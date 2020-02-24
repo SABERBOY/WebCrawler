@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace ArticleConsole.Translators
 {
     public interface ITranslator
     {
-        Task<string[]> ExecuteAsync(params string[] content);
+        Task ExecuteAsync();
+        Task<string[]> TranslateAsync(params string[] content);
     }
 }

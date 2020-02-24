@@ -1,4 +1,6 @@
-﻿namespace ArticleConsole.Models
+﻿using ArticleConsole.Models;
+
+namespace ArticleConsole.Crawlers
 {
     public class ArticleConfig
     {

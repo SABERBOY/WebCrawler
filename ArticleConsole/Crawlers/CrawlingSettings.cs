@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
 
-namespace ArticleConsole.Models
+namespace ArticleConsole.Crawlers
 {
     public class CrawlingSettings
     {
-        public int HttpErrorRetry { get; set; }
-        public int HttpErrorRetrySleep { get; set; }
         public List<ArticleConfig> Crawlers { get; set; }
     }
 }

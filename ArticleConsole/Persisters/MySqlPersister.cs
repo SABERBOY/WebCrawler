@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace ArticleConsole.Persisters
 {
@@ -21,52 +20,87 @@ namespace ArticleConsole.Persisters
             _logger = logger;
         }
 
-        public async Task<Article> GetPreviousAsync(ArticleSource source)
+        public Article GetPrevious(ArticleSource source)
         {
-            return await _dbContext.Articles
-                .Where(o => o.Source == source)
-                .OrderByDescending(o => o.Id)
-                .FirstOrDefaultAsync();
+            lock (_dbContext)
+            {
+                return _dbContext.Articles
+                    .AsNoTracking()
+                    .Where(o => o.Source == source)
+                    .OrderByDescending(o => o.Id)
+                    .FirstOrDefault();
+            }
         }
 
-        public async Task<List<Article>> GetUnTranslatedAsync()
+        public int GetListCount(TransactionStatus status, ArticleSource? source = null)
         {
-            return await _dbContext.Articles
-                .Where(o => !o.Translated)
-                .OrderBy(o => o.Id)
-                .ToListAsync();
+            lock (_dbContext)
+            {
+                return _dbContext.Articles
+                    .AsNoTracking()
+                    .Where(o => (source == null || o.Source == source) && o.Status == status)
+                    .Count();
+            }
         }
 
-        public async Task PersistAsync(List<Article> articles, ArticleSource source)
+        public List<Article> GetList(TransactionStatus status, int batchSize, int? from = null, ArticleSource? source = null)
+        {
+            lock (_dbContext)
+            {
+                return _dbContext.Articles
+                    .AsNoTracking()
+                    .Where(o => (source == null || o.Source == source) && (from == null || o.Id < from) && o.Status == status)
+                    .OrderByDescending(o => o.Id)
+                    .Take(batchSize)
+                    .ToList();
+            }
+        }
+
+        public void Add(List<Article> articles)
         {
             var count = articles.Count;
 
-            Article article;
-            for (var i = count - 1; i >= 0; i--)
+            lock (_dbContext)
             {
-                article = articles[i];
-
-                article.Timestamp = DateTime.Now;
-
-                _dbContext.Articles.Add(article);
-
-                // batch submit
-                if ((count - i) % BATCH_SIZE == 0 || i == 0)
+                Article article;
+                // save from the last one in case failure
+                for (var i = count - 1; i >= 0; i--)
                 {
-                    await _dbContext.SaveChangesAsync();
+                    article = articles[i];
 
-                    _logger.LogDebug("Persisting {0} feed articles: {1}/{2}", source, count - i, count);
+                    article.Timestamp = DateTime.Now;
+
+                    _dbContext.Articles.Add(article);
+
+                    // batch submit
+                    if ((count - i) % BATCH_SIZE == 0 || i == 0)
+                    {
+                        _dbContext.SaveChanges();
+                    }
                 }
             }
-
-            _logger.LogInformation("Persisted {0} feed: {1} articles", source, count);
         }
 
-        public async Task PersistAsync(ArticleZH article)
+        public void Add(ArticleZH article)
         {
-            _dbContext.Add(article);
+            lock (_dbContext)
+            {
+                _dbContext.ArticlesZH.Add(article);
 
-            await _dbContext.SaveChangesAsync();
+                _dbContext.SaveChanges();
+            }
+        }
+
+        public void Update(Article article)
+        {
+            lock (_dbContext)
+            {
+                var model = _dbContext.Articles.Find(article.Id);
+
+                _dbContext.Entry(model).CurrentValues.SetValues(article);
+
+                _dbContext.SaveChanges();
+            }
         }
     }
 }

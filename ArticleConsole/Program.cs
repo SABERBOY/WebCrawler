@@ -17,6 +17,9 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using System.Linq;
+using ArticleConsole.Persisters;
+using ArticleConsole.Crawlers;
+using ArticleConsole.Common;
 
 namespace ArticleConsole
 {
@@ -108,25 +111,35 @@ namespace ArticleConsole
                 .AddJsonFile("appsettings.json", true, true)
                 .Build();
 
-            services.AddSingleton<IConfiguration>(config);
+            //services.AddSingleton<IConfiguration>(config);
 
-            services.AddOptions();
-            services.Configure<CrawlingSettings>(config.GetSection("Crawling"));
+            services.AddSingleton<CrawlingSettings>((serviceProvider) =>
+            {
+                var crawlSettings = new CrawlingSettings();
+                config.Bind("Crawling", crawlSettings);
 
-            //services.AddSingleton<HttpClient>();
+                return crawlSettings;
+            });
+            services.AddSingleton<TranslationSettings>((serviceProvider) =>
+            {
+                var translationSettings = new TranslationSettings();
+                config.Bind("Translation:BaiduTranslator", translationSettings);
+
+                return translationSettings;
+            });
 
             // register as Transient, because efcore dbcontext isn't thread safe
             // https://docs.microsoft.com/en-us/ef/core/miscellaneous/configuring-dbcontext#avoiding-dbcontext-threading-issues
-            //services.AddTransient<IPersister, MySqlPersister>();
+            services.AddTransient<ITranslator, BaiduTranslator>();
+            services.AddTransient<IPersister, MySqlPersister>();
             // configure db context
             services.AddDbContext<ArticleDbContext>(options => options.UseMySql(config["ConnectionStrings:MySqlConnection"]), ServiceLifetime.Transient, ServiceLifetime.Transient);
             //services.AddDbContextPool<ArticleDbContext>(options => options.UseMySql(config["ConnectionStrings:MySqlConnection"]));
-            
-            var settings = new CrawlingSettings();
-            config.Bind("Crawling", settings);
+
+            services.AddTransient<Worker>();
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
-            services.AddHttpClient<Worker>()
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT)
                 .AddPolicyHandler((serviceProvider, request) =>
                 {
                     //var settings = serviceProvider.GetRequiredService<IOptions<CrawlingSettings>>().Value;
@@ -138,8 +151,8 @@ namespace ArticleConsole
                         .Or<OperationCanceledException>()
                         .Or<TaskCanceledException>()
                         .WaitAndRetryAsync(
-                            settings.HttpErrorRetry,
-                            retryAttempt => TimeSpan.FromSeconds(settings.HttpErrorRetrySleep),
+                            int.Parse(config["HttpClient:HttpErrorRetry"]),
+                            retryAttempt => TimeSpan.FromSeconds(int.Parse(config["HttpClient:HttpErrorRetrySleep"])),
                             (response, timespan, retryCount, context) =>
                             {
                                 logger.LogError("Request failed in #{0} try: {1}. {2}", retryCount, request.RequestUri, response.Result?.ReasonPhrase ?? response.Exception.Message);

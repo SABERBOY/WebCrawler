@@ -6,6 +6,6 @@ namespace ArticleConsole.Crawlers
 {
     public interface ICrawler
     {
-        Task<List<Article>> ExecuteAsync(Article previous);
+        Task ExecuteAsync();
     }
 }
