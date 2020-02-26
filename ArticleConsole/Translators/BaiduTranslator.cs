@@ -1,4 +1,5 @@
-﻿using ArticleConsole.Models;
+﻿using ArticleConsole.Common;
+using ArticleConsole.Models;
 using ArticleConsole.Persisters;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -33,7 +34,7 @@ namespace ArticleConsole.Translators
             _persister = persister;
             _logger = logger;
 
-            _httpClient = clientFactory.CreateClient();
+            _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
         }
 
         public async Task ExecuteAsync()
@@ -51,25 +52,22 @@ namespace ArticleConsole.Translators
 
                     try
                     {
-                        var translated = await TranslateAsync(article.Title, article.Keywords, article.Summary, article.Content);
+                        var translated = await TranslateAsync(article.Title, article.Authors, article.Keywords, article.Summary, article.Content);
 
-                        _persister.Add(new ArticleZH
+                        _persister.AddTranslation(new ArticleZH
                         {
                             Id = article.Id,
                             Source = article.Source,
                             Url = article.Url,
                             Image = article.Image,
                             Published = article.Published,
-                            Authors = article.Authors,
                             Title = translated[0],
-                            Keywords = translated[1],
-                            Summary = translated[2],
-                            Content = translated[3],
+                            Authors = translated[1],
+                            Keywords = translated[2],
+                            Summary = translated[3],
+                            Content = translated[4],
                             Timestamp = DateTime.Now
                         });
-
-                        article.Status = TransactionStatus.TranslationCompleted;
-                        _persister.Update(article);
                     }
                     catch (Exception ex)
                     {
@@ -87,14 +85,13 @@ namespace ArticleConsole.Translators
             } while (articles.Count == BATCH_SIZE);
         }
 
-        public async Task<string[]> TranslateAsync(params string[] content)
+        public async Task<string[]> TranslateAsync(params string[] inputs)
         {
-            int[] blockPositions;
-            var batches = TranslatorUtility.Wrap(content, _settings.MaxUTF8BytesPerRequest, out blockPositions);
+            var batches = TranslatorUtility.Wrap(inputs, _settings.MaxUTF8BytesPerRequest, out int[] blockPositions);
 
             //var batches = new string[] { "“It has to be intact, this is a \"test\"”</h2>xxxx<article>hello, we are the world" };
 
-            var outputs = new List<string>();
+            var outputBlocks = new List<string>();
             string query;
             foreach (var batch in batches)
             {
@@ -114,7 +111,7 @@ namespace ArticleConsole.Translators
                 }
                 else
                 {
-                    outputs.AddRange(jo["trans_result"].Select(o => Uri.UnescapeDataString(o.Value<string>("dst"))));
+                    outputBlocks.AddRange(jo["trans_result"].Select(o => Uri.UnescapeDataString(o.Value<string>("dst"))));
                 }
 
                 if (_settings.PausePerRequest > 0)
@@ -123,7 +120,7 @@ namespace ArticleConsole.Translators
                 }
             }
 
-            var translations = TranslatorUtility.Unwrap(outputs, blockPositions);
+            var translations = TranslatorUtility.Unwrap(outputBlocks.ToArray(), blockPositions);
 
             return translations;
         }

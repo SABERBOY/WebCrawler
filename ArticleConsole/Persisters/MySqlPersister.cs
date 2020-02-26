@@ -81,11 +81,15 @@ namespace ArticleConsole.Persisters
             }
         }
 
-        public void Add(ArticleZH article)
+        public void AddTranslation(ArticleZH article)
         {
             lock (_dbContext)
             {
                 _dbContext.ArticlesZH.Add(article);
+
+                var source = _dbContext.Articles.Find(article.Id);
+
+                source.Status = TransactionStatus.TranslationCompleted;
 
                 _dbContext.SaveChanges();
             }

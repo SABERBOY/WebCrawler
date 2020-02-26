@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace ArticleConsole.Translators
 {
@@ -9,32 +10,41 @@ namespace ArticleConsole.Translators
     {
         private static readonly int LEN_LINEBREAK = 1;
 
-        public static List<List<string>> Wrap(string[] content, int maxUTF8Bytes, out int[] blockPositions)
+        public static List<List<string>> Wrap(string[] inputs, int maxUTF8Bytes, out int[] blockPositions)
         {
-            blockPositions = new int[content.Length];
+            blockPositions = new int[inputs.Length];
 
-            // split content to smaller blocks
-            var splitBlocks = new List<string>();
+            // split inputs to smaller blocks
+            var inputBlocks = new List<string>();
             int position = 0;
             int previousBreakIndex;
-            string block;
+            string input;
             string tempBlock;
             MatchCollection breaks;
-            for (var i = 0; i < content.Length; i++)
+            for (var i = 0; i < inputs.Length; i++)
             {
+                input = inputs[i];
+
+                if (string.IsNullOrEmpty(input))
+                {
+                    // ignore empty input
+                    blockPositions[i] = -1;
+                    continue;
+                }
+
                 blockPositions[i] = position;
 
                 // remove original line breaks as they might be inside a single paragraph or sentence.
                 // this might not be necessary for well-formatted article.
-                block = Regex.Replace(content[i] ?? string.Empty, "[\r\n]", " ");
+                input = Regex.Replace(input, "[\r\n]", " ");
 
                 //breaks = Regex.Matches(block, @"(?!\1[ \r\n\t]*)<(div|p|br|h\d|figure|section|aside|header|footer|blockquote|ul)( [^<>]*)?>", RegexOptions.IgnoreCase);
-                breaks = Regex.Matches(block, @"<(div|p|br|h\d|figure|section|aside|header|footer|blockquote|ul)([ \r\n][^<>]*)?>", RegexOptions.IgnoreCase);
+                breaks = Regex.Matches(input, @"<(div|p|br|h\d|figure|section|aside|header|footer|blockquote|ul)([ \r\n][^<>]*)?>", RegexOptions.IgnoreCase);
                 //breaks = Regex.Matches(block, @"<(div|p|br|h\d|figure|section|aside|header|footer|blockquote|ul)( [^<>]*)?/?>", RegexOptions.IgnoreCase);
                 //breaks = Regex.Matches(block, @"</?(div|p|br|h\d|figure|section|aside|header|footer|blockquote|ul)( [^<>]*)?/?>", RegexOptions.IgnoreCase);
                 if (breaks.Count == 0)
                 {
-                    splitBlocks.Add(block);
+                    inputBlocks.Add(input);
 
                     position++;
                 }
@@ -43,20 +53,20 @@ namespace ArticleConsole.Translators
                     previousBreakIndex = 0;
                     for (var j = 0; j < breaks.Count; j++)
                     {
-                        tempBlock = block.Substring(previousBreakIndex, breaks[j].Index - previousBreakIndex);
+                        tempBlock = input.Substring(previousBreakIndex, breaks[j].Index - previousBreakIndex);
                         if (!string.IsNullOrEmpty(tempBlock))
                         {
-                            splitBlocks.Add(tempBlock);
+                            inputBlocks.Add(tempBlock);
                             position++;
                         }
 
                         previousBreakIndex = breaks[j].Index;
                     }
 
-                    tempBlock = block.Substring(previousBreakIndex);
+                    tempBlock = input.Substring(previousBreakIndex);
                     if (!string.IsNullOrEmpty(tempBlock))
                     {
-                        splitBlocks.Add(tempBlock);
+                        inputBlocks.Add(tempBlock);
                         position++;
                     }
                 }
@@ -67,11 +77,11 @@ namespace ArticleConsole.Translators
             List<string> batch = null;
             int subtotal = 0;
             int bytes;
-            foreach (var sb in splitBlocks)
+            foreach (var sb in inputBlocks)
             {
                 bytes = GetUTF8Bytes(sb);
 
-                if (bytes > maxUTF8Bytes) // not expected, might need to figure out how to split the content
+                if (bytes > maxUTF8Bytes) // not expected, might need to figure out how to split the input
                 {
                     // log error
                     throw new NotImplementedException();
@@ -100,26 +110,35 @@ namespace ArticleConsole.Translators
             return batches;
         }
 
-        public static string[] Unwrap(List<string> apiResults, int[] blockPositions)
+        public static string[] Unwrap(string[] outputBlocks, int[] blockPositions)
         {
-            var results = new List<string>();
+            var outputs = new List<string>();
 
-            StringBuilder builder = new StringBuilder();
-            int from;
-            int to;
+            int start = 0;
+            int end;
             for (var i = 0; i < blockPositions.Length; i++)
             {
-                builder.Clear();
-                from = blockPositions[i];
-                to = (i < blockPositions.Length - 1 ? blockPositions[i + 1] : apiResults.Count);
-                for (var j = from; j < to; j++)
+                start = blockPositions[i];
+
+                if (start < 0)
                 {
-                    builder.Append(apiResults[j]);
+                    // fill ignored input with empty string
+                    outputs.Add(string.Empty);
                 }
-                results.Add(builder.ToString());
+                else
+                {
+                    // seek for the start position of next output block or end position
+                    end = blockPositions
+                            .Skip(i + 1)
+                            .Select(o => (int?)o)
+                            .FirstOrDefault(o => o > 0)
+                        ?? outputBlocks.Length;
+
+                    outputs.Add(string.Join(string.Empty, outputBlocks, start, end - start));
+                }
             }
 
-            return results.ToArray();
+            return outputs.ToArray();
         }
 
         public static int GetUTF8Bytes(string content)

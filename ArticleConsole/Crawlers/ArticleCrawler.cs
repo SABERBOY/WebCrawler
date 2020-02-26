@@ -28,7 +28,7 @@ namespace ArticleConsole.Crawlers
         {
             _config = config;
             _persister = persister;
-            _httpClient = clientFactory.CreateClient();
+            _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _logger = logger;
 
             _workerBlock = new ActionBlock<Article>(

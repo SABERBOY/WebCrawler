@@ -133,7 +133,10 @@ namespace ArticleConsole
             services.AddTransient<ITranslator, BaiduTranslator>();
             services.AddTransient<IPersister, MySqlPersister>();
             // configure db context
-            services.AddDbContext<ArticleDbContext>(options => options.UseMySql(config["ConnectionStrings:MySqlConnection"]), ServiceLifetime.Transient, ServiceLifetime.Transient);
+            services.AddDbContext<ArticleDbContext>(
+                options => options.UseMySql(config["ConnectionStrings:MySqlConnection"], builder => builder.EnableRetryOnFailure(3)),
+                ServiceLifetime.Transient,
+                ServiceLifetime.Transient);
             //services.AddDbContextPool<ArticleDbContext>(options => options.UseMySql(config["ConnectionStrings:MySqlConnection"]));
 
             services.AddTransient<Worker>();
@@ -147,7 +150,7 @@ namespace ArticleConsole
 
                     return HttpPolicyExtensions
                         .HandleTransientHttpError()
-                        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
                         .Or<OperationCanceledException>()
                         .Or<TaskCanceledException>()
                         .WaitAndRetryAsync(
