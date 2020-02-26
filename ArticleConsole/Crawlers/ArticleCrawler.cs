@@ -119,7 +119,10 @@ namespace ArticleConsole.Crawlers
                 {
                     page++;
                 }
-            } while (page >= 0 && !exceedPrevious);
+            } while (page >= 0
+                && !exceedPrevious
+                && (_config.FeedMaxPagesLimit == -1 || page < _config.FeedPageIndexStart + _config.FeedMaxPagesLimit)
+            );
 
             _persister.Add(articles);
 

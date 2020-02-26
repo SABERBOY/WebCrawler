@@ -8,6 +8,7 @@ namespace ArticleConsole.Crawlers
         public string FeedUrl { get; set; }
         public string FeedItemLink { get; set; }
         public int FeedPageIndexStart { get; set; }
+        public int FeedMaxPagesLimit { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
         public string ArticleTitle { get; set; }
         public string ArticlePublished { get; set; }
