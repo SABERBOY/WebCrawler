@@ -112,7 +112,8 @@ namespace ArticleConsole.Crawlers
                 {
                     _logger.LogError(ex, "Failed to retrieve {0} feed catalogs: {1}", _config.FeedSource, feedUrl);
 
-                    break;
+                    // exit without saving
+                    return;
                 }
 
                 if (_config.FeedUrl.Contains("{0}"))
