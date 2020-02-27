@@ -139,8 +139,6 @@ namespace ArticleConsole.Crawlers
                 }
             }
 
-            _persister.Add(articles);
-
             _logger.LogInformation("Persisted {0} feed catalogs: {1} articles", _config.FeedSource, articles.Count);
         }
 
