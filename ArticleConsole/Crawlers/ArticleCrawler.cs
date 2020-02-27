@@ -125,9 +125,23 @@ namespace ArticleConsole.Crawlers
                 && (_config.FeedMaxPagesLimit == -1 || page < _config.FeedPageIndexStart + _config.FeedMaxPagesLimit)
             );
 
+            _logger.LogInformation("Crawled {0} feed catalogs: {1} articles", _config.FeedSource, articles.Count);
+
+            // record order isn't guaranteed in batch inset, so let's save the records one by one
+            // save from the last one in case failure
+            for (var i = articles.Count - 1; i >= 0; i--)
+            {
+                _persister.Add(articles[i]);
+
+                if ((articles.Count - i) % 20 == 0 || i == 0)
+                {
+                    _logger.LogInformation("Persisting {0} feed catalogs articles: {1}/{2}", _config.FeedSource, articles.Count - i, articles.Count);
+                }
+            }
+
             _persister.Add(articles);
 
-            _logger.LogInformation("Crawled {0} feed catalogs: {1} articles", _config.FeedSource, articles.Count);
+            _logger.LogInformation("Persisted {0} feed catalogs: {1} articles", _config.FeedSource, articles.Count);
         }
 
         private async Task<List<Article>> CrawlArticlesAsync()
@@ -145,7 +159,7 @@ namespace ArticleConsole.Crawlers
                 }
 
                 subTotal += articles.Count;
-                _logger.LogInformation("Queued {0} feed article details crawling: {1}/{2}", _config.FeedSource, subTotal, total);
+                _logger.LogInformation("Queuing {0} feed article details crawling: {1}/{2}", _config.FeedSource, subTotal, total);
 
                 while (true)
                 {

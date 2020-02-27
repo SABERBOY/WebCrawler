@@ -65,8 +65,7 @@ namespace ArticleConsole.Translators
                             Authors = translated[1],
                             Keywords = translated[2],
                             Summary = translated[3],
-                            Content = translated[4],
-                            Timestamp = DateTime.Now
+                            Content = translated[4]
                         });
                     }
                     catch (Exception ex)

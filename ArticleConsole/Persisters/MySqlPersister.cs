@@ -9,8 +9,6 @@ namespace ArticleConsole.Persisters
 {
     public class MySqlPersister : IPersister
     {
-        private readonly static int BATCH_SIZE = 100;
-
         private readonly ArticleDbContext _dbContext;
         private readonly ILogger _logger;
 
@@ -56,8 +54,21 @@ namespace ArticleConsole.Persisters
             }
         }
 
+        public void Add(Article article)
+        {
+            lock (_dbContext)
+            {
+                article.Timestamp = DateTime.Now;
+
+                _dbContext.Articles.Add(article);
+
+                _dbContext.SaveChanges();
+            }
+        }
+
         public void Add(List<Article> articles)
         {
+            int step = 100;
             var count = articles.Count;
 
             lock (_dbContext)
@@ -72,10 +83,12 @@ namespace ArticleConsole.Persisters
 
                     _dbContext.Articles.Add(article);
 
-                    // batch submit
-                    if ((count - i) % BATCH_SIZE == 0 || i == 0)
+                    // record order isn't guaranteed in batch inset, so let's save the records one by one
+                    _dbContext.SaveChanges();
+
+                    if ((count - i) % step == 0 || i == 0)
                     {
-                        _dbContext.SaveChanges();
+                        _logger.LogInformation("[{0}] Persisting articles: {1}/{2}", article.Source, i + 1, count);
                     }
                 }
             }
@@ -85,11 +98,14 @@ namespace ArticleConsole.Persisters
         {
             lock (_dbContext)
             {
+                article.Timestamp = DateTime.Now;
+
                 _dbContext.ArticlesZH.Add(article);
 
                 var source = _dbContext.Articles.Find(article.Id);
 
                 source.Status = TransactionStatus.TranslationCompleted;
+                source.Timestamp = DateTime.Now;
 
                 _dbContext.SaveChanges();
             }
@@ -99,6 +115,8 @@ namespace ArticleConsole.Persisters
         {
             lock (_dbContext)
             {
+                article.Timestamp = DateTime.Now;
+
                 var model = _dbContext.Articles.Find(article.Id);
 
                 _dbContext.Entry(model).CurrentValues.SetValues(article);
