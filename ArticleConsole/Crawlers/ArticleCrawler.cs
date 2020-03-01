@@ -1,15 +1,15 @@
-﻿using ArticleConsole.Common;
-using ArticleConsole.Models;
+﻿using ArticleConsole.Models;
 using ArticleConsole.Persisters;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using System.Linq;
+using WebCrawler.Common;
 
 namespace ArticleConsole.Crawlers
 {

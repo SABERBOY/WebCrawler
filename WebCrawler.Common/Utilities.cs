@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace ArticleConsole.Common
+namespace WebCrawler.Common
 {
     public static class Utilities
     {

@@ -1,4 +1,6 @@
-﻿using ArticleConsole.Models;
+﻿using ArticleConsole.Crawlers;
+using ArticleConsole.Models;
+using ArticleConsole.Persisters;
 using ArticleConsole.Translators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -10,16 +12,11 @@ using Serilog;
 using System;
 using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
-using System.Linq;
-using ArticleConsole.Persisters;
-using ArticleConsole.Crawlers;
-using ArticleConsole.Common;
+using WebCrawler.Common;
 
 namespace ArticleConsole
 {

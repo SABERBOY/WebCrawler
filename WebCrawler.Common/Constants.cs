@@ -1,4 +1,4 @@
-﻿namespace ArticleConsole.Common
+﻿namespace WebCrawler.Common
 {
     public static class Constants
     {

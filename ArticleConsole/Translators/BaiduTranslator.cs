@@ -1,5 +1,4 @@
-﻿using ArticleConsole.Common;
-using ArticleConsole.Models;
+﻿using ArticleConsole.Models;
 using ArticleConsole.Persisters;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -12,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using WebCrawler.Common;
 
 namespace ArticleConsole.Translators
 {

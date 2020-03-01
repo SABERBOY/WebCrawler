@@ -3,7 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArticleConsole", "ArticleConsole\ArticleConsole.csproj", "{211892F7-23AB-4633-8A26-D49FC1F5421E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArticleConsole", "ArticleConsole\ArticleConsole.csproj", "{211892F7-23AB-4633-8A26-D49FC1F5421E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Html2Article", "Html2Article\Html2Article.csproj", "{6EE7F681-0A6B-4F2B-B62E-81A0145DFA07}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler", "WebCrawler\WebCrawler.csproj", "{1EA0F1F1-4E84-4930-8194-7C259F3D5599}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.Common", "WebCrawler.Common\WebCrawler.Common.csproj", "{80A78C96-7736-4D04-B018-F5F63C854EF9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawler.UI", "WebCrawler.UI\WebCrawler.UI.csproj", "{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +23,22 @@ Global
 		{211892F7-23AB-4633-8A26-D49FC1F5421E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{211892F7-23AB-4633-8A26-D49FC1F5421E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{211892F7-23AB-4633-8A26-D49FC1F5421E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EE7F681-0A6B-4F2B-B62E-81A0145DFA07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EE7F681-0A6B-4F2B-B62E-81A0145DFA07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EE7F681-0A6B-4F2B-B62E-81A0145DFA07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EE7F681-0A6B-4F2B-B62E-81A0145DFA07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EA0F1F1-4E84-4930-8194-7C259F3D5599}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EA0F1F1-4E84-4930-8194-7C259F3D5599}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EA0F1F1-4E84-4930-8194-7C259F3D5599}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EA0F1F1-4E84-4930-8194-7C259F3D5599}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80A78C96-7736-4D04-B018-F5F63C854EF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80A78C96-7736-4D04-B018-F5F63C854EF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80A78C96-7736-4D04-B018-F5F63C854EF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80A78C96-7736-4D04-B018-F5F63C854EF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
