@@ -131,8 +131,11 @@
                 </Grid>
             </Grid>
 
-
-            <DataGrid Grid.Row="1" Margin="0 0 10 10" IsReadOnly="True" CanUserSortColumns="False"
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding CrawlLogs}"
+                      Margin="0 0 10 10"
+                      IsReadOnly="True"
+                      CanUserSortColumns="False"
                       MinHeight="100"
                       Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
                 <DataGrid.Columns>
@@ -140,7 +143,12 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <DataGrid Grid.Row="2" Margin="0 0 10 10" IsReadOnly="True" CanUserSortColumns="False">
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding Outputs}"
+                      AutoGenerateColumns="True"
+                      Margin="0 0 10 10"
+                      IsReadOnly="True"
+                      CanUserSortColumns="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Test" />
                 </DataGrid.Columns>

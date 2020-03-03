@@ -1,15 +1,17 @@
 ﻿using GalaSoft.MvvmLight.Command;
+using HtmlAgilityPack;
+using Serilog.Events;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
+using WebCrawler.Common;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
-using System.Linq;
-using WebCrawler.Common;
-using System.Net.Http;
-using HtmlAgilityPack;
 
 namespace WebCrawler.UI.ViewModels
 {
@@ -55,7 +57,7 @@ namespace WebCrawler.UI.ViewModels
                 _keywords = value;
                 RaisePropertyChanged();
 
-                LoadDataAsync().ConfigureAwait(false);
+                LoadData();
             }
         }
 
@@ -70,7 +72,7 @@ namespace WebCrawler.UI.ViewModels
                 _enabled = value;
                 RaisePropertyChanged();
 
-                LoadDataAsync().ConfigureAwait(false);
+                LoadData();
             }
         }
 
@@ -169,6 +171,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private ObservableCollection<Output> _outputs;
+        public ObservableCollection<Output> Outputs
+        {
+            get { return _outputs; }
+            set
+            {
+                if (_outputs == value) { return; }
+
+                _outputs = value;
+                RaisePropertyChanged();
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -224,71 +239,55 @@ namespace WebCrawler.UI.ViewModels
 
             Websites = new ObservableCollection<Website>();
             CatalogItems = new ObservableCollection<CatalogItem>();
+            Outputs = new ObservableCollection<Output>();
 
             _websitesSource = new CollectionViewSource { Source = Websites };
 
             Editor = new WebsiteEditor();
         }
 
-        public async Task Sort(params SortDescription[] sorts)
+        public bool Sort(params SortDescription[] sorts)
         {
-            if (!AcquireLock())
+            return TryProcess(async(complete) =>
             {
-                return;
-            }
+                await LoadDataCoreAsync(sorts);
 
-            try
-            {
-                _sorts = sorts;
-
-                await LoadDataAsync(true);
-            }
-            catch (System.Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                ReleaseLock();
-            }
+                complete?.Invoke();
+            });
         }
 
-        public async Task LoadDataAsync(bool skipLock = false)
+        public void LoadData()
         {
-            if (!skipLock && !AcquireLock())
+            TryProcess(async (complete) =>
             {
-                return;
-            }
+                await LoadDataCoreAsync();
 
-            try
-            {
-                var sort = _sorts?.FirstOrDefault();
-
-                var websites = await _persister.GetWebsitesAsync(Keywords, Enabled, 1, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
-
-                Websites.Clear();
-
-                foreach (var web in websites.Items)
-                {
-                    Websites.Add(web);
-                }
-
-                WebsitesView.Refresh();
-            }
-            catch (System.Exception ex)
-            {
-                throw;
-            }
-            finally
-            {
-                if (!skipLock)
-                {
-                    ReleaseLock();
-                }
-            }
+                complete?.Invoke();
+            });
         }
 
         #region Private Members
+
+        private async Task LoadDataCoreAsync(SortDescription[] sorts = null)
+        {
+            if (sorts != null)
+            {
+                _sorts = sorts;
+            }
+
+            var sort = _sorts?.FirstOrDefault();
+
+            var websites = await _persister.GetWebsitesAsync(Keywords, Enabled, 1, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+
+            Websites.Clear();
+
+            foreach (var web in websites.Items)
+            {
+                Websites.Add(web);
+            }
+
+            WebsitesView.Refresh();
+        }
 
         private void OnSelectedWebsiteChanged()
         {
@@ -304,26 +303,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private async void SaveAsync()
+        private void SaveAsync()
         {
-            if (!AcquireLock())
+            TryProcess((complete) =>
             {
-                return;
-            }
+                // TODO
 
-            // TODO
-
-            ReleaseLock();
+                complete?.Invoke();
+            });
         }
 
-        private async void RunTestAsync()
+        private void RunTestAsync()
         {
-            if (!AcquireLock())
-            {
-                return;
-            }
-
-            try
+            TryProcess(async (complete) =>
             {
                 ShowTestResult = true;
 
@@ -355,30 +347,17 @@ namespace WebCrawler.UI.ViewModels
 
                 // test pagination
                 // test details
-            }
-            catch (System.Exception ex)
-            {
-                throw;
-            }
-            finally
-            {
-                ReleaseLock();
-            }
+
+                complete?.Invoke();
+            });
         }
 
         private void Reset()
         {
-            if (!AcquireLock())
-            {
-                return;
-            }
-
             Editor.From(SelectedWebsite);
-
-            ReleaseLock();
         }
 
-        private async void OnSelectedCatalogItemChanged()
+        private void OnSelectedCatalogItemChanged()
         {
             if (SelectedCatalogItem == null)
             {
@@ -387,29 +366,32 @@ namespace WebCrawler.UI.ViewModels
                 return;
             }
 
-            if (!AcquireLock())
+            TryProcess(async (complete) =>
             {
-                return;
-            }
+                var url = Utilities.ResolveResourceUrl(SelectedCatalogItem.Url, SelectedWebsite.Home);
 
-            var url = Utilities.ResolveResourceUrl(SelectedCatalogItem.Url, SelectedWebsite.Home);
+                var data = await _httpClient.GetHtmlAsync(url);
 
-            var data = await _httpClient.GetHtmlAsync(url);
+                var article = StanSoft.Html2Article.GetArticle(data);
 
-            var article = StanSoft.Html2Article.GetArticle(data);
+                Article = new Article
+                {
+                    Url = url,
+                    Title = article.Title,
+                    Content = article.Content,
+                    Published = article.PublishDate
+                };
 
-            Article = new Article
-            {
-                Url = url,
-                Title = article.Title,
-                Content = article.Content,
-                Published = article.PublishDate
-            };
-
-            ReleaseLock();
+                complete?.Invoke();
+            });
         }
 
-        private bool AcquireLock()
+        /// <summary>
+        /// Returns true if the call is accepted.
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        private bool TryProcess(Action<Action> action)
         {
             lock (this)
             {
@@ -418,13 +400,39 @@ namespace WebCrawler.UI.ViewModels
                     return false;
                 }
 
-                return IsProcessing = true;
+                IsProcessing = true;
             }
+
+            try
+            {
+                action?.Invoke(() => IsProcessing = false);
+            }
+            catch (Exception ex)
+            {
+                AppendOutput(ex.Message, LogEventLevel.Error);
+
+                IsProcessing = false;
+            }
+
+            return true;
         }
 
-        private void ReleaseLock()
+        private void AppendOutput(string message, LogEventLevel level = LogEventLevel.Information)
         {
-            IsProcessing = false;
+            lock (this)
+            {
+                _outputs.Insert(0, new Output
+                {
+                    Level = level,
+                    Message = message,
+                    Timestamp = DateTime.Now
+                });
+
+                while (_outputs.Count > 500)
+                {
+                    _outputs.RemoveAt(_outputs.Count - 1);
+                }
+            }
         }
 
         #endregion

@@ -16,25 +16,46 @@ namespace WebCrawler.UI.Views
             Loaded += SiteConfig_Loaded;
         }
 
-        private async void SiteConfig_Loaded(object sender, RoutedEventArgs e)
+        private void SiteConfig_Loaded(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as SiteConfigViewModel;
 
-            await vm.LoadDataAsync();
+            vm.LoadData();
         }
 
-        private async void DataGrid_Sorting(object sender, DataGridSortingEventArgs e)
+        /// <summary>
+        /// That's better to not to use async for this event, otherwise, the table might be sorted twice, as the call e.Handled = true might be later than the built-in behavior.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DataGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
+            e.Handled = true;
+
             var vm = DataContext as SiteConfigViewModel;
 
             var direction = e.Column.SortDirection == null || e.Column.SortDirection == ListSortDirection.Descending
                 ? ListSortDirection.Ascending
                 : ListSortDirection.Descending;
 
-            await vm.Sort(new SortDescription(e.Column.SortMemberPath, direction));
+            var sortAccepted = vm.Sort(new SortDescription(e.Column.SortMemberPath, direction));
+            if (sortAccepted)
+            {
+                var grid = sender as DataGrid;
 
-            // TODO: 考虑使用handler event去取消built-in排序功能，然后自己设置column header的排序箭头
-            e.Handled = true;
+                // update the sort arrow icon status as the sorting is cancelled by e.Handled = true
+                foreach (var col in grid.Columns)
+                {
+                    if (col.SortMemberPath == e.Column.SortMemberPath)
+                    {
+                        col.SortDirection = direction;
+                    }
+                    else
+                    {
+                        col.SortDirection = null;
+                    }
+                }
+            }
         }
     }
 }
