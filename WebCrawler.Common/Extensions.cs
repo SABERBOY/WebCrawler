@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -96,7 +98,7 @@ namespace WebCrawler.Common
         /// Read HTML with auto-detected encoding.
         /// </summary>
         /// <returns></returns>
-        public async static Task<string> GetHTMLAsync(this HttpClient httpClient, string requestUri)
+        public async static Task<string> GetHtmlAsync(this HttpClient httpClient, string requestUri)
         {
             using (var stream = await httpClient.GetStreamAsync(requestUri))
             {
@@ -157,6 +159,25 @@ namespace WebCrawler.Common
         }
 
         #endregion
+
+        public static string GetDescription(this Enum value)
+        {
+            Type type = value.GetType();
+            string name = Enum.GetName(type, value);
+            if (name != null)
+            {
+                FieldInfo field = type.GetField(name);
+                if (field != null)
+                {
+                    var attr = Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
+                    if (attr != null)
+                    {
+                        return attr.Description;
+                    }
+                }
+            }
+            return null;
+        }
 
         public static string GetAggregatedMessage(this AggregateException aex)
         {

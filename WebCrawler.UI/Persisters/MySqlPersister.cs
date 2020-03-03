@@ -4,7 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebCrawler.Common;
+using WebCrawler.UI.Common;
 using WebCrawler.UI.Models;
+using WebCrawler.UI.ViewModels;
 
 namespace WebCrawler.UI.Persisters
 {
@@ -21,13 +24,35 @@ namespace WebCrawler.UI.Persisters
             _logger = logger;
         }
 
-        public async Task<List<Website>> GetActiveConfigsAsync()
+        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, bool enabled = true, int page = 1, string sortBy = null, bool descending = false)
         {
-            return await _dbContext.Websites
-                .Where(o => o.Enabled)
+            var query = _dbContext.Websites
                 .Include(o => o.CrawlLogs)
-                .OrderByDescending(o => o.Rank)
-                .ToListAsync();
+                .Where(o => (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords))
+                    && o.Enabled == enabled
+                );
+
+            if (string.IsNullOrEmpty(sortBy))
+            {
+                query = query.OrderByDescending(o => o.Rank);
+            }
+            else
+            {
+                if (sortBy == nameof(Website.Rank))
+                {
+                    query = Sort<int>(query, sortBy, descending);
+                }
+                else if (sortBy == nameof(Website.Registered))
+                {
+                    query = Sort<DateTime>(query, sortBy, descending);
+                }
+                else
+                {
+                    query = Sort<string>(query, sortBy, descending);
+                }
+            }
+
+            return await query.ToPagedResultAsync(page);
         }
 
         public async Task AddAsync(List<Article> articles)
@@ -53,5 +78,29 @@ namespace WebCrawler.UI.Persisters
                 }
             }
         }
+
+        public Task<PagedResult<CrawlLog>> GetCrawlLogsAsync()
+        {
+            var data = _dbContext.CrawlLogs.ToArray();
+
+            return null;
+        }
+
+        #region Private Members
+
+        private IOrderedQueryable<Website> Sort<T>(IQueryable<Website> query, string property, bool descending)
+        {
+            var sortKeySelector = LinqHelper.CreateKeyAccessor<Website, T>(property);
+            if (descending)
+            {
+                return query.OrderByDescending(sortKeySelector);
+            }
+            else
+            {
+                return query.OrderBy(sortKeySelector);
+            }
+        }
+
+        #endregion
     }
 }

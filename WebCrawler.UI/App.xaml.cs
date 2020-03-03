@@ -4,15 +4,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
+using Polly.Retry;
 using Serilog;
 using System;
 using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using WebCrawler.Common;
 using WebCrawler.UI.Crawlers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
+using WebCrawler.UI.ViewModels;
+using WebCrawler.UI.Views;
 
 namespace WebCrawler.UI
 {
@@ -25,23 +31,52 @@ namespace WebCrawler.UI
         {
             base.OnStartup(e);
 
+            DispatcherUnhandledException += Application_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
             var services = new ServiceCollection();
 
             ConfigureServices(services);
 
-            using (var serviceProvider = services.BuildServiceProvider())
-            {
-                serviceProvider.GetService<MainWindow>().Show();
-            }
+            // NOTICE: Couldn't dispose the service provider here, otherwise it might suffer the issue below, as the Show method will complete immediately.
+            // https://github.com/aspnet/DependencyInjection/issues/440#issuecomment-236862811
+            var serviceProvider = services.BuildServiceProvider();
+            serviceProvider.GetService<MainWindow>().Show();
+
+            // add encoding support for GB2312 and GDK
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         }
 
-        static void ConfigureServices(IServiceCollection services)
+        #region Events
+
+        private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            HandleException(e.Exception);
+
+            e.Handled = true;
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            HandleException(e.ExceptionObject as Exception);
+        }
+
+        private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            HandleException(e.Exception);
+        }
+
+        #endregion
+
+        #region Private Members
+        private void ConfigureServices(IServiceCollection services)
         {
             IConfiguration config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", true, true)
                 .Build();
 
-            //services.AddSingleton<IConfiguration>(config);
+            services.AddSingleton<IConfiguration>(config);
 
             services.AddSingleton<CrawlingSettings>((serviceProvider) =>
             {
@@ -61,26 +96,18 @@ namespace WebCrawler.UI
                 ServiceLifetime.Transient);
 
             services.AddTransient<MainWindow>();
+            services.AddTransient<Crawler>();
+            services.AddTransient<SiteConfig>();
+            services.AddTransient<Settings>();
+
+            services.AddTransient<SiteConfigViewModel>();
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
             services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT)
-                .AddPolicyHandler((serviceProvider, request) =>
-                {
-                    var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger>();
-
-                    return HttpPolicyExtensions
-                        .HandleTransientHttpError()
-                        .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
-                        .Or<OperationCanceledException>()
-                        .Or<TaskCanceledException>()
-                        .WaitAndRetryAsync(
-                            int.Parse(config["HttpClient:HttpErrorRetry"]),
-                            retryAttempt => TimeSpan.FromSeconds(int.Parse(config["HttpClient:HttpErrorRetrySleep"])),
-                            (response, timespan, retryCount, context) =>
-                            {
-                                logger.LogError("Request failed in #{0} try: {1}. {2}", retryCount, request.RequestUri, response.Result?.ReasonPhrase ?? response.Exception.Message);
-                            });
-                });
+                .AddPolicyHandler(HttpPolicyHandler);
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT)
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+                .AddPolicyHandler(HttpPolicyHandler);
 
             // configure logger
             services.AddSingleton<Microsoft.Extensions.Logging.ILogger>(serviceProvider =>
@@ -96,5 +123,53 @@ namespace WebCrawler.UI
                 .CreateLogger<MainWindow>();
             });
         }
+
+        private AsyncRetryPolicy<HttpResponseMessage> HttpPolicyHandler(IServiceProvider serviceProvider, HttpRequestMessage request)
+        {
+            IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
+
+            var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger>();
+
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
+                .Or<OperationCanceledException>()
+                .Or<TaskCanceledException>()
+                .WaitAndRetryAsync(
+                    int.Parse(config["HttpClient:HttpErrorRetry"]),
+                    retryAttempt => TimeSpan.FromSeconds(int.Parse(config["HttpClient:HttpErrorRetrySleep"])),
+                    (response, timespan, retryCount, context) =>
+                    {
+                        logger.LogError("Request failed in #{0} try: {1}. {2}", retryCount, request.RequestUri, response.Result?.ReasonPhrase ?? response.Exception.Message);
+                    });
+        }
+
+        private void HandleException(Exception exception)
+        {
+            if (exception.InnerException is ThreadAbortException)
+            {
+            }
+            //else if (exception.GetBaseException() is System.Data.Entity.Validation.DbEntityValidationException valEx)
+            //{
+            //    StringBuilder builder = new StringBuilder();
+            //    foreach (var eve in valEx.EntityValidationErrors)
+            //    {
+            //        foreach (var ve in eve.ValidationErrors)
+            //        {
+            //            builder.AppendLine($"{ve.PropertyName}: {ve.ErrorMessage}");
+            //        }
+            //    }
+
+            //    MessageBox.Show(builder.ToString(), "Validation Errors", MessageBoxButton.OK, MessageBoxImage.Error);
+            //}
+            else
+            {
+                exception = (exception is System.Reflection.TargetInvocationException && exception.InnerException != null) ? exception.InnerException : exception;
+
+                MessageBox.Show(exception.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #endregion
     }
 }

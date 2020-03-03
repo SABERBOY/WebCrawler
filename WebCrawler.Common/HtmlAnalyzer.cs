@@ -2,83 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Linq;
-using System.IO;
-using System.Threading;
-using System.Globalization;
-using WebCrawler.Common;
+using System.Text.RegularExpressions;
 
-namespace WebCrawler.UI
+namespace WebCrawler.Common
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public static class HtmlAnalyzer
     {
-        public MainWindow()
+        public static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
         {
-            InitializeComponent();
-
-            Loaded += MainWindow_Loaded;
-        }
-
-        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-            var x = CodePagesEncodingProvider.Instance.GetEncoding("gb2312");
-
-            var urls = new string[] {
-                "http://roll.finance.sina.com.cn/finance/gncj/jrxw/index_1.shtml",
-                "http://finance.ifeng.com/roll/index.shtml", // ***** 重点 *****
-                "http://0745news.cn/news/xianshi/hecheng/",
-                "http://www.ocn.com.cn/hongguan/hongguanguancha/",
-                "http://www.mof.gov.cn/zhengwuxinxi/caijingshidian/zyzfmhwz/",
-                "http://channel.chinanews.com/u/finance/yw.shtml?pager=0",
-                "http://economy.jschina.com.cn/gdxw/",
-                "http://www.cq.xinhuanet.com/zhengwu/gzdt.htm",
-                "http://roll.finance.sina.com.cn/finance/gncj/jrxw/index_1.shtml"
-            };
-
-            using (var client = new HttpClient())
-            {
-                for (var i = 0; i < urls.Length; i++)
-                {
-                    var data = await client.GetHTMLAsync(urls[i]);
-
-                    var blocks = EvaluateCatalogs(data);
-
-                    ;
-                }
-
-                // GetDiffXPath
-                // https://github.com/ferventdesert/Hawk/blob/03fbdd0ff4bbdb61db3434adae66c40fa6774641/Hawk.ETL/Crawlers/XPathAnalyzer.cs#L153-L159
-
-                // node.CssSelect(xpath)
-                // https://github.com/ferventdesert/Hawk/blob/03fbdd0ff4bbdb61db3434adae66c40fa6774641/Hawk.ETL/Crawlers/XPathAnalyzer.cs#L82-L100
-
-                // TODO: 后期需过滤重复链接
-            }
-        }
-
-        private Block[] EvaluateCatalogs(string html)
-        {
-            var htmlDoc = new HtmlDocument();
-
-            htmlDoc.LoadHtml(html);
-
             var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a[@href][text()]");
             var links = linkNodes.Select(o => new Link
             {
@@ -88,6 +20,8 @@ namespace WebCrawler.UI
             }).ToArray();
 
             Dictionary<string, string[]> similarities = new Dictionary<string, string[]>();
+
+            var expAnyIndex = new Regex("[*]");
 
             List<Block> blocks = new List<Block>();
             Block block = null;
@@ -111,8 +45,10 @@ namespace WebCrawler.UI
                 }
                 else // compare with the items after
                 {
-                    genericXPath= GenerateXPathSimilarity(block.LinkXPath, link.XPath);
-                    if (!string.IsNullOrEmpty(genericXPath))
+                    genericXPath = GenerateXPathSimilarity(block.LinkXPath, link.XPath);
+                    if (!string.IsNullOrEmpty(genericXPath)
+                        // accepts 2-level depth of nested catalog lists at most
+                        && expAnyIndex.Matches(genericXPath).Count <= Constants.RULE_CATALOG_LIST_NESTED_MAX_LEVEL)
                     {
                         block.LinkXPath = genericXPath;
                         block.MatchCount++;
@@ -128,13 +64,50 @@ namespace WebCrawler.UI
                 }
             }
 
-            var query = blocks.OrderByDescending(o => o.Score);
+            var expExcludeSections = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
+
+            var query = blocks
+                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath))
+                .OrderByDescending(o => o.Score);
 
             var threshold = query.First().Score / 2;
 
             return query
                 .Where(o => o.Score > threshold) // filter high posibility blocks
                 .ToArray();
+        }
+
+        public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
+        {
+            var regexDate = new Regex(Constants.EXP_DATE_TIME);
+            var regexTrim = new Regex(Constants.EXP_TrimText);
+            Match match;
+
+            var items = new List<CatalogItem>();
+
+            var itemIterator = htmlDoc.CreateNavigator().Select(block.ContainerPath);
+            string value;
+            while (itemIterator.MoveNext())
+            {
+                value = itemIterator.Current.Value;
+
+                if (string.IsNullOrEmpty(value))
+                {
+                    continue;
+                }
+
+                match = regexDate.Match(value);
+
+                items.Add(new CatalogItem
+                {
+                    Url = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href"),
+                    Title = itemIterator.Current.GetValue(block.RelativeLinkXPath),
+                    FullText = regexTrim.Replace(value, ""),
+                    Published = match.Success ? DateTime.Parse(match.Value) : default(DateTime?)
+                });
+            }
+
+            return items.ToArray();
         }
 
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)
@@ -270,7 +243,7 @@ namespace WebCrawler.UI
         //    return similarity.ToArray();
         //}
 
-        private string GenerateXPathSimilarity(string source, string target)
+        private static string GenerateXPathSimilarity(string source, string target)
         {
             if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(target))
             {
@@ -416,7 +389,7 @@ namespace WebCrawler.UI
             {
                 if (string.IsNullOrEmpty(LinkXPath))
                 {
-                    return null;
+                    return string.Empty;
                 }
 
                 int index = LinkXPath.LastIndexOf("[*]");
@@ -424,5 +397,32 @@ namespace WebCrawler.UI
                 return index == -1 ? LinkXPath : LinkXPath.Substring(0, index);
             }
         }
+
+        public string RelativeLinkXPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(LinkXPath))
+                {
+                    return string.Empty;
+                }
+
+                var xpath = LinkXPath.Substring(ContainerPath.Length);
+                if (xpath.StartsWith("[*]"))
+                {
+                    xpath = xpath.Substring(3);
+                }
+
+                return "." + xpath;
+            }
+        }
+    }
+
+    public class CatalogItem
+    {
+        public DateTime? Published { get; set; }
+        public string Title { get; set; }
+        public string Url { get; set; }
+        public string FullText { get; set; }
     }
 }

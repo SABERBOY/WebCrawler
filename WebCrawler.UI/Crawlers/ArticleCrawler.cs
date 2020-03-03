@@ -44,9 +44,9 @@ namespace WebCrawler.UI.Crawlers
         {
             _logger.LogInformation("Loading websites data");
 
-            var configs = await _persister.GetActiveConfigsAsync();
+            var configs = await _persister.GetWebsitesAsync();
 
-            foreach (var config in configs)
+            foreach (var config in configs.Items)
             {
                 _workerBlock.Post(config);
             }
