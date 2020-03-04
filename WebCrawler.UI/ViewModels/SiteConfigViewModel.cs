@@ -261,7 +261,7 @@ namespace WebCrawler.UI.ViewModels
         public SiteConfigViewModel(IPersister persister, IHttpClientFactory clientFactory)
         {
             _persister = persister;
-            _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT);
+            _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
 
             // set the priviate variable to avoid trigger data loading
             _enabled = true;
