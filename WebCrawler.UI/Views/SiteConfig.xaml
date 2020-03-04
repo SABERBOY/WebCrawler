@@ -11,7 +11,16 @@
       Title="SiteConfig">
 
     <Page.Resources>
-
+        <Style TargetType="Line">
+            <Setter Property="Stroke" Value="White" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Stretch" Value="Fill" />
+            <Setter Property="X1" Value="0" />
+            <Setter Property="X2" Value="1" />
+            <Setter Property="Y1" Value="0" />
+            <Setter Property="Y2" Value="0" />
+            <Setter Property="Margin" Value="10 5" />
+        </Style>
     </Page.Resources>
 
     <Grid>
@@ -91,6 +100,9 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <Label Grid.Row="0" Grid.Column="0" Content="Name" />
@@ -100,24 +112,30 @@
                     <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Rank}" />
 
                     <Label Grid.Row="2" Grid.Column="0" Content="Home" />
-                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Home}" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Home}" ctls:Placeholder.PlaceholderText="Url of the first list page" />
 
-                    <Label Grid.Row="3" Grid.Column="0" Content="UrlFormat" />
-                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Editor.UrlFormat}" />
+                    <Line Grid.Row="3" Grid.ColumnSpan="2" />
+                    
+                    <Label Grid.Row="4" Grid.Column="0" Content="UrlFormat" />
+                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Editor.UrlFormat}" ctls:Placeholder.PlaceholderText="Url format for list pagination, use {0} as page number placeholder" />
 
-                    <Label Grid.Row="4" Grid.Column="0" Content="StartIndex" />
-                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Editor.StartIndex}" />
+                    <Label Grid.Row="5" Grid.Column="0" Content="StartIndex" />
+                    <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Editor.StartIndex}" ctls:Placeholder.PlaceholderText="List page start index presented in the url" />
 
-                    <Label Grid.Row="5" Grid.Column="0" Content="ListPath" />
-                    <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Editor.ListPath}" ctls:Placeholder.PlaceholderText="Leave empty to auto detect" />
+                    <Line Grid.Row="6" Grid.ColumnSpan="2" />
+                    
+                    <Label Grid.Row="7" Grid.Column="0" Content="ListPath" />
+                    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Editor.ListPath}" ctls:Placeholder.PlaceholderText="Leave empty to auto detect" />
 
-                    <Label Grid.Row="6" Grid.Column="0" Content="Notes" />
-                    <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Editor.Notes}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                    <Line Grid.Row="8" Grid.ColumnSpan="2" />
+                    
+                    <Label Grid.Row="9" Grid.Column="0" Content="Notes" />
+                    <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding Editor.Notes}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" />
 
-                    <Label Grid.Row="7" Grid.Column="0" Content="Enabled" />
-                    <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Editor.Enabled}" />
+                    <Label Grid.Row="10" Grid.Column="0" Content="Enabled" />
+                    <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Editor.Enabled}" />
 
-                    <Grid Grid.Row="8" Grid.ColumnSpan="2" Margin="10">
+                    <Grid Grid.Row="11" Grid.ColumnSpan="2" Margin="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
