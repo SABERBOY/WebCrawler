@@ -49,7 +49,7 @@
         <DataGrid Grid.Row="1"
                       Grid.Column="0"
                   Margin="10 0 10 10"
-                  ItemsSource="{Binding WebsitesView}"
+                  ItemsSource="{Binding Websites}"
                   SelectedItem="{Binding SelectedWebsite}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
@@ -137,20 +137,18 @@
                       IsReadOnly="True"
                       CanUserSortColumns="False"
                       MinHeight="100"
-                      Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Test" />
-                </DataGrid.Columns>
-            </DataGrid>
+                      Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}" />
 
             <DataGrid Grid.Row="2"
                       ItemsSource="{Binding Outputs}"
-                      AutoGenerateColumns="True"
+                      AutoGenerateColumns="False"
                       Margin="0 0 10 10"
                       IsReadOnly="True"
                       CanUserSortColumns="False">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Test" />
+                    <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp, StringFormat=HH:mm:ss.fff}" />
+                    <DataGridTextColumn Header="Level" Binding="{Binding Level}" />
+                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" />
                 </DataGrid.Columns>
             </DataGrid>
 

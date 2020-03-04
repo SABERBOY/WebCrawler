@@ -7,7 +7,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Windows.Data;
 using System.Windows.Input;
 using WebCrawler.Common;
 using WebCrawler.UI.Models;
@@ -21,15 +20,6 @@ namespace WebCrawler.UI.ViewModels
         private HttpClient _httpClient;
 
         private SortDescription[] _sorts;
-
-        private CollectionViewSource _websitesSource;
-        public ICollectionView WebsitesView
-        {
-            get
-            {
-                return _websitesSource.View;
-            }
-        }
 
         #region Notify Properties
 
@@ -238,31 +228,24 @@ namespace WebCrawler.UI.ViewModels
             _enabled = true;
 
             Websites = new ObservableCollection<Website>();
-            CatalogItems = new ObservableCollection<CatalogItem>();
             Outputs = new ObservableCollection<Output>();
-
-            _websitesSource = new CollectionViewSource { Source = Websites };
 
             Editor = new WebsiteEditor();
         }
 
         public bool Sort(params SortDescription[] sorts)
         {
-            return TryProcess(async(complete) =>
+            return TryRunAsync(async() =>
             {
                 await LoadDataCoreAsync(sorts);
-
-                complete?.Invoke();
             });
         }
 
         public void LoadData()
         {
-            TryProcess(async (complete) =>
+            TryRunAsync(async () =>
             {
                 await LoadDataCoreAsync();
-
-                complete?.Invoke();
             });
         }
 
@@ -279,14 +262,15 @@ namespace WebCrawler.UI.ViewModels
 
             var websites = await _persister.GetWebsitesAsync(Keywords, Enabled, 1, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
 
-            Websites.Clear();
-
-            foreach (var web in websites.Items)
+            App.Current.Dispatcher.Invoke(() =>
             {
-                Websites.Add(web);
-            }
-
-            WebsitesView.Refresh();
+                // couldn't create new Websites instance (which don't require Dispatcher Invoke) here as we want to persist the sort arrows in the data grid
+                Websites.Clear();
+                foreach (var web in websites.Items)
+                {
+                    Websites.Add(web);
+                }
+            });
         }
 
         private void OnSelectedWebsiteChanged()
@@ -299,29 +283,25 @@ namespace WebCrawler.UI.ViewModels
             {
                 Editor.From(_selectedWebsite);
 
-                CatalogItems.Clear();
+                CatalogItems = null;
             }
         }
 
         private void SaveAsync()
         {
-            TryProcess((complete) =>
+            TryRunAsync(async () =>
             {
                 // TODO
-
-                complete?.Invoke();
             });
         }
 
         private void RunTestAsync()
         {
-            TryProcess(async (complete) =>
+            TryRunAsync(async () =>
             {
                 ShowTestResult = true;
 
                 #region Test catalogs
-
-                CatalogItems.Clear();
 
                 var data = await _httpClient.GetHtmlAsync(Editor.Home);
 
@@ -336,10 +316,8 @@ namespace WebCrawler.UI.ViewModels
                     if (blocks.Length > 0)
                     {
                         var items = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, blocks[0]);
-                        foreach (var item in items)
-                        {
-                            CatalogItems.Add(item);
-                        }
+
+                        CatalogItems = new ObservableCollection<CatalogItem>(items);
                     }
                 }
 
@@ -347,8 +325,6 @@ namespace WebCrawler.UI.ViewModels
 
                 // test pagination
                 // test details
-
-                complete?.Invoke();
             });
         }
 
@@ -366,7 +342,7 @@ namespace WebCrawler.UI.ViewModels
                 return;
             }
 
-            TryProcess(async (complete) =>
+            TryRunAsync(async () =>
             {
                 var url = Utilities.ResolveResourceUrl(SelectedCatalogItem.Url, SelectedWebsite.Home);
 
@@ -381,8 +357,6 @@ namespace WebCrawler.UI.ViewModels
                     Content = article.Content,
                     Published = article.PublishDate
                 };
-
-                complete?.Invoke();
             });
         }
 
@@ -391,7 +365,7 @@ namespace WebCrawler.UI.ViewModels
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        private bool TryProcess(Action<Action> action)
+        private bool TryRunAsync(Func<Task> action)
         {
             lock (this)
             {
@@ -403,16 +377,21 @@ namespace WebCrawler.UI.ViewModels
                 IsProcessing = true;
             }
 
-            try
+            Task.Run(async () =>
             {
-                action?.Invoke(() => IsProcessing = false);
-            }
-            catch (Exception ex)
-            {
-                AppendOutput(ex.Message, LogEventLevel.Error);
-
-                IsProcessing = false;
-            }
+                try
+                {
+                    await action?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    AppendOutput(ex.Message, LogEventLevel.Error);
+                }
+                finally
+                {
+                    IsProcessing = false;
+                }
+            });
 
             return true;
         }
@@ -421,17 +400,20 @@ namespace WebCrawler.UI.ViewModels
         {
             lock (this)
             {
-                _outputs.Insert(0, new Output
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    Level = level,
-                    Message = message,
-                    Timestamp = DateTime.Now
-                });
+                    Outputs.Insert(0, new Output
+                    {
+                        Level = level,
+                        Message = message,
+                        Timestamp = DateTime.Now
+                    });
 
-                while (_outputs.Count > 500)
-                {
-                    _outputs.RemoveAt(_outputs.Count - 1);
-                }
+                    while (Outputs.Count > 500)
+                    {
+                        Outputs.RemoveAt(_outputs.Count - 1);
+                    }
+                });
             }
         }
 
