@@ -167,11 +167,19 @@
 
             <DataGrid Grid.Row="1"
                       ItemsSource="{Binding CrawlLogs}"
+                      AutoGenerateColumns="False"
                       Margin="0 0 10 10"
                       IsReadOnly="True"
                       CanUserSortColumns="False"
                       MinHeight="100"
-                      Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}" />
+                      Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Crawled" Binding="{Binding Crawled}" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                    <DataGridTextColumn Header="Previous" Binding="{Binding Previous}" />
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
+                </DataGrid.Columns>
+            </DataGrid>
 
             <DataGrid Grid.Row="2"
                       ItemsSource="{Binding Outputs}"

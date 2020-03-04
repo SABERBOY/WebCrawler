@@ -101,7 +101,7 @@ namespace WebCrawler.Common
                 items.Add(new CatalogItem
                 {
                     Url = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href"),
-                    Title = itemIterator.Current.GetValue(block.RelativeLinkXPath),
+                    Title = regexTrim.Replace(itemIterator.Current.GetValue(block.RelativeLinkXPath), ""),
                     FullText = regexTrim.Replace(value, ""),
                     Published = match.Success ? DateTime.Parse(match.Value) : default(DateTime?)
                 });
