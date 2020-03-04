@@ -100,45 +100,61 @@ namespace WebCrawler.Common
         /// <returns></returns>
         public async static Task<string> GetHtmlAsync(this HttpClient httpClient, string requestUri)
         {
-            using (var stream = await httpClient.GetStreamAsync(requestUri))
+            using (var response = await httpClient.GetAsync(requestUri))
             {
-                using (MemoryStream ms = new MemoryStream())
+                response.EnsureSuccessStatusCode();
+
+                var charset = response.Content.Headers.ContentType.CharSet;
+                Encoding encoding = charset == null ? null : Encoding.GetEncoding(charset);
+
+                using (var stream = await response.Content.ReadAsStreamAsync())
                 {
-                    byte[] buffer = new byte[1024];
-                    int length = stream.Read(buffer, 0, buffer.Length);
-                    while (length > 0)
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        ms.Write(buffer, 0, length);
-                        length = stream.Read(buffer, 0, buffer.Length);
-                    }
-
-                    ms.Seek(0, SeekOrigin.Begin);
-                    using (var reader = new StreamReader(ms))
-                    {
-                        var html = await reader.ReadToEndAsync();
-
-                        var charset = DetectCharSet(html);
-                        if (string.IsNullOrEmpty(charset))
+                        byte[] buffer = new byte[1024];
+                        int length = stream.Read(buffer, 0, buffer.Length);
+                        while (length > 0)
                         {
-                            return html;
-                        }
-
-                        // charset correction
-                        if (charset.Equals("utf8", StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            charset = "utf-8";
-                        }
-
-                        Encoding encoding = Encoding.GetEncoding(charset);
-                        if (encoding == reader.CurrentEncoding)
-                        {
-                            return html;
+                            ms.Write(buffer, 0, length);
+                            length = stream.Read(buffer, 0, buffer.Length);
                         }
 
                         ms.Seek(0, SeekOrigin.Begin);
-                        using (var reader2 = new StreamReader(ms, encoding))
+                        using (var reader = new StreamReader(ms, encoding))
                         {
-                            return await reader2.ReadToEndAsync();
+                            var html = await reader.ReadToEndAsync();
+
+                            html = Utilities.FixUrls(requestUri, html);
+
+                            if (encoding != null)
+                            {
+                                // use the response content type encoding if present
+                                return html;
+                            }
+
+                            charset = DetectCharSet(html);
+                            if (string.IsNullOrEmpty(charset))
+                            {
+                                // skip as chartset doesn't present
+                                return html;
+                            }
+
+                            encoding = Encoding.GetEncoding(charset);
+                            if (encoding == reader.CurrentEncoding)
+                            {
+                                // skip as it's already the charset encoding
+                                return html;
+                            }
+
+                            ms.Seek(0, SeekOrigin.Begin);
+                            using (var reader2 = new StreamReader(ms, encoding))
+                            {
+                                // re-parse with the charset encoding
+                                html = await reader2.ReadToEndAsync();
+                                html = Utilities.FixUrls(requestUri, html);
+
+                                return html;
+                            }
                         }
                     }
                 }
@@ -155,10 +171,21 @@ namespace WebCrawler.Common
 
             m = Regex.Match(rawContent, @"\<meta [^<>]*charset=[^\w]? *([\w-]+)", RegexOptions.IgnoreCase);
 
-            return m.Success ? m.Groups[1].Value : string.Empty;
+            var charset = m.Success ? m.Groups[1].Value : string.Empty;
+
+            // charset correction
+            return charset.Equals("utf8", StringComparison.CurrentCultureIgnoreCase) ? "utf-8" : charset;
         }
 
         #endregion
+
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            foreach (var item in source)
+            {
+                action?.Invoke(item);
+            }
+        }
 
         public static string GetDescription(this Enum value)
         {

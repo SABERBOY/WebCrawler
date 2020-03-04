@@ -27,7 +27,7 @@ namespace WebCrawler.UI.Persisters
         public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, bool enabled = true, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
-                .Include(o => o.CrawlLogs)
+                //.Include(o => o.CrawlLogs)
                 .Where(o => (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords))
                     && o.Enabled == enabled
                 );
@@ -55,7 +55,15 @@ namespace WebCrawler.UI.Persisters
             return await query.ToPagedResultAsync(page);
         }
 
-        public async Task AddAsync(List<Article> articles)
+        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int websiteId)
+        {
+            return await _dbContext.CrawlLogs
+                .Where(o => o.WebsiteId == websiteId)
+                .OrderByDescending(o => o.Id)
+                .ToPagedResultAsync(1);
+        }
+
+        public async Task SaveAsync(List<Article> articles)
         {
             var count = articles.Count;
 
@@ -79,11 +87,38 @@ namespace WebCrawler.UI.Persisters
             }
         }
 
-        public Task<PagedResult<CrawlLog>> GetCrawlLogsAsync()
+        public async Task SaveAsync(WebsiteEditor website)
         {
-            var data = _dbContext.CrawlLogs.ToArray();
+            if (website.Id > 0)
+            {
+                var model = await _dbContext.Websites.FindAsync(website.Id);
 
-            return null;
+                model.Name = website.Name;
+                model.Rank = website.Rank;
+                model.Home = website.Home;
+                model.UrlFormat = website.UrlFormat;
+                model.StartIndex = website.StartIndex;
+                model.ListPath = website.ListPath;
+                model.Notes = website.Notes;
+                model.Enabled = website.Enabled;
+            }
+            else
+            {
+                _dbContext.Websites.Add(new Website
+                {
+                    Name = website.Name,
+                    Enabled = website.Enabled,
+                    Home = website.Home,
+                    UrlFormat = website.UrlFormat,
+                    StartIndex = website.StartIndex,
+                    ListPath = website.ListPath,
+                    Rank = website.Rank,
+                    Notes = website.Notes,
+                    Registered = DateTime.Now
+                });
+            }
+
+            await _dbContext.SaveChangesAsync();
         }
 
         #region Private Members

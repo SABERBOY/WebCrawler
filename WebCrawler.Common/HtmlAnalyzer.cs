@@ -80,7 +80,7 @@ namespace WebCrawler.Common
         public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
         {
             var regexDate = new Regex(Constants.EXP_DATE_TIME);
-            var regexTrim = new Regex(Constants.EXP_TrimText);
+            var regexTrim = new Regex(Constants.EXP_TEXT_CLEAN_FULL);
             Match match;
 
             var items = new List<CatalogItem>();
@@ -107,7 +107,19 @@ namespace WebCrawler.Common
                 });
             }
 
-            return items.ToArray();
+            var results = items
+                .GroupBy(o => o.Url)
+                // pick the first link if duplicate links detected
+                .Select(o => o.First())
+                .ToArray();
+
+            // the published is considered as valid only when all catalog items are valid
+            if (results.Any(o => o.Published == null))
+            {
+                results.ForEach(o => o.Published = null);
+            }
+
+            return results;
         }
 
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)

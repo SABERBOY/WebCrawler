@@ -103,6 +103,7 @@ namespace WebCrawler.UI
             services.AddTransient<SiteConfigViewModel>();
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
+            // https://github.com/dotnet/runtime/issues/30025
             services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT)
                 .AddPolicyHandler(HttpPolicyHandler);
             services.AddHttpClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT)

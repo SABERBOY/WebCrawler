@@ -185,7 +185,7 @@ namespace WebCrawler.UI.Crawlers
             _logger.LogInformation("Crawled {0} feed catalogs: {1} articles", webConfig.Name, articles.Count);
 
 
-            await _persister.AddAsync(articles);
+            await _persister.SaveAsync(articles);
 
             _logger.LogInformation("Persisted {0} feed catalogs: {1} articles", webConfig.Name, articles.Count);
 

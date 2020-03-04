@@ -35,7 +35,22 @@
         </Grid.ColumnDefinitions>
 
         <!-- menu bar -->
-        <Grid Grid.Row="0" Grid.ColumnSpan="3">
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Height="60" Orientation="Horizontal">
+            <Button Command="{Binding BackCommand}" Background="Transparent">
+                <Viewbox>
+                    <Path Data="{StaticResource BackIcon}" />
+                </Viewbox>
+            </Button>
+            <Button Command="{Binding RefreshCommand}" Background="Transparent">
+                <Viewbox>
+                    <Path Data="{StaticResource RefreshIcon}" />
+                </Viewbox>
+            </Button>
+            <TextBox Text="{Binding Keywords}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
+            <CheckBox IsChecked="{Binding Enabled}" Content="Enabled" BorderThickness="1" />
+        </StackPanel>
+        
+        <!--<Grid Grid.Row="0" Grid.ColumnSpan="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="60" />
             </Grid.RowDefinitions>
@@ -53,7 +68,7 @@
                 <TextBox Text="{Binding Keywords}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
                 <CheckBox IsChecked="{Binding Enabled}" Content="Enabled" BorderThickness="1" />
             </StackPanel>
-        </Grid>
+        </Grid>-->
 
         <DataGrid Grid.Row="1"
                   Grid.Column="0"

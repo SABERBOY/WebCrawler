@@ -74,7 +74,9 @@ namespace WebCrawler.Common
 
         public static string FixUrls(string baseUrl, string html)
         {
-            return Regex.Replace(html, "(?is)(href|src)=(\"|\')([^(\"|\')]+)(\"|\')", (match) =>
+            Uri baseUri = new Uri(baseUrl);
+
+            return Regex.Replace(html, "(?is)(href|src)=(\"|\')([^\"\']+)(\"|\')", (match) =>
             {
                 string org = match.Value;
                 string link = match.Groups[3].Value;
@@ -85,7 +87,6 @@ namespace WebCrawler.Common
 
                 try
                 {
-                    Uri baseUri = new Uri(baseUrl);
                     Uri thisUri = new Uri(baseUri, link);
                     return string.Format("{0}=\"{1}\"", match.Groups[1].Value, thisUri.AbsoluteUri);
                 }

@@ -148,6 +148,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private ObservableCollection<CrawlLog> _crawlLogs;
+        public ObservableCollection<CrawlLog> CrawlLogs
+        {
+            get { return _crawlLogs; }
+            set
+            {
+                if (_crawlLogs == value) { return; }
+
+                _crawlLogs = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private ObservableCollection<CatalogItem> _catalogItems;
         public ObservableCollection<CatalogItem> CatalogItems
         {
@@ -178,6 +191,32 @@ namespace WebCrawler.UI.ViewModels
 
         #region Commands
 
+        private RelayCommand _refreshCommand;
+        public ICommand RefreshCommand
+        {
+            get
+            {
+                if (_refreshCommand == null)
+                {
+                    _refreshCommand = new RelayCommand(LoadData, () => !IsProcessing);
+                }
+                return _refreshCommand;
+            }
+        }
+
+        private RelayCommand _backCommand;
+        public ICommand BackCommand
+        {
+            get
+            {
+                if (_backCommand == null)
+                {
+                    _backCommand = new RelayCommand(Back, () => !IsProcessing);
+                }
+                return _backCommand;
+            }
+        }
+
         private RelayCommand _saveCommand;
         public ICommand SaveCommand
         {
@@ -185,7 +224,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_saveCommand == null)
                 {
-                    _saveCommand = new RelayCommand(SaveAsync, () => SelectedWebsite != null && !IsProcessing);
+                    _saveCommand = new RelayCommand(Save, () => SelectedWebsite != null && !IsProcessing);
                 }
                 return _saveCommand;
             }
@@ -198,7 +237,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_testCommand == null)
                 {
-                    _testCommand = new RelayCommand(RunTestAsync, () => SelectedWebsite != null && !IsProcessing);
+                    _testCommand = new RelayCommand(RunTest, () => SelectedWebsite != null && !IsProcessing);
                 }
                 return _testCommand;
             }
@@ -229,8 +268,6 @@ namespace WebCrawler.UI.ViewModels
 
             Websites = new ObservableCollection<Website>();
             Outputs = new ObservableCollection<Output>();
-
-            Editor = new WebsiteEditor();
         }
 
         public bool Sort(params SortDescription[] sorts)
@@ -275,27 +312,40 @@ namespace WebCrawler.UI.ViewModels
 
         private void OnSelectedWebsiteChanged()
         {
+            CrawlLogs = null;
+            CatalogItems = null;
+
             if (SelectedWebsite == null)
             {
                 ShowTestResult = false;
             }
             else
             {
-                Editor.From(_selectedWebsite);
+                Editor = new WebsiteEditor(SelectedWebsite);
 
-                CatalogItems = null;
+                TryRunAsync(async () =>
+                {
+                    var logs = await _persister.GetCrawlLogsAsync(SelectedWebsite.Id);
+
+                    CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
+                });
             }
         }
 
-        private void SaveAsync()
+        private void Back()
+        {
+            NavigationCommands.BrowseBack.Execute(null, null);
+        }
+
+        private void Save()
         {
             TryRunAsync(async () =>
             {
-                // TODO
+                await _persister.SaveAsync(Editor);
             });
         }
 
-        private void RunTestAsync()
+        private void RunTest()
         {
             TryRunAsync(async () =>
             {
@@ -330,7 +380,7 @@ namespace WebCrawler.UI.ViewModels
 
         private void Reset()
         {
-            Editor.From(SelectedWebsite);
+            Editor = new WebsiteEditor(SelectedWebsite);
         }
 
         private void OnSelectedCatalogItemChanged()

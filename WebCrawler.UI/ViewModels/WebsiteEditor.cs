@@ -175,7 +175,7 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        public void From(Website model)
+        public WebsiteEditor(Website model)
         {
             Id = model.Id;
             Rank = model.Rank;
@@ -186,19 +186,6 @@ namespace WebCrawler.UI.ViewModels
             ListPath = model.ListPath;
             Notes = model.Notes;
             Enabled = model.Enabled;
-        }
-
-        public void To(Website model)
-        {
-            model.Id = Id;
-            model.Rank = Rank;
-            model.Name = Name;
-            model.Home = Home;
-            model.UrlFormat = UrlFormat;
-            model.StartIndex = StartIndex;
-            model.ListPath = ListPath;
-            model.Notes = Notes;
-            model.Enabled = Enabled;
         }
     }
 }
