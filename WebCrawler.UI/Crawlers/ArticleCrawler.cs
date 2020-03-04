@@ -2,15 +2,15 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using WebCrawler.Common;
+using WebCrawler.Common.Analyzers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace WebCrawler.UI.Crawlers
 {
@@ -144,7 +144,7 @@ namespace WebCrawler.UI.Crawlers
                             {
                                 content = await _httpClient.GetStringAsync(articleLink);
 
-                                var tempArticle = StanSoft.Html2Article.GetArticle(content);
+                                var tempArticle = Html2Article.GetArticle(content);
 
                                 articles.Add(new Article
                                 {

@@ -29,7 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Html2Article\Html2Article.csproj" />
     <ProjectReference Include="..\WebCrawler.Common\WebCrawler.Common.csproj" />
   </ItemGroup>
 

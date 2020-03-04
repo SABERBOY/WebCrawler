@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace WebCrawler.Common
+namespace WebCrawler.Common.Analyzers
 {
     public static class HtmlAnalyzer
     {

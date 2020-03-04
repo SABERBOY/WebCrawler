@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using WebCrawler.Common;
+using WebCrawler.Common.Analyzers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
 
@@ -398,7 +399,7 @@ namespace WebCrawler.UI.ViewModels
 
                 var data = await _httpClient.GetHtmlAsync(url);
 
-                var article = StanSoft.Html2Article.GetArticle(data);
+                var article = Html2Article.GetArticle(data);
 
                 Article = new Article
                 {
