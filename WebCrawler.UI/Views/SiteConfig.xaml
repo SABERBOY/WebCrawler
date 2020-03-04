@@ -156,10 +156,12 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="RESET" Command="{Binding ResetCommand}" Height="30" />
-                        <Button Grid.Column="1" Content="SAVE" Command="{Binding SaveCommand}" Height="30" />
-                        <Button Grid.Column="2" Content="TEST" Command="{Binding TestCommand}" Height="30" />
+                        <Button Grid.Column="0" Content="DELETE" Command="{Binding DeleteCommand}" Height="30" />
+                        <Button Grid.Column="1" Content="RESET" Command="{Binding ResetCommand}" Height="30" />
+                        <Button Grid.Column="2" Content="SAVE" Command="{Binding SaveCommand}" Height="30" />
+                        <Button Grid.Column="3" Content="TEST" Command="{Binding TestCommand}" Height="30" />
                     </Grid>
 
                 </Grid>

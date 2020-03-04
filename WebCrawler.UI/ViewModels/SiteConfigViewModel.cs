@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using WebCrawler.Common;
 using WebCrawler.Common.Analyzers;
@@ -257,6 +258,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private RelayCommand _deleteCommand;
+        public ICommand DeleteCommand
+        {
+            get
+            {
+                if (_deleteCommand == null)
+                {
+                    _deleteCommand = new RelayCommand(Delete, () => SelectedWebsite != null && !IsProcessing);
+                }
+                return _deleteCommand;
+            }
+        }
+
         #endregion
 
         public SiteConfigViewModel(IPersister persister, IHttpClientFactory clientFactory)
@@ -382,6 +396,21 @@ namespace WebCrawler.UI.ViewModels
         private void Reset()
         {
             Editor = new WebsiteEditor(SelectedWebsite);
+        }
+
+        private void Delete()
+        {
+            if (MessageBox.Show($"Are you sure to delete [{SelectedWebsite.Name}]?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            TryRunAsync(async () =>
+            {
+                await _persister.DeleteAsync(SelectedWebsite);
+
+                App.Current.Dispatcher.Invoke(() => Websites.Remove(SelectedWebsite));
+            });
         }
 
         private void OnSelectedCatalogItemChanged()

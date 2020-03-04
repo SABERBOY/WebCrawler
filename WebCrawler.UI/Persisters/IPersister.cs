@@ -11,5 +11,6 @@ namespace WebCrawler.UI.Persisters
         Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int websiteId);
         Task SaveAsync(List<Article> articles);
         Task SaveAsync(WebsiteEditor website);
+        Task DeleteAsync(Website website);
     }
 }

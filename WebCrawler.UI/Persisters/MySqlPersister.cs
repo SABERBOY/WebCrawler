@@ -27,7 +27,7 @@ namespace WebCrawler.UI.Persisters
         public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, bool enabled = true, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
-                //.Include(o => o.CrawlLogs)
+                .AsNoTracking()
                 .Where(o => (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords))
                     && o.Enabled == enabled
                 );
@@ -119,6 +119,16 @@ namespace WebCrawler.UI.Persisters
             }
 
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Website website)
+        {
+            var model = await _dbContext.Websites.FindAsync(website.Id);
+            if (model != null)
+            {
+                _dbContext.Websites.Remove(model);
+                await _dbContext.SaveChangesAsync();
+            }
         }
 
         #region Private Members
