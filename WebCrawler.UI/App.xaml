@@ -8,6 +8,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Themes/Icons.xaml"/>
                 <ResourceDictionary Source="/Themes/Default.xaml"/>
+                <!--<ResourceDictionary Source="/Controls/Spinner.xaml"/>-->
             </ResourceDictionary.MergedDictionaries>
 
             <cvt:BinaryConverter x:Key="BinaryConverter" />
