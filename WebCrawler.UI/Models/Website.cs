@@ -17,6 +17,11 @@ namespace WebCrawler.UI.Models
         public string Notes { get; set; }
         public DateTime Registered { get; set; }
         public bool Enabled { get; set; }
+        /// <summary>
+        /// Value Conversions
+        /// https://docs.microsoft.com/en-us/ef/core/modeling/value-conversions
+        /// </summary>
+        [Column(TypeName = "ENUM")]
         public WebsiteStatus Status { get; set; }
         public string SysNotes { get; set; }
 
