@@ -24,12 +24,12 @@ namespace WebCrawler.UI.Persisters
             _logger = logger;
         }
 
-        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, bool enabled = true, int page = 1, string sortBy = null, bool descending = false)
+        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, bool? enabled = true, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
-                .Where(o => (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords))
-                    && o.Enabled == enabled
+                .Where(o => (enabled == null || o.Enabled == enabled)
+                    && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords))
                 );
 
             if (string.IsNullOrEmpty(sortBy))
@@ -38,9 +38,14 @@ namespace WebCrawler.UI.Persisters
             }
             else
             {
-                if (sortBy == nameof(Website.Rank))
+                // TODO: use reflection to get the proper data types
+                if (sortBy == nameof(Website.Rank) || sortBy == nameof(Website.Id))
                 {
                     query = Sort<int>(query, sortBy, descending);
+                }
+                else if (sortBy == nameof(Website.Status))
+                {
+                    query = Sort<WebsiteStatus>(query, sortBy, descending);
                 }
                 else if (sortBy == nameof(Website.Registered))
                 {
@@ -87,36 +92,49 @@ namespace WebCrawler.UI.Persisters
             }
         }
 
-        public async Task SaveAsync(WebsiteEditor website)
+        public async Task SaveAsync(WebsiteEditor editor)
         {
-            if (website.Id > 0)
+            if (editor.Id > 0)
             {
-                var model = await _dbContext.Websites.FindAsync(website.Id);
+                var model = await _dbContext.Websites.FindAsync(editor.Id);
 
-                model.Name = website.Name;
-                model.Rank = website.Rank;
-                model.Home = website.Home;
-                model.UrlFormat = website.UrlFormat;
-                model.StartIndex = website.StartIndex;
-                model.ListPath = website.ListPath;
-                model.Notes = website.Notes;
-                model.Enabled = website.Enabled;
+                model.Name = editor.Name;
+                model.Rank = editor.Rank;
+                model.Home = editor.Home;
+                model.UrlFormat = editor.UrlFormat;
+                model.StartIndex = editor.StartIndex;
+                model.ListPath = editor.ListPath;
+                model.Notes = editor.Notes;
+                model.Enabled = editor.Enabled;
+                model.Status = editor.Status;
             }
             else
             {
                 _dbContext.Websites.Add(new Website
                 {
-                    Name = website.Name,
-                    Enabled = website.Enabled,
-                    Home = website.Home,
-                    UrlFormat = website.UrlFormat,
-                    StartIndex = website.StartIndex,
-                    ListPath = website.ListPath,
-                    Rank = website.Rank,
-                    Notes = website.Notes,
+                    Name = editor.Name,
+                    Enabled = editor.Enabled,
+                    Home = editor.Home,
+                    UrlFormat = editor.UrlFormat,
+                    StartIndex = editor.StartIndex,
+                    ListPath = editor.ListPath,
+                    Rank = editor.Rank,
+                    Notes = editor.Notes,
+                    Status = editor.Status,
+                    SysNotes = null,
                     Registered = DateTime.Now
                 });
             }
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateStatusAsync(int websiteId, WebsiteStatus status, string notes = null)
+        {
+            var model = await _dbContext.Websites.FindAsync(websiteId);
+
+            model.Status = status;
+            model.SysNotes = notes;
 
             await _dbContext.SaveChangesAsync();
         }

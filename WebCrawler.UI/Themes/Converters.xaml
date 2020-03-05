@@ -1,0 +1,15 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:cvt="clr-namespace:WebCrawler.UI.Converters">
+
+    <cvt:BinaryConverter x:Key="BinaryConverter" />
+    <cvt:MatchEnumConverter x:Key="MatchEnumConverter" />
+    <!--<cvt:MatchStringConverter x:Key="MatchStringConverter" />-->
+    <cvt:EmptyStringConverter x:Key="EmptyStringConverter" />
+    <!--<cvt:EmptyNumberConverter x:Key="EmptyNumberConverter" />-->
+    <cvt:EmptyObjectConverter x:Key="EmptyObjectConverter" />
+    <cvt:EmptyCollectionConverter x:Key="EmptyCollectionConverter" />
+
+    <cvt:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
+
+</ResourceDictionary>

@@ -17,6 +17,8 @@ namespace WebCrawler.UI.Models
         public string Notes { get; set; }
         public DateTime Registered { get; set; }
         public bool Enabled { get; set; }
+        public WebsiteStatus Status { get; set; }
+        public string SysNotes { get; set; }
 
         public List<CrawlLog> CrawlLogs { get; set; }
     }

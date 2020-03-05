@@ -6,11 +6,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using System.Windows;
 using System.Windows.Input;
 using WebCrawler.Common;
 using WebCrawler.Common.Analyzers;
+using WebCrawler.UI.Crawlers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
 
@@ -18,8 +21,11 @@ namespace WebCrawler.UI.ViewModels
 {
     public class SiteConfigViewModel : NotifyPropertyChanged
     {
+        private static readonly object LOCK_DB = new object();
+
         private IPersister _persister;
         private HttpClient _httpClient;
+        private CrawlingSettings _crawlingSettings;
 
         private SortDescription[] _sorts;
 
@@ -34,6 +40,19 @@ namespace WebCrawler.UI.ViewModels
                 if (_isProcessing == value) { return; }
 
                 _isProcessing = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private string _processingStatus;
+        public string ProcessingStatus
+        {
+            get { return _processingStatus; }
+            set
+            {
+                if (_processingStatus == value) { return; }
+
+                _processingStatus = value;
                 RaisePropertyChanged();
             }
         }
@@ -193,6 +212,19 @@ namespace WebCrawler.UI.ViewModels
 
         #region Commands
 
+        private RelayCommand _backCommand;
+        public ICommand BackCommand
+        {
+            get
+            {
+                if (_backCommand == null)
+                {
+                    _backCommand = new RelayCommand(Back, () => !IsProcessing);
+                }
+                return _backCommand;
+            }
+        }
+
         private RelayCommand _refreshCommand;
         public ICommand RefreshCommand
         {
@@ -206,16 +238,16 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private RelayCommand _backCommand;
-        public ICommand BackCommand
+        private RelayCommand _analyzeCommand;
+        public ICommand AnalyzeCommand
         {
             get
             {
-                if (_backCommand == null)
+                if (_analyzeCommand == null)
                 {
-                    _backCommand = new RelayCommand(Back, () => !IsProcessing);
+                    _analyzeCommand = new RelayCommand(Analyze, () => !IsProcessing);
                 }
-                return _backCommand;
+                return _analyzeCommand;
             }
         }
 
@@ -273,10 +305,11 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public SiteConfigViewModel(IPersister persister, IHttpClientFactory clientFactory)
+        public SiteConfigViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
         {
             _persister = persister;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
+            _crawlingSettings = crawlingSettings;
 
             // set the priviate variable to avoid trigger data loading
             _enabled = true;
@@ -350,6 +383,93 @@ namespace WebCrawler.UI.ViewModels
         private void Back()
         {
             NavigationCommands.BrowseBack.Execute(null, null);
+        }
+
+        private void Analyze()
+        {
+            TryRunAsync(async () =>
+            {
+                ProcessingStatus = "Processing";
+
+                int processed = 0;
+                int total = 0;
+
+                ActionBlock<Website> workerBlock = null;
+                workerBlock = new ActionBlock<Website>(async website =>
+                {
+                    WebsiteStatus status;
+                    string notes;
+
+                    try
+                    {
+                        var response = await _httpClient.GetAsync(website.Home);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            status = WebsiteStatus.Normal;
+                            notes = null;
+                        }
+                        else
+                        {
+                            status = WebsiteStatus.Broken;
+                            notes = response.ReasonPhrase;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        status = WebsiteStatus.Broken;
+                        notes = ex.Message;
+                    }
+
+                    if (status != WebsiteStatus.Normal)
+                    {
+                        AppendOutput($"Detected broken website: {website.Name}. {notes}", LogEventLevel.Warning);
+                    }
+
+                    lock (LOCK_DB)
+                    {
+                        _persister.UpdateStatusAsync(website.Id, status, notes).Wait();
+                    }
+
+                    lock (this)
+                    {
+                        processed++;
+                    }
+
+                    ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
+                }, new ExecutionDataflowBlockOptions
+                {
+                    MaxDegreeOfParallelism = _crawlingSettings.MaxDegreeOfParallelism
+                });
+
+                int page = 1;
+                PagedResult<Website> websites;
+                do
+                {
+                    lock (LOCK_DB)
+                    {
+                        websites = _persister.GetWebsitesAsync(enabled: null, page: page, sortBy: nameof(Website.Id)).Result;
+                    }
+
+                    total = websites.Pager.ItemCount;
+
+                    foreach (var website in websites.Items)
+                    {
+                        workerBlock.Post(website);
+
+                        ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
+
+                        // accept queue items in the amount of batch size x 3
+                        while (workerBlock.InputCount > _crawlingSettings.MaxDegreeOfParallelism * 3)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                    }
+                } while (page++ < websites.Pager.PageCount);
+
+                workerBlock.Complete();
+                workerBlock.Completion.Wait();
+            });
         }
 
         private void Save()

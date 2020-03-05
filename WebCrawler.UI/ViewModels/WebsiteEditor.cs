@@ -156,6 +156,25 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private WebsiteStatus _status;
+        public WebsiteStatus Status
+        {
+            get
+            {
+                return _status;
+            }
+            set
+            {
+                if (value == _status)
+                {
+                    return;
+                }
+
+                _status = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private bool _enabled;
         public bool Enabled
         {
@@ -186,6 +205,7 @@ namespace WebCrawler.UI.ViewModels
             ListPath = model.ListPath;
             Notes = model.Notes;
             Enabled = model.Enabled;
+            Status = model.Status;
         }
     }
 }
