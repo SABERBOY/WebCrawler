@@ -122,6 +122,11 @@ namespace WebCrawler.Common.Analyzers
             return results;
         }
 
+        public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, string listPath)
+        {
+            throw new NotImplementedException();
+        }
+
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)
         //{
         //    // assume xpath1 and xpath2 are the 1st and 2nd occurrence of a formatted list in the HTML DOM, so the index and xpath text length should be same if they are in the same list and depth.

@@ -397,22 +397,26 @@ namespace WebCrawler.UI.ViewModels
                 ActionBlock<Website> workerBlock = null;
                 workerBlock = new ActionBlock<Website>(async website =>
                 {
-                    WebsiteStatus status;
-                    string notes;
+                    WebsiteStatus status = WebsiteStatus.Normal;
+                    string notes = null;
 
                     try
                     {
-                        var response = await _httpClient.GetAsync(website.Home);
+                        var catalogItems = await TestAsync(website.Home, website.ListPath);
 
-                        if (response.IsSuccessStatusCode)
+                        if (catalogItems.Length == 0)
                         {
-                            status = WebsiteStatus.Normal;
-                            notes = null;
+                            status = WebsiteStatus.CatalogMissing;
+                            notes = "Couldn't detect the catalog items";
                         }
                         else
                         {
-                            status = WebsiteStatus.Broken;
-                            notes = response.ReasonPhrase;
+                            var latestPublished = catalogItems.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
+                            if (latestPublished != null && latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                            {
+                                status = WebsiteStatus.Outdate;
+                                notes = $"Outdated as last published date: {latestPublished}";
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -448,7 +452,7 @@ namespace WebCrawler.UI.ViewModels
                 {
                     lock (LOCK_DB)
                     {
-                        websites = _persister.GetWebsitesAsync(enabled: null, page: page, sortBy: nameof(Website.Id)).Result;
+                        websites = _persister.GetWebsitesAsync(enabled: true, page: page, sortBy: nameof(Website.Id)).Result;
                     }
 
                     total = websites.Pager.ItemCount;
@@ -486,31 +490,36 @@ namespace WebCrawler.UI.ViewModels
             {
                 ShowTestResult = true;
 
-                #region Test catalogs
-
-                var data = await _httpClient.GetHtmlAsync(Editor.Home);
-
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(data);
-
-                var listPath = Editor.ListPath;
-                if (string.IsNullOrEmpty(listPath))
-                {
-                    var blocks = HtmlAnalyzer.EvaluateCatalogs(htmlDoc);
-
-                    if (blocks.Length > 0)
-                    {
-                        var items = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, blocks[0]);
-
-                        CatalogItems = new ObservableCollection<CatalogItem>(items);
-                    }
-                }
-
-                #endregion
+                // test catalogs
+                var catalogItems = await TestAsync(Editor.Home, Editor.ListPath);
+                CatalogItems = new ObservableCollection<CatalogItem>(catalogItems);
 
                 // test pagination
                 // test details
             });
+        }
+
+        private async Task<CatalogItem[]> TestAsync(string url, string listPath)
+        {
+            var data = await _httpClient.GetHtmlAsync(url);
+
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(data);
+
+            if (!string.IsNullOrEmpty(listPath))
+            {
+                return HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
+            }
+
+            var blocks = HtmlAnalyzer.EvaluateCatalogs(htmlDoc);
+            if (blocks.Length == 0)
+            {
+                return new CatalogItem[0];
+            }
+            else
+            {
+                return HtmlAnalyzer.ExtractCatalogItems(htmlDoc, blocks[0]);
+            }
         }
 
         private void Reset()
