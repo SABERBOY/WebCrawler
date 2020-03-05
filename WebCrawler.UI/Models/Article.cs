@@ -18,7 +18,7 @@ namespace WebCrawler.UI.Models
         public string Title { get; set; }
         public string Content { get; set; }
         public string ContentHtml { get; set; }
-        public DateTime Published { get; set; }
+        public DateTime? Published { get; set; }
         public DateTime Timestamp { get; set; }
     }
 }

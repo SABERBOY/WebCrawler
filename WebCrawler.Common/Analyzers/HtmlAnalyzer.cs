@@ -12,6 +12,11 @@ namespace WebCrawler.Common.Analyzers
         public static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
         {
             var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a[@href][text()]");
+            if (linkNodes == null)
+            {
+                return new Block[0];
+            }
+
             var links = linkNodes.Select(o => new Link
             {
                 XPath = o.XPath,
@@ -79,31 +84,32 @@ namespace WebCrawler.Common.Analyzers
 
         public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
         {
-            var regexDate = new Regex(Constants.EXP_DATE_TIME);
             var regexTrim = new Regex(Constants.EXP_TEXT_CLEAN_FULL);
-            Match match;
 
             var items = new List<CatalogItem>();
 
             var itemIterator = htmlDoc.CreateNavigator().Select(block.ContainerPath);
-            string value;
+            string linkUrl;
+            string linkTitle;
+            string fullText;
             while (itemIterator.MoveNext())
             {
-                value = itemIterator.Current.Value;
+                linkUrl = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href");
+                linkTitle = itemIterator.Current.GetValue(block.RelativeLinkXPath);
+                fullText = itemIterator.Current.Value;
 
-                if (string.IsNullOrEmpty(value))
+                if (string.IsNullOrEmpty(linkUrl))
                 {
+                    // skip invalid list item
                     continue;
                 }
 
-                match = regexDate.Match(value);
-
                 items.Add(new CatalogItem
                 {
-                    Url = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href"),
-                    Title = regexTrim.Replace(itemIterator.Current.GetValue(block.RelativeLinkXPath), ""),
-                    FullText = regexTrim.Replace(value, ""),
-                    Published = match.Success ? DateTime.Parse(match.Value) : default(DateTime?)
+                    Url = linkUrl,
+                    Title = string.IsNullOrEmpty(linkTitle) ? string.Empty : regexTrim.Replace(linkTitle, ""),
+                    FullText = regexTrim.Replace(fullText, ""),
+                    Published = Html2Article.GetPublishDate(itemIterator.Current.InnerXml)
                 });
             }
 

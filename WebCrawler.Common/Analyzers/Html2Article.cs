@@ -27,7 +27,7 @@ namespace WebCrawler.Common.Analyzers
         /// <summary>
         /// 文章发布时间
         /// </summary>
-        public DateTime PublishDate { get; set; }
+        public DateTime? PublishDate { get; set; }
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ namespace WebCrawler.Common.Analyzers
         /// </summary>
         /// <param name="html"></param>
         /// <returns></returns>
-        private static DateTime GetPublishDate(string html)
+        public static DateTime? GetPublishDate(string html)
         {
             // 过滤html标签，防止标签对日期提取产生影响
             string text = Regex.Replace(html, "(?is)<.*?>", "");
@@ -206,7 +206,6 @@ namespace WebCrawler.Common.Analyzers
                 @"((\d{4}|\d{2})(\-|\/)\d{1,2}\3\d{1,2})(\s?\d{2}:\d{2})?|(\d{4}年\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2})?",
                 RegexOptions.IgnoreCase);
 
-            DateTime result = new DateTime(1900, 1, 1);
             if (match.Success)
             {
                 try
@@ -215,7 +214,7 @@ namespace WebCrawler.Common.Analyzers
                     for (int i = 0; i < match.Groups.Count; i++)
                     {
                         dateStr = match.Groups[i].Value;
-                        if (!String.IsNullOrEmpty(dateStr))
+                        if (!string.IsNullOrEmpty(dateStr))
                         {
                             break;
                         }
@@ -240,18 +239,15 @@ namespace WebCrawler.Common.Analyzers
                         }
                         dateStr = sb.ToString();
                     }
-                    result = Convert.ToDateTime(dateStr);
+
+                    return Convert.ToDateTime(dateStr);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
-                }
-                if (result.Year < 1900)
-                {
-                    result = new DateTime(1900, 1, 1);
                 }
             }
-            return result;
+
+            return null;
         }
 
         /// <summary>
@@ -297,7 +293,7 @@ namespace WebCrawler.Common.Analyzers
                         int emptyCount = 0;
                         for (int j = i - 1; j > 0; j--)
                         {
-                            if (String.IsNullOrEmpty(lines[j]))
+                            if (string.IsNullOrEmpty(lines[j]))
                             {
                                 emptyCount++;
                             }
