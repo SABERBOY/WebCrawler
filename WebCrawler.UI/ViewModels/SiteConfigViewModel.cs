@@ -464,7 +464,7 @@ namespace WebCrawler.UI.ViewModels
                         ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
 
                         // accept queue items in the amount of batch size x 3
-                        while (workerBlock.InputCount > _crawlingSettings.MaxDegreeOfParallelism * 3)
+                        while (workerBlock.InputCount > _crawlingSettings.MaxDegreeOfParallelism * 2)
                         {
                             Thread.Sleep(1000);
                         }
