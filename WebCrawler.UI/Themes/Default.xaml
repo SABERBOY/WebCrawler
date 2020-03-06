@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ctls="clr-namespace:WebCrawler.UI.Controls">
 
+    <!-- Colors -->
     <SolidColorBrush x:Key="TextColorGrayLight" Color="#FFBBBBBB" />
     <SolidColorBrush x:Key="BackgroundLight" Color="#FFCCCC99" />
     <SolidColorBrush x:Key="BorderLight" Color="#FFCCCCCC" />
@@ -9,6 +10,7 @@
     <SolidColorBrush x:Key="ButtonBackgroundDark" Color="#FF003366" />
     <SolidColorBrush x:Key="ButtonImageColor" Color="#FF003366" />
 
+    <!-- Styles -->
     <Style TargetType="Label">
         <Setter Property="Margin" Value="10 5" />
         <Setter Property="Padding" Value="0 5" />
@@ -16,6 +18,12 @@
     
     <Style TargetType="CheckBox">
         <Setter Property="Margin" Value="10" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderLight}" />
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Margin" Value="10 5" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderLight}" />
     </Style>
@@ -79,5 +87,10 @@
     <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
         <Setter Property="BorderBrush" Value="{StaticResource BorderLight}" />
     </Style>
-    
+
+    <!-- Templates -->
+    <DataTemplate x:Key="EnumDisplayNameComboBoxItem">
+        <TextBlock Text="{Binding Converter={StaticResource EnumDisplayNameConverter}}" HorizontalAlignment="Stretch" Padding="3" />
+    </DataTemplate>
+
 </ResourceDictionary>

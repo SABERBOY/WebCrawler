@@ -24,12 +24,13 @@ namespace WebCrawler.UI.Persisters
             _logger = logger;
         }
 
-        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, bool? enabled = true, int page = 1, string sortBy = null, bool descending = false)
+        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus? status = null, bool? enabled = true, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
                 .Where(o => (enabled == null || o.Enabled == enabled)
-                    && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords))
+                    && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords) || o.Notes.Contains(keywords) || o.SysNotes.Contains(keywords))
+                    && (status == null || o.Status == status)
                 );
 
             if (string.IsNullOrEmpty(sortBy))
@@ -129,12 +130,35 @@ namespace WebCrawler.UI.Persisters
             await _dbContext.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Update website status, and disalbe it automatically if the status isn't Normal.
+        /// </summary>
+        /// <param name="websiteId"></param>
+        /// <param name="status"></param>
+        /// <param name="notes"></param>
+        /// <returns></returns>
         public async Task UpdateStatusAsync(int websiteId, WebsiteStatus status, string notes = null)
         {
             var model = await _dbContext.Websites.FindAsync(websiteId);
 
             model.Status = status;
             model.SysNotes = notes;
+
+            if (status != WebsiteStatus.Normal)
+            {
+                model.Enabled = false;
+            }
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task ToggleAsync(Website[] websites, bool enabled)
+        {
+            var websiteIds = websites.Select(o => o.Id).ToArray();
+
+            var models = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
+
+            models.ForEach(o => o.Enabled = enabled);
 
             await _dbContext.SaveChangesAsync();
         }

@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using WebCrawler.UI.Models;
 using WebCrawler.UI.ViewModels;
 
 namespace WebCrawler.UI.Views
@@ -28,7 +30,7 @@ namespace WebCrawler.UI.Views
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void DataGrid_Sorting(object sender, DataGridSortingEventArgs e)
+        private void WebsiteGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
             e.Handled = true;
 
@@ -56,6 +58,15 @@ namespace WebCrawler.UI.Views
                     }
                 }
             }
+        }
+
+        private void WebsiteGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var vm = DataContext as SiteConfigViewModel;
+
+            var grid = sender as DataGrid;
+
+            vm.AcceptSelectedItems(grid.SelectedItems.Cast<Website>().ToArray());
         }
     }
 }

@@ -50,6 +50,11 @@ namespace WebCrawler.UI.Converters
 
         public static bool GetBinaryValue(object value, bool throwErrorIfNotSupported = true)
         {
+            if (value == null)
+            {
+                return false;
+            }
+
             if (value is bool)
             {
                 return (bool)value;

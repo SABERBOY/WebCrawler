@@ -27,7 +27,8 @@ namespace WebCrawler.UI.ViewModels
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
 
-        private SortDescription[] _sorts;
+        private SortDescription[] _websiteSorts;
+        private Website[] _websiteSelections;
 
         #region Notify Properties
 
@@ -57,30 +58,45 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private string _keywords;
-        public string Keywords
+        private string _keywordsFilter;
+        public string KeywordsFilter
         {
-            get { return _keywords; }
+            get { return _keywordsFilter; }
             set
             {
-                if (_keywords == value) { return; }
+                if (_keywordsFilter == value) { return; }
 
-                _keywords = value;
+                _keywordsFilter = value;
                 RaisePropertyChanged();
 
                 LoadData();
             }
         }
 
-        private bool _enabled;
-        public bool Enabled
+        private WebsiteStatus _statusFilter;
+        public WebsiteStatus StatusFilter
         {
-            get { return _enabled; }
+            get { return _statusFilter; }
             set
             {
-                if (_enabled == value) { return; }
+                if (_statusFilter == value) { return; }
 
-                _enabled = value;
+                _statusFilter = value;
+                RaisePropertyChanged();
+
+                LoadData();
+            }
+        }
+
+        private bool _enabledFilter;
+        public bool EnabledFilter
+        {
+            get { return _enabledFilter; }
+            set
+            {
+                if (_enabledFilter == value) { return; }
+
+                _enabledFilter = value;
                 RaisePropertyChanged();
 
                 LoadData();
@@ -152,6 +168,19 @@ namespace WebCrawler.UI.ViewModels
                 if (_article == value) { return; }
 
                 _article = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private bool? _toggleAsEnabled;
+        public bool? ToggleAsEnable
+        {
+            get { return _toggleAsEnabled; }
+            set
+            {
+                if (_toggleAsEnabled == value) { return; }
+
+                _toggleAsEnabled = value;
                 RaisePropertyChanged();
             }
         }
@@ -251,6 +280,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private RelayCommand _toggleCommand;
+        public ICommand ToggleCommand
+        {
+            get
+            {
+                if (_toggleCommand == null)
+                {
+                    _toggleCommand = new RelayCommand(Toggle, () => ToggleAsEnable != null && !IsProcessing);
+                }
+                return _toggleCommand;
+            }
+        }
+
         private RelayCommand _saveCommand;
         public ICommand SaveCommand
         {
@@ -312,7 +354,7 @@ namespace WebCrawler.UI.ViewModels
             _crawlingSettings = crawlingSettings;
 
             // set the priviate variable to avoid trigger data loading
-            _enabled = true;
+            _enabledFilter = true;
 
             Websites = new ObservableCollection<Website>();
             Outputs = new ObservableCollection<Output>();
@@ -334,18 +376,38 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
+        public void AcceptSelectedItems(Website[] websites)
+        {
+            _websiteSelections = websites;
+
+            if (_websiteSelections == null || _websiteSelections.Length == 0)
+            {
+                ToggleAsEnable = null;
+            }
+            else if (_websiteSelections.Any(o => o.Enabled))
+            {
+                ToggleAsEnable = false;
+            }
+            else
+            {
+                ToggleAsEnable = true;
+            }
+
+            // TODO: website 编辑disabled/enabled后，data grid尚未更新，可能会导致问题，需要考虑为其创建新的 viewmodel
+        }
+
         #region Private Members
 
         private async Task LoadDataCoreAsync(SortDescription[] sorts = null)
         {
             if (sorts != null)
             {
-                _sorts = sorts;
+                _websiteSorts = sorts;
             }
 
-            var sort = _sorts?.FirstOrDefault();
+            var sort = _websiteSorts?.FirstOrDefault();
 
-            var websites = await _persister.GetWebsitesAsync(Keywords, Enabled, 1, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+            var websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, 1, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
 
             App.Current.Dispatcher.Invoke(() =>
             {
@@ -411,6 +473,7 @@ namespace WebCrawler.UI.ViewModels
                         }
                         else
                         {
+                            // assume the published date detected above will be always valid or null
                             var latestPublished = catalogItems.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
                             if (latestPublished != null && latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
                             {
@@ -473,6 +536,14 @@ namespace WebCrawler.UI.ViewModels
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
+            });
+        }
+
+        private void Toggle()
+        {
+            TryRunAsync(async () =>
+            {
+                await _persister.ToggleAsync(_websiteSelections, ToggleAsEnable.Value);
             });
         }
 
@@ -618,7 +689,7 @@ namespace WebCrawler.UI.ViewModels
                         Timestamp = DateTime.Now
                     });
 
-                    while (Outputs.Count > 500)
+                    while (Outputs.Count > Common.Constants.OUTPUTS_MAX)
                     {
                         Outputs.RemoveAt(_outputs.Count - 1);
                     }

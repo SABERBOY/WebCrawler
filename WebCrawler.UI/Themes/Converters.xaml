@@ -10,6 +10,6 @@
     <cvt:EmptyObjectConverter x:Key="EmptyObjectConverter" />
     <cvt:EmptyCollectionConverter x:Key="EmptyCollectionConverter" />
 
-    <cvt:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
+    <cvt:EnumDisplayNameConverter x:Key="EnumDisplayNameConverter" />
 
 </ResourceDictionary>

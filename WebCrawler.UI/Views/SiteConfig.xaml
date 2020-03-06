@@ -6,6 +6,8 @@
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:local="clr-namespace:WebCrawler.UI.Views"
       xmlns:ctls="clr-namespace:WebCrawler.UI.Controls"
+      xmlns:me="clr-namespace:WebCrawler.UI.MarkupExtensions"
+      xmlns:m="clr-namespace:WebCrawler.UI.Models"
       mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
       Title="SiteConfig">
@@ -57,8 +59,22 @@
                     <Path Data="{StaticResource AnalysisIcon}" />
                 </Viewbox>
             </Button>
-            <TextBox Text="{Binding Keywords}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
-            <CheckBox IsChecked="{Binding Enabled}" Content="Enabled" BorderThickness="1" VerticalAlignment="Center" />
+            <Button Command="{Binding ToggleCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze" Visibility="{Binding ToggleAsEnable, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                <Viewbox>
+                    <Grid>
+                        <Path Data="{StaticResource EnableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}}" />
+                        <Path Data="{StaticResource DisableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
+                    </Grid>
+                </Viewbox>
+            </Button>
+            <TextBox Text="{Binding KeywordsFilter}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
+            <ComboBox Width="150"
+                      ItemsSource="{me:EnumValues {x:Type m:WebsiteStatus}}"
+                      ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                      SelectedValue="{Binding StatusFilter}"
+                      BorderThickness="1"
+                      VerticalAlignment="Center" />
+            <CheckBox IsChecked="{Binding EnabledFilter}" Content="Enabled" BorderThickness="1" VerticalAlignment="Center" />
         </StackPanel>
         
         <!--<Grid Grid.Row="0" Grid.ColumnSpan="3">
@@ -83,23 +99,26 @@
 
         <DataGrid Grid.Row="1"
                   Grid.Column="0"
+                  x:Name="WebsiteGrid"
                   Margin="10 0 10 10"
                   ItemsSource="{Binding Websites}"
                   SelectedItem="{Binding SelectedWebsite}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  Sorting="DataGrid_Sorting">
+                  Sorting="WebsiteGrid_Sorting"
+                  SelectionChanged="WebsiteGrid_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Rank" Binding="{Binding Rank}" />
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150" />
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="80" />
+                <DataGridTextColumn Header="Home" Binding="{Binding Home}" MaxWidth="300" />
                 <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" CanUserSort="False" />
-                <DataGridTextColumn Header="Home" Binding="{Binding Home}" Width="300" />
-                <DataGridTextColumn Header="UrlFormat" Binding="{Binding UrlFormat}" Width="300" />
-                <DataGridTextColumn Header="StartIndex" Binding="{Binding StartIndex}" CanUserSort="False" />
-                <DataGridTextColumn Header="ListPath" Binding="{Binding ListPath}" />
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                <!--<DataGridTextColumn Header="UrlFormat" Binding="{Binding UrlFormat}" Width="300" />
+                <DataGridTextColumn Header="StartIndex" Binding="{Binding StartIndex}" CanUserSort="False" />-->
+                <DataGridTextColumn Header="List Path" Binding="{Binding ListPath}" MaxWidth="200" />
+                <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" />
+                <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" />
                 <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
-                <DataGridTextColumn Header="SysNotes" Binding="{Binding SysNotes}" Width="80" />
             </DataGrid.Columns>
         </DataGrid>
 
@@ -129,42 +148,42 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <!--<RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />-->
                     </Grid.RowDefinitions>
 
                     <Label Grid.Row="0" Grid.Column="0" Content="Name" />
                     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Editor.Name}" />
 
-                    <Label Grid.Row="1" Grid.Column="0" Content="Rank" />
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Rank}" />
+                    <Label Grid.Row="1" Grid.Column="0" Content="Home" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Home}" ctls:Placeholder.PlaceholderText="Url of the first list page" />
 
-                    <Label Grid.Row="2" Grid.Column="0" Content="Home" />
-                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Home}" ctls:Placeholder.PlaceholderText="Url of the first list page" />
+                    <Label Grid.Row="2" Grid.Column="0" Content="Rank" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Rank}" />
 
                     <Line Grid.Row="3" Grid.ColumnSpan="2" />
                     
-                    <Label Grid.Row="4" Grid.Column="0" Content="UrlFormat" />
+                    <!--<Label Grid.Row="4" Grid.Column="0" Content="UrlFormat" />
                     <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Editor.UrlFormat}" ctls:Placeholder.PlaceholderText="Url format for list pagination, use {0} as page number placeholder" />
 
                     <Label Grid.Row="5" Grid.Column="0" Content="StartIndex" />
                     <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Editor.StartIndex}" ctls:Placeholder.PlaceholderText="List page start index presented in the url" />
 
-                    <Line Grid.Row="6" Grid.ColumnSpan="2" />
+                    <Line Grid.Row="6" Grid.ColumnSpan="2" />-->
                     
-                    <Label Grid.Row="7" Grid.Column="0" Content="ListPath" />
-                    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Editor.ListPath}" ctls:Placeholder.PlaceholderText="Leave empty to auto detect" />
+                    <Label Grid.Row="4" Grid.Column="0" Content="List Path" />
+                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Editor.ListPath}" ctls:Placeholder.PlaceholderText="Leave empty to auto detect" />
 
-                    <Line Grid.Row="8" Grid.ColumnSpan="2" />
+                    <Line Grid.Row="5" Grid.ColumnSpan="2" />
                     
-                    <Label Grid.Row="9" Grid.Column="0" Content="Notes" />
-                    <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding Editor.Notes}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                    <Label Grid.Row="6" Grid.Column="0" Content="User Notes" />
+                    <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Editor.Notes}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" />
 
-                    <Label Grid.Row="10" Grid.Column="0" Content="Enabled" />
-                    <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Editor.Enabled}" />
+                    <Label Grid.Row="7" Grid.Column="0" Content="Enabled" />
+                    <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Editor.Enabled}" />
 
-                    <Grid Grid.Row="11" Grid.ColumnSpan="2" Margin="10">
+                    <Grid Grid.Row="8" Grid.ColumnSpan="2" Margin="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />

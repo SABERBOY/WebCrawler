@@ -4,7 +4,7 @@ using WebCrawler.Common;
 
 namespace WebCrawler.UI.Converters
 {
-    public class EnumDescriptionConverter : IValueConverter
+    public class EnumDisplayNameConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -15,9 +15,9 @@ namespace WebCrawler.UI.Converters
                 return null;
             }
 
-            string desc = v.GetDescription();
+            string dispName = v.GetDisplayName();
 
-            return string.IsNullOrEmpty(desc) ? v.ToString() : desc;
+            return string.IsNullOrEmpty(dispName) ? v.ToString() : dispName;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
