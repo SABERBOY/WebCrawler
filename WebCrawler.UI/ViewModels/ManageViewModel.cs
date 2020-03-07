@@ -114,6 +114,7 @@ namespace WebCrawler.UI.ViewModels
                 _selectedWebsite = value;
                 RaisePropertyChanged();
 
+                // TODO: This additional async call will cause the buttons state not refreshed
                 OnSelectedWebsiteChanged();
             }
         }
