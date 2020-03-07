@@ -50,7 +50,9 @@ namespace GalaSoft.MvvmLight.Command
             add
             {
                 if (_canExecute == null)
+                {
                     return;
+                }
                 EventHandler eventHandler = _requerySuggestedLocal;
                 EventHandler comparand;
                 do
@@ -64,7 +66,9 @@ namespace GalaSoft.MvvmLight.Command
             remove
             {
                 if (_canExecute == null)
+                {
                     return;
+                }
                 EventHandler eventHandler = _requerySuggestedLocal;
                 EventHandler comparand;
                 do
