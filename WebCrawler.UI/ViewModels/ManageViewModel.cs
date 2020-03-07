@@ -19,7 +19,7 @@ using WebCrawler.UI.Persisters;
 
 namespace WebCrawler.UI.ViewModels
 {
-    public class SiteConfigViewModel : NotifyPropertyChanged
+    public class ManageViewModel : NotifyPropertyChanged
     {
         private static readonly object LOCK_DB = new object();
 
@@ -347,7 +347,7 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public SiteConfigViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
+        public ManageViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
         {
             _persister = persister;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);

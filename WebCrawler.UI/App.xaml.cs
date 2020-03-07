@@ -100,7 +100,7 @@ namespace WebCrawler.UI
             services.AddTransient<SiteConfig>();
             services.AddTransient<Settings>();
 
-            services.AddTransient<SiteConfigViewModel>();
+            services.AddTransient<ManageViewModel>();
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
             // https://github.com/dotnet/runtime/issues/30025

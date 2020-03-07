@@ -9,7 +9,7 @@ namespace WebCrawler.UI.Views
 {
     public partial class SiteConfig : Page
     {
-        public SiteConfig(SiteConfigViewModel configViewModel)
+        public SiteConfig(ManageViewModel configViewModel)
         {
             InitializeComponent();
 
@@ -20,7 +20,7 @@ namespace WebCrawler.UI.Views
 
         private void SiteConfig_Loaded(object sender, RoutedEventArgs e)
         {
-            var vm = DataContext as SiteConfigViewModel;
+            var vm = DataContext as ManageViewModel;
 
             vm.LoadData();
         }
@@ -34,7 +34,7 @@ namespace WebCrawler.UI.Views
         {
             e.Handled = true;
 
-            var vm = DataContext as SiteConfigViewModel;
+            var vm = DataContext as ManageViewModel;
 
             var direction = e.Column.SortDirection == null || e.Column.SortDirection == ListSortDirection.Descending
                 ? ListSortDirection.Ascending
@@ -62,7 +62,7 @@ namespace WebCrawler.UI.Views
 
         private void WebsiteGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var vm = DataContext as SiteConfigViewModel;
+            var vm = DataContext as ManageViewModel;
 
             var grid = sender as DataGrid;
 
