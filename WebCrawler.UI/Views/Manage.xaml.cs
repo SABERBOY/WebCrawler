@@ -7,18 +7,18 @@ using WebCrawler.UI.ViewModels;
 
 namespace WebCrawler.UI.Views
 {
-    public partial class SiteConfig : Page
+    public partial class Manage : Page
     {
-        public SiteConfig(ManageViewModel configViewModel)
+        public Manage(ManageViewModel configViewModel)
         {
             InitializeComponent();
 
             DataContext = configViewModel;
 
-            Loaded += SiteConfig_Loaded;
+            Loaded += Manage_Loaded;
         }
 
-        private void SiteConfig_Loaded(object sender, RoutedEventArgs e)
+        private void Manage_Loaded(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as ManageViewModel;
 

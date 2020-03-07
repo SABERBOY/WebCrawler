@@ -9,11 +9,11 @@ namespace WebCrawler.UI.Views
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow(Crawler crawler, SiteConfig siteConfig)
+        public MainWindow(Crawler crawler, Manage manage)
         {
             InitializeComponent();
 
-            MainFrame.Navigate(siteConfig);
+            MainFrame.Navigate(manage);
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)

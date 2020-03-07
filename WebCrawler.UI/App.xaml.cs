@@ -97,7 +97,7 @@ namespace WebCrawler.UI
 
             services.AddTransient<MainWindow>();
             services.AddTransient<Crawler>();
-            services.AddTransient<SiteConfig>();
+            services.AddTransient<Manage>();
             services.AddTransient<Settings>();
 
             services.AddTransient<ManageViewModel>();
