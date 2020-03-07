@@ -116,8 +116,8 @@
                 <!--<DataGridTextColumn Header="UrlFormat" Binding="{Binding UrlFormat}" Width="300" />
                 <DataGridTextColumn Header="StartIndex" Binding="{Binding StartIndex}" CanUserSort="False" />-->
                 <DataGridTextColumn Header="List Path" Binding="{Binding ListPath}" MaxWidth="200" />
-                <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" />
-                <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" />
+                <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" MaxWidth="300" />
+                <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" MaxWidth="400" />
                 <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
             </DataGrid.Columns>
         </DataGrid>
