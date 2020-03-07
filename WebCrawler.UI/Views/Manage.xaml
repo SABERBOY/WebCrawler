@@ -102,7 +102,7 @@
                   x:Name="WebsiteGrid"
                   Margin="10 0 10 10"
                   ItemsSource="{Binding Websites}"
-                  SelectedItem="{Binding SelectedWebsite, UpdateSourceTrigger=PropertyChanged}"
+                  SelectedItem="{Binding SelectedWebsite}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   Sorting="WebsiteGrid_Sorting"
