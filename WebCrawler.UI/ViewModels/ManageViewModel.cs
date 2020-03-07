@@ -493,9 +493,20 @@ namespace WebCrawler.UI.ViewModels
                         AppendOutput($"Detected broken website: {website.Name}. {notes}", LogEventLevel.Warning);
                     }
 
-                    lock (LOCK_DB)
+                    try
                     {
-                        _persister.UpdateStatusAsync(website.Id, status, notes).Wait();
+                        lock (LOCK_DB)
+                        {
+                            //AppendOutput("Innert lock started: " + website.Home, LogEventLevel.Information);
+
+                            _persister.UpdateStatusAsync(website.Id, status, notes).Wait();
+
+                            //AppendOutput("Innert lock completed: " + website.Home, LogEventLevel.Information);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendOutput($"{ex.Message} {website.Home}", LogEventLevel.Error);
                     }
 
                     lock (this)
@@ -515,7 +526,11 @@ namespace WebCrawler.UI.ViewModels
                 {
                     lock (LOCK_DB)
                     {
+                        //AppendOutput("Outer lock started", LogEventLevel.Information);
+
                         websites = _persister.GetWebsitesAsync(enabled: true, page: page, sortBy: nameof(Website.Id)).Result;
+
+                        //AppendOutput("Outer lock completed", LogEventLevel.Information);
                     }
 
                     total = websites.Pager.ItemCount;
@@ -527,7 +542,7 @@ namespace WebCrawler.UI.ViewModels
                         ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
 
                         // accept queue items in the amount of batch size x 3
-                        while (workerBlock.InputCount > _crawlingSettings.MaxDegreeOfParallelism * 2)
+                        while (workerBlock.InputCount >= _crawlingSettings.MaxDegreeOfParallelism * 2)
                         {
                             Thread.Sleep(1000);
                         }

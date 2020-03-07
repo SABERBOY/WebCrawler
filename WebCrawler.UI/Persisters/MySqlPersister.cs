@@ -173,6 +173,11 @@ namespace WebCrawler.UI.Persisters
             }
         }
 
+        public void Dispose()
+        {
+            _dbContext?.Dispose();
+        }
+
         #region Private Members
 
         private IOrderedQueryable<Website> Sort<T>(IQueryable<Website> query, string property, bool descending)

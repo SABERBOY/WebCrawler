@@ -91,7 +91,7 @@ namespace WebCrawler.UI
             services.AddTransient<IPersister, MySqlPersister>();
             // configure db context
             services.AddDbContext<ArticleDbContext>(
-                options => options.UseMySql(config["ConnectionStrings:MySqlConnection"], builder => builder.EnableRetryOnFailure(3)),
+                options => options.UseMySql(config["ConnectionStrings:MySqlConnection"], builder => builder.EnableRetryOnFailure(3, TimeSpan.FromSeconds(3), null)),
                 ServiceLifetime.Transient,
                 ServiceLifetime.Transient);
 
