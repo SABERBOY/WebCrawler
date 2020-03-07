@@ -33,6 +33,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Controls\Pager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Controls\Pager.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Themes\Converters.xaml">
       <SubType>Designer</SubType>
     </Page>

@@ -1,6 +1,6 @@
 ﻿namespace WebCrawler.UI.ViewModels
 {
-    public class Pager : NotifyPropertyChanged
+    public class PageInfo : NotifyPropertyChanged
     {
         #region Notify Properties
 

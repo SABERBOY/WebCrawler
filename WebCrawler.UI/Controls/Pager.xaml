@@ -1,0 +1,25 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ctls="clr-namespace:WebCrawler.UI.Controls">
+
+    <Style TargetType="ctls:Pager">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctls:Pager">
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="First" Content="First" Width="50" />
+                        <Button x:Name="Previous" Content="Prev" Width="50" />
+                        <TextBlock x:Name="Current" Margin="10" Padding="5">
+                            <Run Text="{Binding PageInfo.CurrentPage}" />
+                            <Run Text="/" />
+                            <Run Text="{Binding PageInfo.PageCount, Mode=OneWay}" />
+                        </TextBlock>
+                        <Button x:Name="Next" Content="Next" Width="50" />
+                        <Button x:Name="Last" Content="Last" Width="50" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

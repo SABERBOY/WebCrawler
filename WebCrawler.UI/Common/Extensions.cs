@@ -17,7 +17,7 @@ namespace WebCrawler.UI.Common
                 Items = source.Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToList(),
-                Pager = new Pager
+                PageInfo = new PageInfo
                 {
                     CurrentPage = page,
                     ItemCount = source.Count(),
@@ -33,7 +33,7 @@ namespace WebCrawler.UI.Common
                 Items = await source.Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync(),
-                Pager = new Pager
+                PageInfo = new PageInfo
                 {
                     CurrentPage = page,
                     ItemCount = await source.CountAsync(),

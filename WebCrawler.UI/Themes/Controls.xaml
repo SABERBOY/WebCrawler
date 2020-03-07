@@ -2,6 +2,7 @@
     
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/Controls/Spinner.xaml" />
+        <ResourceDictionary Source="/Controls/Pager.xaml" />
     </ResourceDictionary.MergedDictionaries>
   
 </ResourceDictionary>

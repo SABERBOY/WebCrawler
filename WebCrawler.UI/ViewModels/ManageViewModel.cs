@@ -187,6 +187,9 @@ namespace WebCrawler.UI.ViewModels
         }
 
         private ObservableCollection<Website> _websites;
+        /// <summary>
+        /// Couldn't always create new Websites instance (which don't require Dispatcher Invoke) here as we want to persist the sort arrows in the data grid
+        /// </summary>
         public ObservableCollection<Website> Websites
         {
             get { return _websites; }
@@ -195,6 +198,19 @@ namespace WebCrawler.UI.ViewModels
                 if (_websites == value) { return; }
 
                 _websites = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private PageInfo _pageInfo;
+        public PageInfo PageInfo
+        {
+            get { return _pageInfo; }
+            set
+            {
+                if (_pageInfo == value) { return; }
+
+                _pageInfo = value;
                 RaisePropertyChanged();
             }
         }
@@ -278,6 +294,19 @@ namespace WebCrawler.UI.ViewModels
                     _analyzeCommand = new RelayCommand(Analyze, () => !IsProcessing);
                 }
                 return _analyzeCommand;
+            }
+        }
+
+        private RelayCommand _navigateCommand;
+        public ICommand NavigateCommand
+        {
+            get
+            {
+                if (_navigateCommand == null)
+                {
+                    _navigateCommand = new RelayCommand(Navigate, () => !IsProcessing);
+                }
+                return _navigateCommand;
             }
         }
 
@@ -399,7 +428,7 @@ namespace WebCrawler.UI.ViewModels
 
         #region Private Members
 
-        private async Task LoadDataCoreAsync(SortDescription[] sorts = null)
+        private async Task LoadDataCoreAsync(SortDescription[] sorts = null, int page = 1)
         {
             if (sorts != null)
             {
@@ -408,7 +437,7 @@ namespace WebCrawler.UI.ViewModels
 
             var sort = _websiteSorts?.FirstOrDefault();
 
-            var websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, 1, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+            var websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
 
             App.Current.Dispatcher.Invoke(() =>
             {
@@ -418,6 +447,8 @@ namespace WebCrawler.UI.ViewModels
                 {
                     Websites.Add(web);
                 }
+
+                PageInfo = websites.PageInfo;
             });
         }
 
@@ -534,7 +565,7 @@ namespace WebCrawler.UI.ViewModels
                         //AppendOutput("Outer lock completed", LogEventLevel.Information);
                     }
 
-                    total = websites.Pager.ItemCount;
+                    total = websites.PageInfo.ItemCount;
 
                     foreach (var website in websites.Items)
                     {
@@ -548,7 +579,7 @@ namespace WebCrawler.UI.ViewModels
                             Thread.Sleep(1000);
                         }
                     }
-                } while (page++ < websites.Pager.PageCount);
+                } while (page++ < websites.PageInfo.PageCount);
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
@@ -560,6 +591,14 @@ namespace WebCrawler.UI.ViewModels
             TryRunAsync(async () =>
             {
                 await _persister.ToggleAsync(_websiteSelections, ToggleAsEnable.Value);
+            });
+        }
+
+        private void Navigate()
+        {
+            TryRunAsync(async () =>
+            {
+                await LoadDataCoreAsync(page: PageInfo?.CurrentPage ?? 1);
             });
         }
 

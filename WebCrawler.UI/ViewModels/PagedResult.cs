@@ -6,6 +6,6 @@ namespace WebCrawler.UI.ViewModels
     {
         public List<T> Items { get; set; }
 
-        public Pager Pager { get; set; }
+        public PageInfo PageInfo { get; set; }
     }
 }

@@ -97,30 +97,39 @@
             </StackPanel>
         </Grid>-->
 
-        <DataGrid Grid.Row="1"
-                  Grid.Column="0"
-                  x:Name="WebsiteGrid"
-                  Margin="10 0 10 10"
-                  ItemsSource="{Binding Websites}"
-                  SelectedItem="{Binding SelectedWebsite}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  Sorting="WebsiteGrid_Sorting"
-                  SelectionChanged="WebsiteGrid_SelectionChanged">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Rank" Binding="{Binding Rank}" />
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150" />
-                <DataGridTextColumn Header="Home" Binding="{Binding Home}" MaxWidth="300" />
-                <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" CanUserSort="False" />
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
-                <!--<DataGridTextColumn Header="UrlFormat" Binding="{Binding UrlFormat}" Width="300" />
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <DataGrid Grid.Row="0"
+                      x:Name="WebsiteGrid"
+                      Margin="10 0 10 10"
+                      ItemsSource="{Binding Websites}"
+                      SelectedItem="{Binding SelectedWebsite}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      Sorting="WebsiteGrid_Sorting"
+                      SelectionChanged="WebsiteGrid_SelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Rank" Binding="{Binding Rank}" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150" />
+                    <DataGridTextColumn Header="Home" Binding="{Binding Home}" MaxWidth="300" />
+                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" CanUserSort="False" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                    <!--<DataGridTextColumn Header="UrlFormat" Binding="{Binding UrlFormat}" Width="300" />
                 <DataGridTextColumn Header="StartIndex" Binding="{Binding StartIndex}" CanUserSort="False" />-->
-                <DataGridTextColumn Header="List Path" Binding="{Binding ListPath}" MaxWidth="200" />
-                <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" MaxWidth="300" />
-                <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" MaxWidth="400" />
-                <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
-            </DataGrid.Columns>
-        </DataGrid>
+                    <DataGridTextColumn Header="List Path" Binding="{Binding ListPath}" MaxWidth="200" />
+                    <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" MaxWidth="300" />
+                    <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" MaxWidth="400" />
+                    <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <ctls:Pager Grid.Row="1" PageInfo="{Binding PageInfo}" NavigatedCommand="{Binding NavigateCommand}" HorizontalAlignment="Center" Margin="0 0 0 10" />
+            
+        </Grid>
 
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
