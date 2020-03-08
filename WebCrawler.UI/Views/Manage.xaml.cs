@@ -9,11 +9,11 @@ namespace WebCrawler.UI.Views
 {
     public partial class Manage : Page
     {
-        public Manage(ManageViewModel configViewModel)
+        public Manage(ManageViewModel manageViewModel)
         {
             InitializeComponent();
 
-            DataContext = configViewModel;
+            DataContext = manageViewModel;
 
             Loaded += Manage_Loaded;
         }

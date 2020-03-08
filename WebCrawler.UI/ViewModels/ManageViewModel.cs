@@ -383,7 +383,7 @@ namespace WebCrawler.UI.ViewModels
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
 
-            // set the priviate variable to avoid trigger data loading
+            // set the priviate variable to avoid trigger data loading immediately
             _enabledFilter = true;
 
             Websites = new ObservableCollection<Website>();

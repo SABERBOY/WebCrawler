@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebCrawler.UI.Models
@@ -7,6 +8,8 @@ namespace WebCrawler.UI.Models
     [Table("atc_websites")]
     public class Website
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public int Rank { get; set; }
         public string Name { get; set; }
