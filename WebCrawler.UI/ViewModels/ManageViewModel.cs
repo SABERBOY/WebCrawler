@@ -620,8 +620,7 @@ namespace WebCrawler.UI.ViewModels
                 var catalogItems = await TestAsync(Editor.Home, Editor.ListPath);
                 CatalogItems = new ObservableCollection<CatalogItem>(catalogItems);
 
-                // test pagination
-                // test details
+                // TODO: test pagination
             });
         }
 
