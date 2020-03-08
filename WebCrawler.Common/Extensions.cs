@@ -105,7 +105,7 @@ namespace WebCrawler.Common
             {
                 response.EnsureSuccessStatusCode();
 
-                var charset = response.Content.Headers.ContentType.CharSet;
+                var charset = response.Content.Headers.ContentType?.CharSet;
                 Encoding encoding = charset == null ? null : Encoding.GetEncoding(charset);
 
                 using (var stream = await response.Content.ReadAsStreamAsync())
