@@ -10,7 +10,6 @@ namespace WebCrawler.UI.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public int Total { get; set; }
         public int Success { get; set; }
         public int Failed { get; set; }
         public string Notes { get; set; }

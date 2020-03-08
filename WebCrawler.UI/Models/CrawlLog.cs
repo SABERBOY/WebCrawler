@@ -13,7 +13,6 @@ namespace WebCrawler.UI.Models
         public int WebsiteId { get; set; }
         public int CrawlId { get; set; }
         public string LastHandled { get; set; }
-        public int Total { get; set; }
         public int Success { get; set; }
         public int Failed { get; set; }
         public string Notes { get; set; }
