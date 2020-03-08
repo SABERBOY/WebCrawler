@@ -2,8 +2,8 @@
 {
     public enum CrawlStatus
     {
-        Unknown = 0,
-        Success = 1,
+        Queued = 0,
+        Completed = 1,
         Failed = 2
     }
 }

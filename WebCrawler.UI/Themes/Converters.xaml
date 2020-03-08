@@ -6,7 +6,7 @@
     <cvt:MatchEnumConverter x:Key="MatchEnumConverter" />
     <cvt:MatchStringConverter x:Key="MatchStringConverter" />
     <cvt:EmptyStringConverter x:Key="EmptyStringConverter" />
-    <!--<cvt:EmptyNumberConverter x:Key="EmptyNumberConverter" />-->
+    <cvt:EmptyNumberConverter x:Key="EmptyNumberConverter" />
     <cvt:EmptyObjectConverter x:Key="EmptyObjectConverter" />
     <cvt:EmptyCollectionConverter x:Key="EmptyCollectionConverter" />
 

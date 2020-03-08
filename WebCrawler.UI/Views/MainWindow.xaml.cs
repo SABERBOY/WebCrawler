@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Windows;
+using System.Windows.Navigation;
 using WebCrawler.Common;
 
 namespace WebCrawler.UI.Views
@@ -9,11 +10,11 @@ namespace WebCrawler.UI.Views
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow(Crawler crawler, Manage manage)
+        public MainWindow(Crawler crawler)
         {
             InitializeComponent();
 
-            MainFrame.Navigate(manage);
+            MainFrame.Navigate(crawler);
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)

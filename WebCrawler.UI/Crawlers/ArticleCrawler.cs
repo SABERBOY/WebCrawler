@@ -70,13 +70,13 @@ namespace WebCrawler.UI.Crawlers
 
             var previousLog = webConfig.CrawlLogs.OrderByDescending(o => o.Id).FirstOrDefault();
 
-            if (string.IsNullOrEmpty(previousLog?.Previous))
+            if (string.IsNullOrEmpty(previousLog?.LastHandled))
             {
                 _logger.LogInformation("Crawling {0} feed catalogs fully", webConfig.Name);
             }
             else
             {
-                _logger.LogInformation("Crawling {0} feed catalogs from last article: {1}", webConfig.Name, previousLog.Previous);
+                _logger.LogInformation("Crawling {0} feed catalogs from last article: {1}", webConfig.Name, previousLog.LastHandled);
             }
 
             var listPath = "//" + webConfig.ListPath + "/@href";
@@ -134,7 +134,7 @@ namespace WebCrawler.UI.Crawlers
                         if (!string.IsNullOrEmpty(articleLink))
                         {
                             articleLink = Utilities.ResolveResourceUrl(articleLink, feedUrl);
-                            if (articleLink.Equals(previousLog?.Previous, StringComparison.CurrentCultureIgnoreCase))
+                            if (articleLink.Equals(previousLog?.LastHandled, StringComparison.CurrentCultureIgnoreCase))
                             {
                                 exceedPrevious = true;
                                 break;

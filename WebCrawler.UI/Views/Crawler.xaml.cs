@@ -1,26 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using WebCrawler.UI.ViewModels;
 
 namespace WebCrawler.UI.Views
 {
-    /// <summary>
-    /// Interaction logic for Crawler.xaml
-    /// </summary>
     public partial class Crawler : Page
     {
-        public Crawler()
+        public Crawler(CrawlerViewModel crawlerViewModel)
         {
             InitializeComponent();
+
+            DataContext = crawlerViewModel;
+
+            Loaded += Crawler_Loaded;
+        }
+
+        private void Crawler_Loaded(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as CrawlerViewModel;
+
+            vm.LoadData();
         }
     }
 }

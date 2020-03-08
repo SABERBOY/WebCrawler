@@ -6,6 +6,7 @@ namespace WebCrawler.UI.Models
     {
         public virtual DbSet<Article> Articles { get; set; }
         public virtual DbSet<Website> Websites { get; set; }
+        public virtual DbSet<Crawl> Crawls { get; set; }
         public virtual DbSet<CrawlLog> CrawlLogs { get; set; }
 
         public ArticleDbContext(DbContextOptions<ArticleDbContext> options)

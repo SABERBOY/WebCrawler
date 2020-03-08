@@ -1,14 +1,133 @@
 ﻿<Page x:Class="WebCrawler.UI.Views.Crawler"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:local="clr-namespace:WebCrawler.UI.Views"
-      mc:Ignorable="d" 
+      xmlns:ctls="clr-namespace:WebCrawler.UI.Controls"
+      xmlns:me="clr-namespace:WebCrawler.UI.MarkupExtensions"
+      xmlns:m="clr-namespace:WebCrawler.UI.Models"
+      mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="Crawler">
+      Title="SiteConfig">
+
+    <Page.Resources>
+        <Style x:Key="LargeButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+    </Page.Resources>
 
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- menu bar -->
+        <Grid Grid.Row="0" Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal">
+                <ComboBox Width="150"
+                          ItemsSource="{Binding Crawls}"
+                          SelectedValue="{Binding SelectedCrawl}"
+                          BorderThickness="1"
+                          VerticalAlignment="Center">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <TextBlock Text="" HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}}" />
+                                <TextBlock Text="{Binding Started}" HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}, ConverterParameter=!}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBox Text="{Binding KeywordsFilter}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
+                <ComboBox Width="150"
+                          ItemsSource="{me:EnumValues {x:Type m:CrawlStatus}}"
+                          ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                          SelectedValue="{Binding StatusFilter}"
+                          BorderThickness="1"
+                          VerticalAlignment="Center" />
+                <Button Command="{Binding CrawlCommand}">
+                    <Button.Resources>
+                        <Style TargetType="Button" BasedOn="{StaticResource LargeButton}">
+                            <Setter Property="ToolTip" Value="Continue Selected Crawl" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedCrawl.Id}" Value="0">
+                                    <Setter Property="ToolTip" Value="Start Full Crawl" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Resources>
+                    <Viewbox>
+                        <Path Data="{StaticResource StartIcon}" />
+                    </Viewbox>
+                </Button>
+                <Button Command="{Binding RefreshCommand}" Style="{StaticResource LargeButton}" ToolTip="Refresh">
+                    <Viewbox>
+                        <Path Data="{StaticResource RefreshIcon}" />
+                    </Viewbox>
+                </Button>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Command="{Binding ManageCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze">
+                    <Viewbox>
+                        <Path Data="{StaticResource SettingsIcon}" />
+                    </Viewbox>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <DataGrid Grid.Row="0"
+                      ItemsSource="{Binding CrawlLogs}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserSortColumns="False"
+                      Margin="10 0 10 10">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Website.Name}" />
+                    <DataGridTextColumn Header="Home" Binding="{Binding Website.Home}" />
+                    <DataGridTextColumn Header="Last Handled" Binding="{Binding LastHandled}" />
+                    <DataGridTextColumn Header="Total" Binding="{Binding Total}" />
+                    <DataGridTextColumn Header="Success" Binding="{Binding Success}" />
+                    <DataGridTextColumn Header="Failed" Binding="{Binding Failed}" />
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                    <DataGridTextColumn Header="Crawled" Binding="{Binding Crawled}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <ctls:Pager Grid.Row="1" PageInfo="{Binding PageInfo}" NavigatedCommand="{Binding NavigateCommand}" HorizontalAlignment="Center" Margin="0 0 0 10" />
+        </Grid>
+
+        <DataGrid Grid.Row="1"
+                  Grid.Column="1"
+                  ItemsSource="{Binding Outputs}"
+                  AutoGenerateColumns="False"
+                  Margin="0 0 10 10"
+                  IsReadOnly="True"
+                  CanUserSortColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp, StringFormat=HH:mm:ss.fff}" />
+                <DataGridTextColumn Header="Level" Binding="{Binding Level}" />
+                <DataGridTextColumn Header="Message" Binding="{Binding Message}" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <ctls:Spinner Grid.RowSpan="2" Grid.ColumnSpan="3" IsEnabled="{Binding IsProcessing}" Message="{Binding ProcessingStatus}" />
+
     </Grid>
 </Page>

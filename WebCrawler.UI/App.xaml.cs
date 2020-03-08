@@ -100,6 +100,7 @@ namespace WebCrawler.UI
             services.AddTransient<Manage>();
             services.AddTransient<Settings>();
 
+            services.AddTransient<CrawlerViewModel>();
             services.AddTransient<ManageViewModel>();
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures

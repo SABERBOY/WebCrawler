@@ -61,10 +61,22 @@ namespace WebCrawler.UI.Persisters
             return await query.ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int websiteId)
+        public async Task<PagedResult<Crawl>> GetCrawlsAsync(int page = 1)
+        {
+            return await _dbContext.Crawls
+                .OrderByDescending(o => o.Id)
+                .ToPagedResultAsync(page);
+        }
+
+        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int crawlId, int? websiteId = null, string keywords = null, CrawlStatus? status = null, int page = 1)
         {
             return await _dbContext.CrawlLogs
-                .Where(o => o.WebsiteId == websiteId)
+                .Include(o => o.Website)
+                .Where(o => o.CrawlId == crawlId
+                    && (websiteId == null || o.WebsiteId == websiteId)
+                    && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
+                    && (status == null || o.Status == status)
+                )
                 .OrderByDescending(o => o.Id)
                 .ToPagedResultAsync(1);
         }
@@ -128,6 +140,29 @@ namespace WebCrawler.UI.Persisters
             }
 
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<Crawl> SaveAsync(Crawl crawl = null)
+        {
+            Crawl model;
+            if (crawl?.Id > 0)
+            {
+                model = await _dbContext.Crawls.FindAsync(crawl.Id);
+
+                _dbContext.Entry(model).CurrentValues.SetValues(crawl);
+            }
+            else
+            {
+                model = new Crawl
+                {
+                    Started = DateTime.Now
+                };
+                _dbContext.Crawls.Add(model);
+
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return model;
         }
 
         /// <summary>
