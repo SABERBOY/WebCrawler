@@ -109,7 +109,7 @@ namespace WebCrawler.Common.Analyzers
                     Url = linkUrl,
                     Title = string.IsNullOrEmpty(linkTitle) ? string.Empty : regexTrim.Replace(linkTitle, ""),
                     FullText = regexTrim.Replace(fullText, ""),
-                    Published = Html2Article.GetPublishDate(itemIterator.Current.InnerXml)
+                    Published = Html2Article.GetPublishDate(itemIterator.Current.Value)
                 });
             }
 
