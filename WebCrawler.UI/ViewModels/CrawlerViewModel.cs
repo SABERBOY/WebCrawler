@@ -2,14 +2,13 @@
 using HtmlAgilityPack;
 using Serilog.Events;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using System.Windows;
 using System.Windows.Input;
 using WebCrawler.Common;
 using WebCrawler.Common.Analyzers;
@@ -240,7 +239,10 @@ namespace WebCrawler.UI.ViewModels
         {
             TryRunAsync(async () =>
             {
-                if (SelectedCrawl == null)
+                ProcessingStatus = "Processing";
+
+                // create new crawl
+                if (SelectedCrawl.Id == 0)
                 {
                     var crawl = await _persister.SaveAsync(default(Crawl));
 
@@ -251,71 +253,13 @@ namespace WebCrawler.UI.ViewModels
                     });
                 }
 
-                // TODO: start crawl
-            });
-        }
-
-        private void Analyze()
-        {
-            TryRunAsync(async () =>
-            {
-                ProcessingStatus = "Processing";
-
                 int processed = 0;
                 int total = 0;
 
                 ActionBlock<Website> workerBlock = null;
                 workerBlock = new ActionBlock<Website>(async website =>
                 {
-                    WebsiteStatus status = WebsiteStatus.Normal;
-                    string notes = null;
-
-                    try
-                    {
-                        /*var catalogItems = await TestAsync(website.Home, website.ListPath);
-
-                        if (catalogItems.Length == 0)
-                        {
-                            status = WebsiteStatus.CatalogMissing;
-                            notes = "Couldn't detect the catalog items";
-                        }
-                        else
-                        {
-                            // assume the published date detected above will be always valid or null
-                            var latestPublished = catalogItems.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
-                            if (latestPublished != null && latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
-                            {
-                                status = WebsiteStatus.Outdate;
-                                notes = $"Outdated as last published date: {latestPublished}";
-                            }
-                        }*/
-                    }
-                    catch (Exception ex)
-                    {
-                        status = WebsiteStatus.Broken;
-                        notes = ex.Message;
-                    }
-
-                    if (status != WebsiteStatus.Normal)
-                    {
-                        AppendOutput($"Detected broken website: {website.Name}. {notes}", LogEventLevel.Warning);
-                    }
-
-                    try
-                    {
-                        lock (LOCK_DB)
-                        {
-                            //AppendOutput("Innert lock started: " + website.Home, LogEventLevel.Information);
-
-                            _persister.UpdateStatusAsync(website.Id, status, notes).Wait();
-
-                            //AppendOutput("Innert lock completed: " + website.Home, LogEventLevel.Information);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        AppendOutput($"{ex.Message} {website.Home}", LogEventLevel.Error);
-                    }
+                    await CrawlAsync(website);
 
                     lock (this)
                     {
@@ -334,11 +278,7 @@ namespace WebCrawler.UI.ViewModels
                 {
                     lock (LOCK_DB)
                     {
-                        //AppendOutput("Outer lock started", LogEventLevel.Information);
-
-                        websites = _persister.GetWebsitesAsync(enabled: true, page: page, sortBy: nameof(Website.Id)).Result;
-
-                        //AppendOutput("Outer lock completed", LogEventLevel.Information);
+                        websites = _persister.GetWebsitesAsync(status: WebsiteStatus.Normal, enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
                     }
 
                     total = websites.PageInfo.ItemCount;
@@ -355,11 +295,123 @@ namespace WebCrawler.UI.ViewModels
                             Thread.Sleep(1000);
                         }
                     }
+                    break;
                 } while (page++ < websites.PageInfo.PageCount);
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
             });
+        }
+
+        private async Task CrawlAsync(Website website)
+        {
+            CrawlLog previousLog = website.CrawlLogs?.OrderByDescending(o => o.Id).FirstOrDefault();
+
+            CrawlLog crawlLog = new CrawlLog
+            {
+                CrawlId = SelectedCrawl.Id,
+                WebsiteId = website.Id,
+                Crawled = DateTime.Now
+            };
+            List<Article> articles = new List<Article>();
+
+            CatalogItem[] catalogItems = null;
+            try
+            {
+                var data = await _httpClient.GetHtmlAsync(website.Home);
+
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(data);
+
+                if (!string.IsNullOrEmpty(website.ListPath))
+                {
+                    catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, website.ListPath);
+                }
+                else
+                {
+                    var blocks = HtmlAnalyzer.EvaluateCatalogs(htmlDoc);
+                    if (blocks.Length == 0)
+                    {
+                        throw new Exception("Failed to auto detect catalog");
+                    }
+                    else
+                    {
+                        catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, blocks[0]);
+                    }
+                }
+
+                if (catalogItems.Length == 0)
+                {
+                    throw new Exception("Failed to locate catalog items");
+                }
+
+                crawlLog.LastHandled = catalogItems[0].Url;
+            }
+            catch (Exception ex)
+            {
+                crawlLog.Status = CrawlStatus.Failed;
+                crawlLog.Notes = ex.Message;
+                crawlLog.LastHandled = previousLog?.LastHandled;
+            }
+
+            if (crawlLog.Status != CrawlStatus.Failed)
+            {
+                foreach (var item in catalogItems)
+                {
+                    if (item.Url.Equals(previousLog?.LastHandled, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        var html = await _httpClient.GetHtmlAsync(item.Url);
+                        var info = Html2Article.GetArticle(html);
+
+                        articles.Add(new Article
+                        {
+                            Url = item.Url,
+                            Title = info.Title,
+                            Published = info.PublishDate ?? item.Published, // use date from article details page first
+                            Content = info.Content,
+                            ContentHtml = info.ContentWithTags,
+                            WebsiteId = website.Id,
+                            Timestamp = DateTime.Now
+                        });
+
+                        crawlLog.Success++;
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendOutput(ex.Message, item.Url, LogEventLevel.Error);
+
+                        crawlLog.Failed++;
+                    }
+                }
+            }
+
+            lock (LOCK_DB)
+            {
+                _persister.SaveAsync(articles, crawlLog).Wait();
+            }
+
+            if (crawlLog.Status == CrawlStatus.Completed)
+            {
+                if (articles.Count == 0)
+                {
+                    AppendOutput($"Skipped website as no updates: {website.Home}", website.Home, LogEventLevel.Information);
+                }
+                else
+                {
+                    AppendOutput($"Crawled website (success: {crawlLog.Success}, failed: {crawlLog.Failed}): {website.Home}", website.Home, LogEventLevel.Information);
+                }
+            }
+            else if (crawlLog.Status == CrawlStatus.Failed)
+            {
+                AppendOutput($"Failed to crawl article from website: {website.Home}", website.Home, LogEventLevel.Error);
+            }
+
+            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLog));
         }
 
         private void Navigate()
@@ -397,7 +449,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    AppendOutput(ex.Message, LogEventLevel.Error);
+                    AppendOutput(ex.Message, null, LogEventLevel.Error);
                 }
                 finally
                 {
@@ -408,7 +460,7 @@ namespace WebCrawler.UI.ViewModels
             return true;
         }
 
-        private void AppendOutput(string message, LogEventLevel level = LogEventLevel.Information)
+        private void AppendOutput(string message, string url = null, LogEventLevel level = LogEventLevel.Information)
         {
             lock (this)
             {
@@ -417,6 +469,7 @@ namespace WebCrawler.UI.ViewModels
                     Outputs.Insert(0, new Output
                     {
                         Level = level,
+                        URL = url,
                         Message = message,
                         Timestamp = DateTime.Now
                     });

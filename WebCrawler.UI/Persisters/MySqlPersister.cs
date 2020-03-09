@@ -24,7 +24,7 @@ namespace WebCrawler.UI.Persisters
             _logger = logger;
         }
 
-        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus? status = null, bool? enabled = true, int page = 1, string sortBy = null, bool descending = false)
+        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus? status = null, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
@@ -32,6 +32,11 @@ namespace WebCrawler.UI.Persisters
                     && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords) || o.Notes.Contains(keywords) || o.SysNotes.Contains(keywords))
                     && (status == null || o.Status == status)
                 );
+
+            if (includeLogs)
+            {
+                query = query.Include(o => o.CrawlLogs);
+            }
 
             if (string.IsNullOrEmpty(sortBy))
             {
@@ -64,6 +69,7 @@ namespace WebCrawler.UI.Persisters
         public async Task<PagedResult<Crawl>> GetCrawlsAsync(int page = 1)
         {
             return await _dbContext.Crawls
+                .AsNoTracking()
                 .OrderByDescending(o => o.Id)
                 .ToPagedResultAsync(page);
         }
@@ -71,6 +77,7 @@ namespace WebCrawler.UI.Persisters
         public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int crawlId, int? websiteId = null, string keywords = null, CrawlStatus? status = null, int page = 1)
         {
             return await _dbContext.CrawlLogs
+                .AsNoTracking()
                 .Include(o => o.Website)
                 .Where(o => o.CrawlId == crawlId
                     && (websiteId == null || o.WebsiteId == websiteId)
@@ -81,28 +88,12 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(1);
         }
 
-        public async Task SaveAsync(List<Article> articles)
+        public async Task SaveAsync(List<Article> articles, CrawlLog crawlLog)
         {
-            var count = articles.Count;
+            _dbContext.Articles.AddRange(articles);
+            _dbContext.CrawlLogs.Add(crawlLog);
 
-            Article article;
-            // save from the last one in case failure
-            for (var i = count - 1; i >= 0; i--)
-            {
-                article = articles[i];
-
-                article.Timestamp = DateTime.Now;
-
-                _dbContext.Articles.Add(article);
-
-                if ((count - i) % BATCH_SIZE == 0 || i == 0)
-                {
-                    // record order isn't guaranteed in batch inset, so let's save the records one by one
-                    await _dbContext.SaveChangesAsync();
-
-                    _logger.LogInformation("Persisting {0} feed articles: {1}/{2}", article.WebsiteId, i + 1, count);
-                }
-            }
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task SaveAsync(WebsiteEditor editor)

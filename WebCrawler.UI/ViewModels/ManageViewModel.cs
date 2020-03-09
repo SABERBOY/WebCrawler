@@ -437,7 +437,7 @@ namespace WebCrawler.UI.ViewModels
 
             var sort = _websiteSorts?.FirstOrDefault();
 
-            var websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+            var websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
 
             App.Current.Dispatcher.Invoke(() =>
             {

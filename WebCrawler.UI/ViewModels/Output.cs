@@ -61,5 +61,24 @@ namespace WebCrawler.UI.ViewModels
                 RaisePropertyChanged();
             }
         }
+
+        private string _url;
+        public string URL
+        {
+            get
+            {
+                return _url;
+            }
+            set
+            {
+                if (value == _url)
+                {
+                    return;
+                }
+
+                _url = value;
+                RaisePropertyChanged();
+            }
+        }
     }
 }

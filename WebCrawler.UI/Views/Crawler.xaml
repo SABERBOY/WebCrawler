@@ -123,11 +123,10 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp, StringFormat=HH:mm:ss.fff}" />
                 <DataGridTextColumn Header="Level" Binding="{Binding Level}" />
+                <DataGridTextColumn Header="URL" Binding="{Binding URL}" Width="300" />
                 <DataGridTextColumn Header="Message" Binding="{Binding Message}" />
             </DataGrid.Columns>
         </DataGrid>
-
-        <ctls:Spinner Grid.RowSpan="2" Grid.ColumnSpan="3" IsEnabled="{Binding IsProcessing}" Message="{Binding ProcessingStatus}" />
 
     </Grid>
 </Page>
