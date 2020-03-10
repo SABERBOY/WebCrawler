@@ -170,7 +170,7 @@ namespace WebCrawler.UI.Persisters
             model.Status = status;
             model.SysNotes = notes;
 
-            if (status != WebsiteStatus.Normal)
+            if (status != WebsiteStatus.Normal && status != WebsiteStatus.WarningNoDates)
             {
                 model.Enabled = false;
             }

@@ -6,11 +6,13 @@ namespace WebCrawler.UI.Models
     {
         [Display(Name = "Normal")]
         Normal = 0,
-        [Display(Name = "Broken")]
-        Broken = 1,
-        [Display(Name = "Catalog Missing")]
-        CatalogMissing = 2,
-        [Display(Name = "Outdate")]
-        Outdate = 3
+        [Display(Name = "Warning: No Dates")]
+        WarningNoDates = 1,
+        [Display(Name = "Error: Broken")]
+        ErrorBroken = 2,
+        [Display(Name = "Error: Catalog Missing")]
+        ErrorCatalogMissing = 3,
+        [Display(Name = "Error: Outdate")]
+        ErrorOutdate = 4
     }
 }

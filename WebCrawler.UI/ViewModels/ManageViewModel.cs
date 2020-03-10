@@ -500,29 +500,34 @@ namespace WebCrawler.UI.ViewModels
 
                         if (catalogItems.Length == 0)
                         {
-                            status = WebsiteStatus.CatalogMissing;
+                            status = WebsiteStatus.ErrorCatalogMissing;
                             notes = "Couldn't detect the catalog items";
                         }
                         else
                         {
                             // assume the published date detected above will be always valid or null
                             var latestPublished = catalogItems.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
-                            if (latestPublished != null && latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                            if (latestPublished == null)
                             {
-                                status = WebsiteStatus.Outdate;
+                                status = WebsiteStatus.WarningNoDates;
+                                notes = "No published date in catalog items";
+                            }
+                            else if (latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                            {
+                                status = WebsiteStatus.ErrorOutdate;
                                 notes = $"Outdated as last published date: {latestPublished}";
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        status = WebsiteStatus.Broken;
+                        status = WebsiteStatus.ErrorBroken;
                         notes = ex.Message;
                     }
 
                     if (status != WebsiteStatus.Normal)
                     {
-                        AppendOutput($"Detected broken website: {website.Name}. {notes}", LogEventLevel.Warning);
+                        AppendOutput($"{website.Name}: {notes}", LogEventLevel.Warning);
                     }
 
                     try

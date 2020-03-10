@@ -68,7 +68,7 @@
                 </Viewbox>
             </Button>
             <TextBox Text="{Binding KeywordsFilter}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
-            <ComboBox Width="150"
+            <ComboBox Width="180"
                       ItemsSource="{me:EnumValues {x:Type m:WebsiteStatus}}"
                       ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
                       SelectedValue="{Binding StatusFilter}"
