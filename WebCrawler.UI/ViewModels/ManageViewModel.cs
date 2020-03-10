@@ -88,8 +88,8 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private bool _enabledFilter;
-        public bool EnabledFilter
+        private bool? _enabledFilter;
+        public bool? EnabledFilter
         {
             get { return _enabledFilter; }
             set
@@ -382,9 +382,6 @@ namespace WebCrawler.UI.ViewModels
             _persister = persister;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
-
-            // set the priviate variable to avoid trigger data loading immediately
-            _enabledFilter = true;
 
             Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();

@@ -24,13 +24,13 @@ namespace WebCrawler.UI.Persisters
             _logger = logger;
         }
 
-        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus? status = null, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
+        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
                 .Where(o => (enabled == null || o.Enabled == enabled)
                     && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords) || o.Notes.Contains(keywords) || o.SysNotes.Contains(keywords))
-                    && (status == null || o.Status == status)
+                    && (status == WebsiteStatus.All || o.Status == status)
                 );
 
             if (includeLogs)
@@ -74,7 +74,7 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int crawlId, int? websiteId = null, string keywords = null, CrawlStatus? status = null, int page = 1)
+        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int crawlId, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1)
         {
             return await _dbContext.CrawlLogs
                 .AsNoTracking()
@@ -82,7 +82,7 @@ namespace WebCrawler.UI.Persisters
                 .Where(o => o.CrawlId == crawlId
                     && (websiteId == null || o.WebsiteId == websiteId)
                     && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
-                    && (status == null || o.Status == status)
+                    && (status == CrawlStatus.All || o.Status == status)
                 )
                 .OrderByDescending(o => o.Id)
                 .ToPagedResultAsync(1);

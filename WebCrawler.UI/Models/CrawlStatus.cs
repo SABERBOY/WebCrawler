@@ -2,8 +2,12 @@
 {
     public enum CrawlStatus
     {
-        Queued = 0,
-        Completed = 1,
-        Failed = 2
+        /// <summary>
+        /// For filtering only
+        /// </summary>
+        All = 0,
+        Queued = 1,
+        Completed = 2,
+        Failed = 3
     }
 }
