@@ -78,7 +78,7 @@ namespace WebCrawler.Common.Analyzers
             var threshold = query.First().Score / 2;
 
             return query
-                .Where(o => o.Score > threshold) // filter high posibility blocks
+                .Where(o => o.Score > threshold) // pick high posibility blocks
                 .ToArray();
         }
 
@@ -120,7 +120,7 @@ namespace WebCrawler.Common.Analyzers
                 .Where(o => o != null)
                 .ToArray();
 
-            // the published is considered as valid only when all catalog items are valid
+            // the published is considered as valid only when valid in all catalog items
             if (results.Any(o => o.Published == null))
             {
                 results.ForEach(o => o.Published = null);
