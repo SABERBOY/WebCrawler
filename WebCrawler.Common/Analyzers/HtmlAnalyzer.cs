@@ -49,6 +49,9 @@ namespace WebCrawler.Common.Analyzers
                 Url = o.GetAttributeValue("href", null)
             }).ToArray();
 
+            // test code
+            //var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
+
             Dictionary<string, string[]> similarities = new Dictionary<string, string[]>();
 
             var expAnyIndex = new Regex("[*]");
