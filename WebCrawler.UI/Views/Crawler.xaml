@@ -54,6 +54,11 @@
                           SelectedValue="{Binding StatusFilter}"
                           BorderThickness="1"
                           VerticalAlignment="Center" />
+                <Button Command="{Binding RefreshCommand}" Style="{StaticResource LargeButton}" ToolTip="Refresh">
+                    <Viewbox>
+                        <Path Data="{StaticResource RefreshIcon}" />
+                    </Viewbox>
+                </Button>
                 <Button Command="{Binding CrawlCommand}">
                     <Button.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource LargeButton}">
@@ -67,11 +72,6 @@
                     </Button.Resources>
                     <Viewbox>
                         <Path Data="{StaticResource StartIcon}" />
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding RefreshCommand}" Style="{StaticResource LargeButton}" ToolTip="Refresh">
-                    <Viewbox>
-                        <Path Data="{StaticResource RefreshIcon}" />
                     </Viewbox>
                 </Button>
             </StackPanel>
