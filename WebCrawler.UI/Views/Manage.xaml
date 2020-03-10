@@ -63,17 +63,17 @@
                         <Path Data="{StaticResource AnalysisIcon}" />
                     </Viewbox>
                 </Button>
+                <Button Command="{Binding AddCommand}" Style="{StaticResource LargeButton}" ToolTip="Add">
+                    <Viewbox>
+                        <Path Data="{StaticResource AddIcon}" />
+                    </Viewbox>
+                </Button>
                 <Button Command="{Binding ToggleCommand}" Style="{StaticResource LargeButton}" ToolTip="Toggle Selected" Visibility="{Binding ToggleAsEnable, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
                     <Viewbox>
                         <Grid>
                             <Path Data="{StaticResource EnableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}}" />
                             <Path Data="{StaticResource DisableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
                         </Grid>
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding AddCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze">
-                    <Viewbox>
-                        <Path Data="{StaticResource AddIcon}" />
                     </Viewbox>
                 </Button>
             </StackPanel>
