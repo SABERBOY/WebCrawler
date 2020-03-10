@@ -329,6 +329,11 @@ namespace WebCrawler.UI.ViewModels
                     throw new Exception("Failed to locate catalog items");
                 }
 
+                // sort by published, as some website might have highlights always shown on the top
+                catalogItems = catalogItems
+                    .OrderByDescending(o => o.Published)
+                    .ToArray();
+
                 crawlLog.LastHandled = catalogItems[0].Url;
             }
             catch (Exception ex)
