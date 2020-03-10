@@ -172,6 +172,11 @@ namespace WebCrawler.UI.ViewModels
 
                 _status = value;
                 RaisePropertyChanged();
+
+                if (value != WebsiteStatus.Normal && value != WebsiteStatus.WarningNoDates)
+                {
+                    Enabled = false;
+                }
             }
         }
 
@@ -204,8 +209,9 @@ namespace WebCrawler.UI.ViewModels
             StartIndex = website.StartIndex;
             ListPath = website.ListPath;
             Notes = website.Notes;
-            Enabled = website.Enabled;
             Status = website.Status;
+            // Enabled should be assigned after Status, otherwise it might be overwritten
+            Enabled = website.Enabled;
         }
 
         public void MergeTo(WebsiteView website)

@@ -191,16 +191,16 @@
 
                     <Line Grid.Row="7" Grid.ColumnSpan="2" />
 
-                    <Label Grid.Row="8" Grid.Column="0" Content="Enabled" />
-                    <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Editor.Enabled}" />
-
-                    <Label Grid.Row="9" Grid.Column="0" Content="Status" />
-                    <ComboBox Grid.Row="9"
+                    <Label Grid.Row="8" Grid.Column="0" Content="Status" />
+                    <ComboBox Grid.Row="8"
                               Grid.Column="1"
                               ItemsSource="{me:EnumValues {x:Type m:WebsiteStatus}}"
                               ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
                               SelectedValue="{Binding Editor.Status}"
                               BorderThickness="1" />
+
+                    <Label Grid.Row="9" Grid.Column="0" Content="Enabled" />
+                    <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Editor.Enabled}" />
 
                     <Label Grid.Row="10" Grid.Column="0" Content="Sys Notes" />
                     <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding Editor.SysNotes}" TextWrapping="Wrap" Margin="10 5" Padding="0 5" />
