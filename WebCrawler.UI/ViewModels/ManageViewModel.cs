@@ -119,8 +119,8 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private WebsiteEditor _editor;
-        public WebsiteEditor Editor
+        private WebsiteView _editor;
+        public WebsiteView Editor
         {
             get { return _editor; }
             set
@@ -385,6 +385,7 @@ namespace WebCrawler.UI.ViewModels
 
             Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();
+            Editor = new WebsiteView();
         }
 
         public bool Sort(params SortDescription[] sorts)
@@ -407,20 +408,7 @@ namespace WebCrawler.UI.ViewModels
         {
             _websiteSelections = websites;
 
-            if (_websiteSelections == null || _websiteSelections.Length == 0)
-            {
-                ToggleAsEnable = null;
-            }
-            else if (_websiteSelections.Any(o => o.Enabled))
-            {
-                ToggleAsEnable = false;
-            }
-            else
-            {
-                ToggleAsEnable = true;
-            }
-
-            // TODO: website 编辑disabled/enabled后，data grid尚未更新，可能会导致问题，需要考虑为其创建新的 viewmodel
+            RefreshToggleState();
         }
 
         #region Private Members
@@ -460,7 +448,7 @@ namespace WebCrawler.UI.ViewModels
             }
             else
             {
-                Editor = new WebsiteEditor(SelectedWebsite);
+                SelectedWebsite.Clone(Editor);
 
                 TryRunAsync(async () =>
                 {
@@ -593,6 +581,11 @@ namespace WebCrawler.UI.ViewModels
             TryRunAsync(async () =>
             {
                 await _persister.ToggleAsync(ToggleAsEnable.Value, _websiteSelections.Select(o => o.Id).ToArray());
+
+                // refresh the website list, but do not sync the editor as that might not be expected
+                _websiteSelections.ForEach(o => o.Enabled = ToggleAsEnable.Value);
+
+                RefreshToggleState();
             });
         }
 
@@ -610,7 +603,9 @@ namespace WebCrawler.UI.ViewModels
             {
                 await _persister.SaveAsync(Editor);
 
-                Editor.MergeTo(SelectedWebsite);
+                Editor.Clone(SelectedWebsite);
+
+                RefreshToggleState();
             });
         }
 
@@ -640,7 +635,7 @@ namespace WebCrawler.UI.ViewModels
 
         private void Reset()
         {
-            Editor = new WebsiteEditor(SelectedWebsite);
+            SelectedWebsite.Clone(Editor);
         }
 
         private void Delete()
@@ -655,6 +650,8 @@ namespace WebCrawler.UI.ViewModels
                 await _persister.DeleteAsync(SelectedWebsite.Id);
 
                 App.Current.Dispatcher.Invoke(() => Websites.Remove(SelectedWebsite));
+
+                RefreshToggleState();
             });
         }
 
@@ -683,6 +680,22 @@ namespace WebCrawler.UI.ViewModels
                     Published = article.PublishDate
                 };
             });
+        }
+
+        private void RefreshToggleState()
+        {
+            if (_websiteSelections == null || _websiteSelections.Length == 0)
+            {
+                ToggleAsEnable = null;
+            }
+            else if (_websiteSelections.Any(o => o.Enabled))
+            {
+                ToggleAsEnable = false;
+            }
+            else
+            {
+                ToggleAsEnable = true;
+            }
         }
 
         /// <summary>

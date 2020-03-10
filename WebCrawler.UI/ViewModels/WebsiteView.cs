@@ -216,6 +216,12 @@ namespace WebCrawler.UI.ViewModels
 
                 _status = value;
                 RaisePropertyChanged();
+
+                // auto disable for error states
+                if (value != WebsiteStatus.Normal && value != WebsiteStatus.WarningNoDates)
+                {
+                    Enabled = false;
+                }
             }
         }
 
@@ -242,12 +248,16 @@ namespace WebCrawler.UI.ViewModels
 
         public List<CrawlLog> CrawlLogs { get; set; }
 
+        public WebsiteView()
+        {
+
+        }
+
         public WebsiteView(Website model)
         {
             Id = model.Id;
             Name = model.Name;
             Home = model.Home;
-            Enabled = model.Enabled;
             Status = model.Status;
             Rank = model.Rank;
             ListPath = model.ListPath;
@@ -257,6 +267,39 @@ namespace WebCrawler.UI.ViewModels
             SysNotes = model.SysNotes;
             Registered = model.Registered;
             CrawlLogs = model.CrawlLogs;
+
+            // Enabled should be assigned after Status, otherwise it might be overwritten
+            Enabled = model.Enabled;
+        }
+
+        /// <summary>
+        /// Shadow copy
+        /// </summary>
+        /// <returns></returns>
+        public WebsiteView Clone(WebsiteView target = null)
+        {
+            if (target == null)
+            {
+                target = new WebsiteView();
+            }
+
+            target.Id = Id;
+            target.Name = Name;
+            target.Home = Home;
+            target.Status = Status;
+            target.Rank = Rank;
+            target.ListPath = ListPath;
+            target.UrlFormat = UrlFormat;
+            target.StartIndex = StartIndex;
+            target.Notes = Notes;
+            target.SysNotes = SysNotes;
+            target.Registered = Registered;
+            target.CrawlLogs = CrawlLogs;
+
+            // Enabled should be assigned after Status, otherwise it might be overwritten
+            target.Enabled = Enabled;
+
+            return target;
         }
     }
 }

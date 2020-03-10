@@ -96,7 +96,7 @@ namespace WebCrawler.UI.Persisters
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task SaveAsync(WebsiteEditor editor)
+        public async Task SaveAsync(WebsiteView editor)
         {
             if (editor.Id > 0)
             {
