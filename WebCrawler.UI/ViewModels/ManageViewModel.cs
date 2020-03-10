@@ -538,7 +538,7 @@ namespace WebCrawler.UI.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        AppendOutput($"{ex.Message} {website.Home}", LogEventLevel.Error);
+                        AppendOutput($"{(ex.InnerException ?? ex).Message} {website.Home}", LogEventLevel.Error);
                     }
 
                     lock (this)
@@ -631,20 +631,7 @@ namespace WebCrawler.UI.ViewModels
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(data);
 
-            if (!string.IsNullOrEmpty(listPath))
-            {
-                return HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
-            }
-
-            var blocks = HtmlAnalyzer.EvaluateCatalogs(htmlDoc);
-            if (blocks.Length == 0)
-            {
-                return new CatalogItem[0];
-            }
-            else
-            {
-                return HtmlAnalyzer.ExtractCatalogItems(htmlDoc, blocks[0]);
-            }
+            return HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
         }
 
         private void Reset()
@@ -719,7 +706,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    AppendOutput(ex.Message, LogEventLevel.Error);
+                    AppendOutput((ex.InnerException ?? ex).Message, LogEventLevel.Error);
                 }
                 finally
                 {

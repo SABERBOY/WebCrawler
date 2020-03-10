@@ -323,23 +323,7 @@ namespace WebCrawler.UI.ViewModels
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(data);
 
-                if (!string.IsNullOrEmpty(website.ListPath))
-                {
-                    catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, website.ListPath);
-                }
-                else
-                {
-                    var blocks = HtmlAnalyzer.EvaluateCatalogs(htmlDoc);
-                    if (blocks.Length == 0)
-                    {
-                        throw new Exception("Failed to auto detect catalog");
-                    }
-                    else
-                    {
-                        catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, blocks[0]);
-                    }
-                }
-
+                catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, website.ListPath);
                 if (catalogItems.Length == 0)
                 {
                     throw new Exception("Failed to locate catalog items");
@@ -449,7 +433,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    AppendOutput(ex.Message, null, LogEventLevel.Error);
+                    AppendOutput((ex.InnerException ?? ex).Message, null, LogEventLevel.Error);
                 }
                 finally
                 {

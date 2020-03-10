@@ -9,7 +9,32 @@ namespace WebCrawler.Common.Analyzers
 {
     public static class HtmlAnalyzer
     {
-        public static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
+        public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, string listPath = null)
+        {
+            if (string.IsNullOrEmpty(listPath)) // auto detect catalog items
+            {
+                var blocks = EvaluateCatalogs(htmlDoc);
+                var catalogItems = new Dictionary<Block, CatalogItem[]>();
+
+                foreach (var block in blocks)
+                {
+                    catalogItems.Add(block, ExtractCatalogItems(htmlDoc, block));
+                }
+
+                return catalogItems
+                    // blocks with published date has higher priority
+                    .OrderByDescending(o => o.Value.First().Published != null)
+                    .ThenByDescending(o => o.Key.Score)
+                    .Select(o => o.Value)
+                    .First();
+            }
+            else // detect catalog items by list xpath
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
         {
             var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a[@href][text()]");
             if (linkNodes == null)
@@ -82,7 +107,7 @@ namespace WebCrawler.Common.Analyzers
                 .ToArray();
         }
 
-        public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
+        private static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
         {
             var regexTrim = new Regex(Constants.EXP_TEXT_CLEAN_FULL);
 
@@ -127,11 +152,6 @@ namespace WebCrawler.Common.Analyzers
             }
 
             return results;
-        }
-
-        public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, string listPath)
-        {
-            throw new NotImplementedException();
         }
 
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)
