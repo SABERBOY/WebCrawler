@@ -45,7 +45,7 @@ namespace WebCrawler.Common.Analyzers
             var links = linkNodes.Select(o => new Link
             {
                 XPath = o.XPath,
-                Text = o.InnerText,
+                Text = TrimText(o.InnerText),
                 Url = o.GetAttributeValue("href", null)
             }).ToArray();
 
@@ -112,19 +112,15 @@ namespace WebCrawler.Common.Analyzers
 
         private static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
         {
-            var regexTrim = new Regex(Constants.EXP_TEXT_CLEAN_FULL);
-
             var items = new List<CatalogItem>();
 
             var itemIterator = htmlDoc.CreateNavigator().Select(block.ContainerPath);
             string linkUrl;
             string linkTitle;
-            string fullText;
             while (itemIterator.MoveNext())
             {
                 linkUrl = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href");
                 linkTitle = itemIterator.Current.GetValue(block.RelativeLinkXPath);
-                fullText = itemIterator.Current.Value;
 
                 if (string.IsNullOrEmpty(linkUrl))
                 {
@@ -135,8 +131,8 @@ namespace WebCrawler.Common.Analyzers
                 items.Add(new CatalogItem
                 {
                     Url = linkUrl,
-                    Title = string.IsNullOrEmpty(linkTitle) ? string.Empty : regexTrim.Replace(linkTitle, ""),
-                    FullText = regexTrim.Replace(fullText, ""),
+                    Title = TrimText(linkTitle),
+                    FullText = TrimText(itemIterator.Current.Value),
                     Published = Html2Article.GetPublishDate(itemIterator.Current.Value)
                 });
             }
@@ -155,6 +151,13 @@ namespace WebCrawler.Common.Analyzers
             }
 
             return results;
+        }
+
+        private static string TrimText(string text, bool persistLineBreaks = false)
+        {
+            return string.IsNullOrEmpty(text)
+                ? string.Empty
+                : Regex.Replace(text, persistLineBreaks ? Constants.EXP_TEXT_CLEAN : Constants.EXP_TEXT_CLEAN_FULL, "");
         }
 
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)
