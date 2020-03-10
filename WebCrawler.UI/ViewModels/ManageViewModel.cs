@@ -28,7 +28,7 @@ namespace WebCrawler.UI.ViewModels
         private CrawlingSettings _crawlingSettings;
 
         private SortDescription[] _websiteSorts;
-        private Website[] _websiteSelections;
+        private WebsiteView[] _websiteSelections;
 
         #region Notify Properties
 
@@ -103,8 +103,8 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private Website _selectedWebsite;
-        public Website SelectedWebsite
+        private WebsiteView _selectedWebsite;
+        public WebsiteView SelectedWebsite
         {
             get { return _selectedWebsite; }
             set
@@ -186,11 +186,11 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private ObservableCollection<Website> _websites;
+        private ObservableCollection<WebsiteView> _websites;
         /// <summary>
         /// Couldn't always create new Websites instance (which don't require Dispatcher Invoke) here as we want to persist the sort arrows in the data grid
         /// </summary>
-        public ObservableCollection<Website> Websites
+        public ObservableCollection<WebsiteView> Websites
         {
             get { return _websites; }
             set
@@ -386,7 +386,7 @@ namespace WebCrawler.UI.ViewModels
             // set the priviate variable to avoid trigger data loading immediately
             _enabledFilter = true;
 
-            Websites = new ObservableCollection<Website>();
+            Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();
         }
 
@@ -406,7 +406,7 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        public void AcceptSelectedItems(Website[] websites)
+        public void AcceptSelectedItems(WebsiteView[] websites)
         {
             _websiteSelections = websites;
 
@@ -445,7 +445,7 @@ namespace WebCrawler.UI.ViewModels
                 Websites.Clear();
                 foreach (var web in websites.Items)
                 {
-                    Websites.Add(web);
+                    Websites.Add(new WebsiteView(web));
                 }
 
                 PageInfo = websites.PageInfo;
@@ -595,7 +595,7 @@ namespace WebCrawler.UI.ViewModels
         {
             TryRunAsync(async () =>
             {
-                await _persister.ToggleAsync(_websiteSelections, ToggleAsEnable.Value);
+                await _persister.ToggleAsync(ToggleAsEnable.Value, _websiteSelections.Select(o => o.Id).ToArray());
             });
         }
 
@@ -612,6 +612,8 @@ namespace WebCrawler.UI.ViewModels
             TryRunAsync(async () =>
             {
                 await _persister.SaveAsync(Editor);
+
+                Editor.MergeTo(SelectedWebsite);
             });
         }
 
@@ -653,7 +655,7 @@ namespace WebCrawler.UI.ViewModels
 
             TryRunAsync(async () =>
             {
-                await _persister.DeleteAsync(SelectedWebsite);
+                await _persister.DeleteAsync(SelectedWebsite.Id);
 
                 App.Current.Dispatcher.Invoke(() => Websites.Remove(SelectedWebsite));
             });

@@ -186,10 +186,8 @@ namespace WebCrawler.UI.Persisters
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task ToggleAsync(Website[] websites, bool enabled)
+        public async Task ToggleAsync(bool enabled, params int[] websiteIds)
         {
-            var websiteIds = websites.Select(o => o.Id).ToArray();
-
             var models = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
 
             models.ForEach(o => o.Enabled = enabled);
@@ -197,9 +195,9 @@ namespace WebCrawler.UI.Persisters
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Website website)
+        public async Task DeleteAsync(int websiteId)
         {
-            var model = await _dbContext.Websites.FindAsync(website.Id);
+            var model = await _dbContext.Websites.FindAsync(websiteId);
             if (model != null)
             {
                 _dbContext.Websites.Remove(model);

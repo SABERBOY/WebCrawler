@@ -1,9 +1,15 @@
-﻿using WebCrawler.UI.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using WebCrawler.UI.Models;
 
 namespace WebCrawler.UI.ViewModels
 {
-    public class WebsiteEditor : NotifyPropertyChanged
+    public class WebsiteView : NotifyPropertyChanged
     {
+        #region Notify Properties
+
         private int _id;
         public int Id
         {
@@ -156,21 +162,21 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private WebsiteStatus _status;
-        public WebsiteStatus Status
+        private DateTime _registered;
+        public DateTime Registered
         {
             get
             {
-                return _status;
+                return _registered;
             }
             set
             {
-                if (value == _status)
+                if (value == _registered)
                 {
                     return;
                 }
 
-                _status = value;
+                _registered = value;
                 RaisePropertyChanged();
             }
         }
@@ -194,32 +200,63 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        public WebsiteEditor(WebsiteView website)
+        private WebsiteStatus _status;
+        public WebsiteStatus Status
         {
-            Id = website.Id;
-            Rank = website.Rank;
-            Name = website.Name;
-            Home = website.Home;
-            UrlFormat = website.UrlFormat;
-            StartIndex = website.StartIndex;
-            ListPath = website.ListPath;
-            Notes = website.Notes;
-            Enabled = website.Enabled;
-            Status = website.Status;
+            get
+            {
+                return _status;
+            }
+            set
+            {
+                if (value == _status)
+                {
+                    return;
+                }
+
+                _status = value;
+                RaisePropertyChanged();
+            }
         }
 
-        public void MergeTo(WebsiteView website)
+        private string _sysNotes;
+        public string SysNotes
         {
-            website.Id = Id;
-            website.Rank = Rank;
-            website.Name = Name;
-            website.Home = Home;
-            website.UrlFormat = UrlFormat;
-            website.StartIndex = StartIndex;
-            website.ListPath = ListPath;
-            website.Notes = Notes;
-            website.Enabled = Enabled;
-            website.Status = Status;
+            get
+            {
+                return _sysNotes;
+            }
+            set
+            {
+                if (value == _sysNotes)
+                {
+                    return;
+                }
+
+                _sysNotes = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        #endregion
+
+        public List<CrawlLog> CrawlLogs { get; set; }
+
+        public WebsiteView(Website model)
+        {
+            Id = model.Id;
+            Name = model.Name;
+            Home = model.Home;
+            Enabled = model.Enabled;
+            Status = model.Status;
+            Rank = model.Rank;
+            ListPath = model.ListPath;
+            UrlFormat = model.UrlFormat;
+            StartIndex = model.StartIndex;
+            Notes = model.Notes;
+            SysNotes = model.SysNotes;
+            Registered = model.Registered;
+            CrawlLogs = model.CrawlLogs;
         }
     }
 }

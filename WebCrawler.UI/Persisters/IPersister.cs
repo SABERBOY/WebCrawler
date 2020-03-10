@@ -15,7 +15,7 @@ namespace WebCrawler.UI.Persisters
         Task SaveAsync(WebsiteEditor editor);
         Task<Crawl> SaveAsync(Crawl crawl = null);
         Task UpdateStatusAsync(int websiteId, WebsiteStatus status, string notes = null);
-        Task ToggleAsync(Website[] websites, bool enabled);
-        Task DeleteAsync(Website website);
+        Task ToggleAsync(bool enabled, params int[] websiteIds);
+        Task DeleteAsync(int websiteId);
     }
 }

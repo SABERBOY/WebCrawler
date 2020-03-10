@@ -66,7 +66,7 @@ namespace WebCrawler.UI.Views
 
             var grid = sender as DataGrid;
 
-            vm.AcceptSelectedItems(grid.SelectedItems.Cast<Website>().ToArray());
+            vm.AcceptSelectedItems(grid.SelectedItems.Cast<WebsiteView>().ToArray());
         }
     }
 }
