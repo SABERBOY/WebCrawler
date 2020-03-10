@@ -226,21 +226,21 @@ namespace WebCrawler.UI.ViewModels
 
         private void LoadCrawlLogs(int page = 1)
         {
-            TryRunAsync(async () =>
+            if (SelectedCrawl == null)
             {
-                if (SelectedCrawl != null)
+                CrawlLogs = new ObservableCollection<CrawlLog>();
+                PageInfo = null;
+            }
+            else
+            {
+                TryRunAsync(async () =>
                 {
                     var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
 
                     CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
                     PageInfo = logs.PageInfo;
-                }
-                else
-                {
-                    CrawlLogs = new ObservableCollection<CrawlLog>();
-                    PageInfo = null;
-                }
-            });
+                });
+            }
         }
 
         private void Crawl()
