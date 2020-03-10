@@ -573,6 +573,9 @@ namespace WebCrawler.UI.ViewModels
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
+
+                // reload data
+                await LoadDataCoreAsync();
             });
         }
 
