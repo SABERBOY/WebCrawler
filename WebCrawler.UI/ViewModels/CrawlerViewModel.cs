@@ -228,10 +228,18 @@ namespace WebCrawler.UI.ViewModels
         {
             TryRunAsync(async () =>
             {
-                var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
+                if (SelectedCrawl != null)
+                {
+                    var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
 
-                CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
-                PageInfo = logs.PageInfo;
+                    CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
+                    PageInfo = logs.PageInfo;
+                }
+                else
+                {
+                    CrawlLogs = new ObservableCollection<CrawlLog>();
+                    PageInfo = null;
+                }
             });
         }
 
