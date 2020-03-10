@@ -115,8 +115,9 @@ namespace WebCrawler.Common.Analyzers
 
             var results = items
                 .GroupBy(o => o.Url)
-                // pick the first link if duplicate links detected
-                .Select(o => o.First())
+                // pick the first link which contains text if duplicate links detected
+                .Select(o => o.FirstOrDefault(lnk => !string.IsNullOrEmpty(lnk.Title)))
+                .Where(o => o != null)
                 .ToArray();
 
             // the published is considered as valid only when all catalog items are valid
