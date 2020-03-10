@@ -71,6 +71,11 @@
                         </Grid>
                     </Viewbox>
                 </Button>
+                <Button Command="{Binding AddCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze">
+                    <Viewbox>
+                        <Path Data="{StaticResource AddIcon}" />
+                    </Viewbox>
+                </Button>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -146,7 +151,7 @@
             <Grid Grid.Row="0"
                   Margin="0 0 10 10"
                   Background="{StaticResource BackgroundLight}"
-                  Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                  Visibility="{Binding Editor, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
                 <Grid Margin="0 5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="80" />

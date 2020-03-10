@@ -98,9 +98,10 @@ namespace WebCrawler.UI.Persisters
 
         public async Task SaveAsync(WebsiteView editor)
         {
+            Website model;
             if (editor.Id > 0)
             {
-                var model = await _dbContext.Websites.FindAsync(editor.Id);
+                model = await _dbContext.Websites.FindAsync(editor.Id);
 
                 model.Name = editor.Name;
                 model.Rank = editor.Rank;
@@ -114,7 +115,7 @@ namespace WebCrawler.UI.Persisters
             }
             else
             {
-                _dbContext.Websites.Add(new Website
+                model = new Website
                 {
                     Name = editor.Name,
                     Enabled = editor.Enabled,
@@ -127,10 +128,14 @@ namespace WebCrawler.UI.Persisters
                     Status = editor.Status,
                     SysNotes = null,
                     Registered = DateTime.Now
-                });
+                };
+                _dbContext.Websites.Add(model);
             }
 
             await _dbContext.SaveChangesAsync();
+
+            editor.Id = model.Id;
+            editor.Registered = model.Registered;
         }
 
         public async Task<Crawl> SaveAsync(Crawl crawl = null)

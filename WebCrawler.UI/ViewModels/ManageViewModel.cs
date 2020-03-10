@@ -323,6 +323,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private RelayCommand _addCommand;
+        public ICommand AddCommand
+        {
+            get
+            {
+                if (_addCommand == null)
+                {
+                    _addCommand = new RelayCommand(Add, () => !IsProcessing);
+                }
+                return _addCommand;
+            }
+        }
+
         private RelayCommand _saveCommand;
         public ICommand SaveCommand
         {
@@ -330,7 +343,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_saveCommand == null)
                 {
-                    _saveCommand = new RelayCommand(Save, () => SelectedWebsite != null && !IsProcessing);
+                    _saveCommand = new RelayCommand(Save, () => !IsProcessing);
                 }
                 return _saveCommand;
             }
@@ -343,7 +356,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_testCommand == null)
                 {
-                    _testCommand = new RelayCommand(RunTest, () => SelectedWebsite != null && !IsProcessing);
+                    _testCommand = new RelayCommand(RunTest, () => !IsProcessing);
                 }
                 return _testCommand;
             }
@@ -356,7 +369,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_resetCommand == null)
                 {
-                    _resetCommand = new RelayCommand(Reset, () => SelectedWebsite != null && !IsProcessing);
+                    _resetCommand = new RelayCommand(Reset, () => !IsProcessing);
                 }
                 return _resetCommand;
             }
@@ -385,7 +398,6 @@ namespace WebCrawler.UI.ViewModels
 
             Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();
-            Editor = new WebsiteView();
         }
 
         public bool Sort(params SortDescription[] sorts)
@@ -444,11 +456,12 @@ namespace WebCrawler.UI.ViewModels
 
             if (SelectedWebsite == null)
             {
+                Editor = null;
                 ShowTestResult = false;
             }
             else
             {
-                SelectedWebsite.Clone(Editor);
+                Editor = SelectedWebsite.Clone();
 
                 TryRunAsync(async () =>
                 {
@@ -592,6 +605,18 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
+        private void Add()
+        {
+            SelectedWebsite = null;
+
+            Editor = new WebsiteView
+            {
+                Rank = 1,
+                Enabled = true,
+                Status = WebsiteStatus.Normal
+            };
+        }
+
         private void Navigate()
         {
             TryRunAsync(async () =>
@@ -604,11 +629,27 @@ namespace WebCrawler.UI.ViewModels
         {
             TryRunAsync(async () =>
             {
+                var isNew = Editor.Id == 0;
+
                 await _persister.SaveAsync(Editor);
 
-                Editor.Clone(SelectedWebsite);
+                if (isNew)
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        var website = Editor.Clone();
 
-                RefreshToggleState();
+                        Websites.Insert(0, website);
+
+                        SelectedWebsite = website;
+                    });
+                }
+                else
+                {
+                    Editor.Clone(SelectedWebsite);
+
+                    RefreshToggleState();
+                }
             });
         }
 
@@ -638,7 +679,14 @@ namespace WebCrawler.UI.ViewModels
 
         private void Reset()
         {
-            SelectedWebsite.Clone(Editor);
+            if (SelectedWebsite == null)
+            {
+                Add();
+            }
+            else
+            {
+                SelectedWebsite.Clone(Editor);
+            }
         }
 
         private void Delete()
@@ -653,8 +701,6 @@ namespace WebCrawler.UI.ViewModels
                 await _persister.DeleteAsync(SelectedWebsite.Id);
 
                 App.Current.Dispatcher.Invoke(() => Websites.Remove(SelectedWebsite));
-
-                RefreshToggleState();
             });
         }
 
