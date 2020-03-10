@@ -167,13 +167,21 @@ namespace WebCrawler.UI.Persisters
         {
             var model = await _dbContext.Websites.FindAsync(websiteId);
 
-            model.Status = status;
-            model.SysNotes = notes;
-
-            if (status != WebsiteStatus.Normal && status != WebsiteStatus.WarningNoDates)
+            if (status == WebsiteStatus.WarningNoDates)
+            {
+                if (status != model.Status)
+                {
+                    // disable warnings only for the records to be moved to new status
+                    model.Enabled = false;
+                }
+            }
+            else if (status != WebsiteStatus.Normal)
             {
                 model.Enabled = false;
             }
+
+            model.Status = status;
+            model.SysNotes = notes;
 
             await _dbContext.SaveChangesAsync();
         }
