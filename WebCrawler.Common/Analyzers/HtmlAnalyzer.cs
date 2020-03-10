@@ -325,7 +325,7 @@ namespace WebCrawler.Common.Analyzers
 
                         index1++;
                     }
-                    else if (IsNumber(current1))
+                    else if (IsNumber(current1) && source[index1 - 1] == '[') // check previous char as the number might be part of head tags, e.g. h1
                     {
                         builder.Append('*');
 
@@ -336,7 +336,7 @@ namespace WebCrawler.Common.Analyzers
                         return null;
                     }
 
-                    if (IsNumber(current2))
+                    if (IsNumber(current2) && source[index2 - 1] == '[') // check previous char as the number might be part of head tags, e.g. h1
                     {
                         while (IsNumber(target[++index2])) { }
                     }
