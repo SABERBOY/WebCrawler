@@ -88,12 +88,43 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(1);
         }
 
-        public async Task SaveAsync(List<Article> articles, CrawlLog crawlLog)
+        public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLog)
         {
-            _dbContext.Articles.AddRange(articles);
-            _dbContext.CrawlLogs.Add(crawlLog);
+            if (crawlLog.Status != CrawlStatus.Failed)
+            {
+                crawlLog.Status = CrawlStatus.Committing;
+
+                foreach (var article in articles)
+                {
+                    // Escape the URL as it will be stored in ASCII as Unique doesn't accept text longer than 255 chars in UTF8.
+                    article.Url = Uri.EscapeUriString(article.Url);
+
+                    _dbContext.Articles.Add(article);
+
+                    // TODO: consider to create separated commits based on the content length
+                    // commit article one by one as some articles might be really large, e.g. the following which involves BASE64 image data
+                    // http://d.drcnet.com.cn/eDRCnet.common.web/DocDetail.aspx?chnid=1012&leafid=5&docid=5738629&uid=030201&version=integrated
+                    await _dbContext.SaveChangesAsync();
+                }
+            }
+
+            var log = new CrawlLog
+            {
+                CrawlId = crawlLog.CrawlId,
+                WebsiteId = crawlLog.WebsiteId,
+                Success = crawlLog.Success,
+                Failed = crawlLog.Failed,
+                Status = crawlLog.Status == CrawlStatus.Failed ? crawlLog.Status : CrawlStatus.Completed,
+                Notes = crawlLog.Notes,
+                LastHandled = crawlLog.LastHandled,
+                Crawled = crawlLog.Crawled
+            };
+            _dbContext.CrawlLogs.Add(log);
 
             await _dbContext.SaveChangesAsync();
+
+            crawlLog.Id = log.Id;
+            crawlLog.Status = log.Status;
         }
 
         public async Task SaveAsync(WebsiteView editor)

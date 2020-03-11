@@ -94,14 +94,13 @@
                       CanUserSortColumns="False"
                       Margin="10 0 10 10">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Binding="{Binding Website.Name}" />
-                    <DataGridTextColumn Header="Home" Binding="{Binding Website.Home}" />
-                    <DataGridTextColumn Header="Last Handled" Binding="{Binding LastHandled}" />
-                    <DataGridTextColumn Header="Total" Binding="{Binding Total}" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding WebsiteName}" />
+                    <DataGridTextColumn Header="Home" Binding="{Binding WebsiteHome}" Width="300" />
                     <DataGridTextColumn Header="Success" Binding="{Binding Success}" />
                     <DataGridTextColumn Header="Failed" Binding="{Binding Failed}" />
-                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="400" />
+                    <DataGridTextColumn Header="Last Handled" Binding="{Binding LastHandled}" Width="300" />
                     <DataGridTextColumn Header="Crawled" Binding="{Binding Crawled}" />
                 </DataGrid.Columns>
             </DataGrid>

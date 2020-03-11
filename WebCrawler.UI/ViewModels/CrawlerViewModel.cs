@@ -129,8 +129,8 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private ObservableCollection<CrawlLog> _crawlLogs;
-        public ObservableCollection<CrawlLog> CrawlLogs
+        private ObservableCollection<CrawlLogView> _crawlLogs;
+        public ObservableCollection<CrawlLogView> CrawlLogs
         {
             get { return _crawlLogs; }
             set
@@ -245,7 +245,7 @@ namespace WebCrawler.UI.ViewModels
         {
             if (SelectedCrawl == null || SelectedCrawl.Id == 0)
             {
-                CrawlLogs = new ObservableCollection<CrawlLog>();
+                CrawlLogs = new ObservableCollection<CrawlLogView>();
                 PageInfo = null;
             }
             else
@@ -254,7 +254,7 @@ namespace WebCrawler.UI.ViewModels
                 {
                     var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
 
-                    CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
+                    CrawlLogs = new ObservableCollection<CrawlLogView>(logs.Items.Select(o => new CrawlLogView(o)));
                     PageInfo = logs.PageInfo;
                 });
             }
@@ -306,7 +306,7 @@ namespace WebCrawler.UI.ViewModels
                     lock (LOCK_DB)
                     {
                         // TODO: consider to load the last crawl log only, for performance consideration
-                        websites = _persister.GetWebsitesAsync(status: WebsiteStatus.Normal, enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
+                        websites = _persister.GetWebsitesAsync(enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
                     }
 
                     total = websites.PageInfo.ItemCount;
@@ -337,13 +337,18 @@ namespace WebCrawler.UI.ViewModels
         {
             CrawlLog previousLog = website.CrawlLogs?.OrderByDescending(o => o.Id).FirstOrDefault();
 
-            CrawlLog crawlLog = new CrawlLog
+            CrawlLogView crawlLog = new CrawlLogView
             {
                 CrawlId = SelectedCrawl.Id,
                 WebsiteId = website.Id,
+                WebsiteName = website.Name,
+                WebsiteHome = website.Home,
+                Status = CrawlStatus.Crawling,
                 Crawled = DateTime.Now
             };
             List<Article> articles = new List<Article>();
+
+            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLog));
 
             CatalogItem[] catalogItems = null;
             try
@@ -373,7 +378,7 @@ namespace WebCrawler.UI.ViewModels
                 crawlLog.LastHandled = previousLog?.LastHandled;
             }
 
-            if (crawlLog.Status != CrawlStatus.Failed)
+            if (crawlLog.Status == CrawlStatus.Crawling)
             {
                 foreach (var item in catalogItems)
                 {
@@ -397,7 +402,7 @@ namespace WebCrawler.UI.ViewModels
                             WebsiteId = website.Id,
                             Timestamp = DateTime.Now
                         });
-
+                        
                         crawlLog.Success++;
                     }
                     catch (Exception ex)
@@ -407,11 +412,25 @@ namespace WebCrawler.UI.ViewModels
                         crawlLog.Failed++;
                     }
                 }
+
+                if (crawlLog.Success == 0 && crawlLog.Failed > 0)
+                {
+                    crawlLog.Status = CrawlStatus.Failed;
+                    crawlLog.Notes = "Failed as nothing succeeded";
+                }
             }
 
-            lock (LOCK_DB)
+            try
             {
-                _persister.SaveAsync(articles, crawlLog).Wait();
+                lock (LOCK_DB)
+                {
+                    _persister.SaveAsync(articles, crawlLog).Wait();
+                }
+            }
+            catch (Exception ex)
+            {
+                crawlLog.Status = CrawlStatus.Failed;
+                crawlLog.Notes = $"Failed to save data: {(ex.InnerException ?? ex).ToString()}";
             }
 
             if (crawlLog.Status == CrawlStatus.Completed)
@@ -422,15 +441,13 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    AppendOutput($"Crawled website (success: {crawlLog.Success}, failed: {crawlLog.Failed}): {website.Home}", website.Home, LogEventLevel.Information);
+                    AppendOutput($"Crawled website (success: {crawlLog.Success}, fail: {crawlLog.Failed}): {website.Home}", website.Home, LogEventLevel.Information);
                 }
             }
             else if (crawlLog.Status == CrawlStatus.Failed)
             {
-                AppendOutput($"Failed to crawl article from website: {website.Home}", website.Home, LogEventLevel.Error);
+                AppendOutput($"Failed to crawl article: {crawlLog.Notes}", website.Home, LogEventLevel.Error);
             }
-
-            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLog));
         }
 
         private void Navigate()

@@ -7,7 +7,9 @@
         /// </summary>
         All = 0,
         Queued = 1,
-        Completed = 2,
-        Failed = 3
+        Crawling = 2,
+        Committing = 3,
+        Completed = 4,
+        Failed = 5
     }
 }
