@@ -437,11 +437,11 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (articles.Count == 0)
                 {
-                    AppendOutput($"Skipped website as no updates: {website.Home}", website.Home, LogEventLevel.Information);
+                    AppendOutput("Skipped website as no updates", website.Home, LogEventLevel.Information);
                 }
                 else
                 {
-                    AppendOutput($"Crawled website (success: {crawlLog.Success}, fail: {crawlLog.Fail}): {website.Home}", website.Home, LogEventLevel.Information);
+                    AppendOutput($"Crawled website, success: {crawlLog.Success}, fail: {crawlLog.Fail}", website.Home, LogEventLevel.Information);
                 }
             }
             else if (crawlLog.Status == CrawlStatus.Failed)
