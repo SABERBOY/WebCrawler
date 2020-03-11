@@ -70,6 +70,7 @@
                         <Path Data="{StaticResource StartIcon}" />
                     </Viewbox>
                 </Button>
+                <Label Content="{Binding ProcessingStatus}" VerticalAlignment="Center" FontSize="20" Foreground="Red" />
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

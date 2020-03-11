@@ -280,20 +280,27 @@ namespace WebCrawler.UI.ViewModels
                     });
                 }
 
-                int processed = 0;
                 int total = 0;
+                CrawlLogView crawlLog;
 
                 ActionBlock<Website> workerBlock = null;
                 workerBlock = new ActionBlock<Website>(async website =>
                 {
-                    await CrawlAsync(website);
+                    crawlLog = await CrawlAsync(website);
 
                     lock (this)
                     {
-                        processed++;
+                        if (crawlLog.Status == CrawlStatus.Completed)
+                        {
+                            SelectedCrawl.Success++;
+                        }
+                        else
+                        {
+                            SelectedCrawl.Fail++;
+                        }
                     }
 
-                    ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
+                    ProcessingStatus = $"Success: {SelectedCrawl.Success} Fail: {SelectedCrawl.Fail} Total: {total}";
                 }, new ExecutionDataflowBlockOptions
                 {
                     MaxDegreeOfParallelism = _crawlingSettings.MaxDegreeOfParallelism
@@ -315,25 +322,27 @@ namespace WebCrawler.UI.ViewModels
                     {
                         workerBlock.Post(website);
 
-                        ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
-
                         // accept queue items in the amount of batch size x 3
                         while (workerBlock.InputCount >= _crawlingSettings.MaxDegreeOfParallelism * 2)
                         {
                             Thread.Sleep(1000);
                         }
                     }
-                    break;
                 } while (page++ < websites.PageInfo.PageCount);
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
 
+                SelectedCrawl.Status = CrawlStatus.Completed;
+                SelectedCrawl.Completed = DateTime.Now;
+
+                await _persister.SaveAsync(SelectedCrawl);
+
                 AppendOutput("Completed crawl");
             });
         }
 
-        private async Task CrawlAsync(Website website)
+        private async Task<CrawlLogView> CrawlAsync(Website website)
         {
             CrawlLog previousLog = website.CrawlLogs?.OrderByDescending(o => o.Id).FirstOrDefault();
 
@@ -448,6 +457,8 @@ namespace WebCrawler.UI.ViewModels
             {
                 AppendOutput($"Failed to crawl website: {crawlLog.Notes}", website.Home, LogEventLevel.Error);
             }
+
+            return crawlLog;
         }
 
         private void Navigate()
