@@ -33,11 +33,12 @@
         <!-- menu bar -->
         <Grid Grid.Row="0" Grid.ColumnSpan="2">
             <StackPanel Orientation="Horizontal">
-                <ComboBox Width="150"
+                <ComboBox Width="180"
                           ItemsSource="{Binding Crawls}"
                           SelectedValue="{Binding SelectedCrawl}"
                           BorderThickness="1"
-                          VerticalAlignment="Center">
+                          VerticalAlignment="Center"
+                          IsEnabled="{Binding IsProcessing, Converter={StaticResource BinaryConverter}, ConverterParameter=!}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -54,11 +55,6 @@
                           SelectedValue="{Binding StatusFilter}"
                           BorderThickness="1"
                           VerticalAlignment="Center" />
-                <Button Command="{Binding RefreshCommand}" Style="{StaticResource LargeButton}" ToolTip="Refresh">
-                    <Viewbox>
-                        <Path Data="{StaticResource RefreshIcon}" />
-                    </Viewbox>
-                </Button>
                 <Button Command="{Binding CrawlCommand}">
                     <Button.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource LargeButton}">
@@ -128,5 +124,7 @@
             </DataGrid.Columns>
         </DataGrid>
 
+        <ctls:Spinner Grid.RowSpan="2" Grid.ColumnSpan="2" IsEnabled="{Binding IsInitializing}" />
+        
     </Grid>
 </Page>

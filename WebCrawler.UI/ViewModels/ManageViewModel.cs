@@ -496,6 +496,8 @@ namespace WebCrawler.UI.ViewModels
             {
                 ProcessingStatus = "Processing";
 
+                AppendOutput("Started analysis");
+
                 int processed = 0;
                 int total = 0;
 
@@ -599,6 +601,8 @@ namespace WebCrawler.UI.ViewModels
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
+
+                AppendOutput("Completed analysis");
 
                 // reload data
                 await LoadDataCoreAsync();

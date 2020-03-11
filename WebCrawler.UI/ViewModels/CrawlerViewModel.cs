@@ -31,6 +31,19 @@ namespace WebCrawler.UI.ViewModels
 
         #region Notify Properties
 
+        private bool _isInitializing;
+        public bool IsInitializing
+        {
+            get { return _isInitializing; }
+            set
+            {
+                if (_isInitializing == value) { return; }
+
+                _isInitializing = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private bool _isProcessing;
         public bool IsProcessing
         {
@@ -212,6 +225,8 @@ namespace WebCrawler.UI.ViewModels
 
         public void LoadData()
         {
+            IsInitializing = true;
+
             TryRunAsync(async () =>
             {
                 var crawls = await _persister.GetCrawlsAsync();
@@ -219,6 +234,8 @@ namespace WebCrawler.UI.ViewModels
                 Crawls = new ObservableCollection<Crawl>(new Crawl[] { new Crawl() }.Concat(crawls.Items));
 
                 SelectedCrawl = Crawls.First();
+
+                IsInitializing = false;
             });
         }
 
@@ -249,8 +266,10 @@ namespace WebCrawler.UI.ViewModels
             {
                 ProcessingStatus = "Processing";
 
+                AppendOutput("Started crawl");
+
                 // create new crawl
-                if (SelectedCrawl.Id == 0)
+                if (SelectedCrawl == null || SelectedCrawl.Id == 0)
                 {
                     var crawl = await _persister.SaveAsync(default(Crawl));
 
@@ -308,6 +327,8 @@ namespace WebCrawler.UI.ViewModels
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
+
+                AppendOutput("Completed crawl");
             });
         }
 
