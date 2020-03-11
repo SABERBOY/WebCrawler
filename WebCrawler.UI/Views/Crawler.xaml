@@ -55,7 +55,7 @@
                           SelectedValue="{Binding StatusFilter}"
                           BorderThickness="1"
                           VerticalAlignment="Center" />
-                <Button Command="{Binding CrawlCommand}">
+                <Button Command="{Binding CrawlCommand}" Visibility="{Binding IsProcessing, Converter={StaticResource BinaryConverter}, ConverterParameter=!}">
                     <Button.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource LargeButton}">
                             <Setter Property="ToolTip" Value="Continue Selected Crawl" />
@@ -68,6 +68,11 @@
                     </Button.Resources>
                     <Viewbox>
                         <Path Data="{StaticResource StartIcon}" />
+                    </Viewbox>
+                </Button>
+                <Button Command="{Binding StopCommand}" Style="{StaticResource LargeButton}" ToolTip="Stop Crawl" Visibility="{Binding IsProcessing, Converter={StaticResource BinaryConverter}}">
+                    <Viewbox>
+                        <Path Data="{StaticResource StopIcon}" />
                     </Viewbox>
                 </Button>
                 <Label Content="{Binding ProcessingStatus}" VerticalAlignment="Center" FontSize="20" Foreground="Red" />

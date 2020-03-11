@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using System.Windows;
 using System.Windows.Input;
 using WebCrawler.Common;
 using WebCrawler.Common.Analyzers;
@@ -179,9 +180,22 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_crawlCommand == null)
                 {
-                    _crawlCommand = new RelayCommand(() => Crawl(), () => !IsProcessing);
+                    _crawlCommand = new RelayCommand(Crawl, () => !IsProcessing);
                 }
                 return _crawlCommand;
+            }
+        }
+
+        private RelayCommand _stopCommand;
+        public ICommand StopCommand
+        {
+            get
+            {
+                if (_stopCommand == null)
+                {
+                    _stopCommand = new RelayCommand(Stop, () => IsProcessing);
+                }
+                return _stopCommand;
             }
         }
 
@@ -459,6 +473,11 @@ namespace WebCrawler.UI.ViewModels
             }
 
             return crawlLog;
+        }
+
+        private void Stop()
+        {
+            MessageBox.Show("Stop crawl hasn't been implemented yet");
         }
 
         private void Navigate()

@@ -10,6 +10,7 @@
         Crawling = 2,
         Committing = 3,
         Completed = 4,
-        Failed = 5
+        Failed = 5,
+        Cancelled = 6
     }
 }
