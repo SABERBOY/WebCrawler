@@ -218,7 +218,7 @@ namespace WebCrawler.UI.ViewModels
 
                 Crawls = new ObservableCollection<Crawl>(new Crawl[] { new Crawl() }.Concat(crawls.Items));
 
-                SelectedCrawl = Crawls.FirstOrDefault();
+                SelectedCrawl = Crawls.First();
             });
         }
 
@@ -226,7 +226,7 @@ namespace WebCrawler.UI.ViewModels
 
         private void LoadCrawlLogs(int page = 1)
         {
-            if (SelectedCrawl == null)
+            if (SelectedCrawl == null || SelectedCrawl.Id == 0)
             {
                 CrawlLogs = new ObservableCollection<CrawlLog>();
                 PageInfo = null;
