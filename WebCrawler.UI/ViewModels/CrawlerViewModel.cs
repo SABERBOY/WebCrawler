@@ -437,7 +437,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (articles.Count == 0)
                 {
-                    AppendOutput("Skipped website as no updates", website.Home, LogEventLevel.Information);
+                    AppendOutput("No updates", website.Home, LogEventLevel.Information);
                 }
                 else
                 {
@@ -446,7 +446,7 @@ namespace WebCrawler.UI.ViewModels
             }
             else if (crawlLog.Status == CrawlStatus.Failed)
             {
-                AppendOutput($"Failed to crawl article: {crawlLog.Notes}", website.Home, LogEventLevel.Error);
+                AppendOutput($"Failed to crawl website: {crawlLog.Notes}", website.Home, LogEventLevel.Error);
             }
         }
 
