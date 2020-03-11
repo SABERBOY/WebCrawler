@@ -18,7 +18,7 @@ namespace WebCrawler.UI.Controls
             nameof(PageInfo),
             typeof(PageInfo),
             typeof(Pager),
-            new PropertyMetadata(null));
+            new PropertyMetadata(OnPropertyChanged));
 
         public static DependencyProperty NavigatedCommandProperty = DependencyProperty.Register(
             nameof(NavigatedCommand),
@@ -35,6 +35,21 @@ namespace WebCrawler.UI.Controls
         {
             get { return (ICommand)GetValue(NavigatedCommandProperty); }
             set { SetValue(NavigatedCommandProperty, value); }
+        }
+
+        private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Pager pager)
+            {
+                switch (e.Property.Name)
+                {
+                    case nameof(PageInfo):
+                        pager.Visibility = pager.PageInfo == null ? Visibility.Collapsed : Visibility.Visible;
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         #endregion
