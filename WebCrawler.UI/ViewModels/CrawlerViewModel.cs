@@ -305,6 +305,7 @@ namespace WebCrawler.UI.ViewModels
                 {
                     lock (LOCK_DB)
                     {
+                        // TODO: consider to load the last crawl log only, for performance consideration
                         websites = _persister.GetWebsitesAsync(status: WebsiteStatus.Normal, enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
                     }
 
