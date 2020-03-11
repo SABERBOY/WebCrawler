@@ -200,14 +200,13 @@ namespace WebCrawler.UI.Persisters
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int websiteId)
+        public async Task DeleteAsync(params int[] websiteIds)
         {
-            var model = await _dbContext.Websites.FindAsync(websiteId);
-            if (model != null)
-            {
-                _dbContext.Websites.Remove(model);
-                await _dbContext.SaveChangesAsync();
-            }
+            var models = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
+
+            _dbContext.Websites.RemoveRange(models);
+
+            await _dbContext.SaveChangesAsync();
         }
 
         public void Dispose()

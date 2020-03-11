@@ -68,12 +68,17 @@
                         <Path Data="{StaticResource AddIcon}" />
                     </Viewbox>
                 </Button>
-                <Button Command="{Binding ToggleCommand}" Style="{StaticResource LargeButton}" ToolTip="Toggle Selected" Visibility="{Binding ToggleAsEnable, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                <Button Command="{Binding ToggleSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Toggle Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
                     <Viewbox>
                         <Grid>
                             <Path Data="{StaticResource EnableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}}" />
                             <Path Data="{StaticResource DisableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
                         </Grid>
+                    </Viewbox>
+                </Button>
+                <Button Command="{Binding DeleteSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Delete Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                    <Viewbox>
+                        <Path Data="{StaticResource DeleteIcon}" />
                     </Viewbox>
                 </Button>
             </StackPanel>
@@ -222,10 +227,10 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="DELETE" Command="{Binding DeleteCommand}" Height="30" />
-                        <Button Grid.Column="1" Content="RESET" Command="{Binding ResetCommand}" Height="30" />
-                        <Button Grid.Column="2" Content="SAVE" Command="{Binding SaveCommand}" Height="30" />
-                        <Button Grid.Column="3" Content="TEST" Command="{Binding TestCommand}" Height="30" />
+                        <Button Grid.Column="0" Content="DELETE" Command="{Binding DeleteCurrentCommand}" Height="30" />
+                        <Button Grid.Column="1" Content="RESET" Command="{Binding ResetCurrentCommand}" Height="30" />
+                        <Button Grid.Column="2" Content="SAVE" Command="{Binding SaveCurrentCommand}" Height="30" />
+                        <Button Grid.Column="3" Content="TEST" Command="{Binding TestCurrentCommand}" Height="30" />
                     </Grid>
 
                 </Grid>

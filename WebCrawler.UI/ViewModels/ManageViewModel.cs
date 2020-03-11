@@ -310,16 +310,29 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private RelayCommand _toggleCommand;
-        public ICommand ToggleCommand
+        private RelayCommand _toggleSelectedCommand;
+        public ICommand ToggleSelectedCommand
         {
             get
             {
-                if (_toggleCommand == null)
+                if (_toggleSelectedCommand == null)
                 {
-                    _toggleCommand = new RelayCommand(Toggle, () => ToggleAsEnable != null && !IsProcessing);
+                    _toggleSelectedCommand = new RelayCommand(ToggleSelected, () => SelectedWebsite != null && !IsProcessing);
                 }
-                return _toggleCommand;
+                return _toggleSelectedCommand;
+            }
+        }
+
+        private RelayCommand _deleteSelectedCommand;
+        public ICommand DeleteSelectedCommand
+        {
+            get
+            {
+                if (_deleteSelectedCommand == null)
+                {
+                    _deleteSelectedCommand = new RelayCommand(DeleteSelected, () => SelectedWebsite != null && !IsProcessing);
+                }
+                return _deleteSelectedCommand;
             }
         }
 
@@ -336,55 +349,55 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private RelayCommand _saveCommand;
-        public ICommand SaveCommand
+        private RelayCommand _saveCurrentCommand;
+        public ICommand SaveCurrentCommand
         {
             get
             {
-                if (_saveCommand == null)
+                if (_saveCurrentCommand == null)
                 {
-                    _saveCommand = new RelayCommand(Save, () => !IsProcessing);
+                    _saveCurrentCommand = new RelayCommand(Save, () => !IsProcessing);
                 }
-                return _saveCommand;
+                return _saveCurrentCommand;
             }
         }
 
-        private RelayCommand _testCommand;
-        public ICommand TestCommand
+        private RelayCommand _testCurrentCommand;
+        public ICommand TestCurrentCommand
         {
             get
             {
-                if (_testCommand == null)
+                if (_testCurrentCommand == null)
                 {
-                    _testCommand = new RelayCommand(RunTest, () => !IsProcessing);
+                    _testCurrentCommand = new RelayCommand(RunTest, () => !IsProcessing);
                 }
-                return _testCommand;
+                return _testCurrentCommand;
             }
         }
 
-        private RelayCommand _resetCommand;
-        public ICommand ResetCommand
+        private RelayCommand _resetCurrentCommand;
+        public ICommand ResetCurrentCommand
         {
             get
             {
-                if (_resetCommand == null)
+                if (_resetCurrentCommand == null)
                 {
-                    _resetCommand = new RelayCommand(Reset, () => !IsProcessing);
+                    _resetCurrentCommand = new RelayCommand(Reset, () => !IsProcessing);
                 }
-                return _resetCommand;
+                return _resetCurrentCommand;
             }
         }
 
-        private RelayCommand _deleteCommand;
-        public ICommand DeleteCommand
+        private RelayCommand _deleteCurrentCommand;
+        public ICommand DeleteCurrentCommand
         {
             get
             {
-                if (_deleteCommand == null)
+                if (_deleteCurrentCommand == null)
                 {
-                    _deleteCommand = new RelayCommand(Delete, () => SelectedWebsite != null && !IsProcessing);
+                    _deleteCurrentCommand = new RelayCommand(Delete, () => SelectedWebsite != null && !IsProcessing);
                 }
-                return _deleteCommand;
+                return _deleteCurrentCommand;
             }
         }
 
@@ -402,7 +415,7 @@ namespace WebCrawler.UI.ViewModels
 
         public bool Sort(params SortDescription[] sorts)
         {
-            return TryRunAsync(async() =>
+            return TryRunAsync(async () =>
             {
                 await LoadDataCoreAsync(sorts);
             });
@@ -592,7 +605,7 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        private void Toggle()
+        private void ToggleSelected()
         {
             TryRunAsync(async () =>
             {
@@ -602,6 +615,24 @@ namespace WebCrawler.UI.ViewModels
                 _websiteSelections.ForEach(o => o.Enabled = ToggleAsEnable.Value);
 
                 RefreshToggleState();
+            });
+        }
+
+        private void DeleteSelected()
+        {
+            if (MessageBox.Show($"Are you sure to delete {_websiteSelections.Length} selected websites?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            TryRunAsync(async () =>
+            {
+                await _persister.DeleteAsync(_websiteSelections.Select(o => o.Id).ToArray());
+
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    _websiteSelections.ForEach(o => Websites.Remove(o));
+                });
             });
         }
 

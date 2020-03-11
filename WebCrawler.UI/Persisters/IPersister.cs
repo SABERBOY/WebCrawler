@@ -16,6 +16,6 @@ namespace WebCrawler.UI.Persisters
         Task<Crawl> SaveAsync(Crawl crawl = null);
         Task UpdateStatusAsync(int websiteId, WebsiteStatus status, string notes = null);
         Task ToggleAsync(bool enabled, params int[] websiteIds);
-        Task DeleteAsync(int websiteId);
+        Task DeleteAsync(params int[] websiteIds);
     }
 }
