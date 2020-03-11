@@ -607,6 +607,11 @@ namespace WebCrawler.UI.ViewModels
 
         private void ToggleSelected()
         {
+            if (MessageBox.Show($"Are you sure to {(ToggleAsEnable.Value ? "enable" : "disable")} {_websiteSelections.Length} selected websites?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
             TryRunAsync(async () =>
             {
                 await _persister.ToggleAsync(ToggleAsEnable.Value, _websiteSelections.Select(o => o.Id).ToArray());
