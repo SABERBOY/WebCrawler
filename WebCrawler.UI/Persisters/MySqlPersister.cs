@@ -86,7 +86,7 @@ namespace WebCrawler.UI.Persisters
                     && (status == CrawlStatus.All || o.Status == status)
                 )
                 .OrderByDescending(o => o.Id)
-                .ToPagedResultAsync(1);
+                .ToPagedResultAsync(page);
         }
 
         public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLog)
