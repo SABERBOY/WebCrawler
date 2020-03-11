@@ -30,8 +30,6 @@ namespace WebCrawler.UI.ViewModels
         private CrawlingSettings _crawlingSettings;
         private Manage _managePage;
 
-        private List<CrawlLogView> _crawlLogsCache;
-
         #region Notify Properties
 
         private bool _isInitializing;
@@ -264,17 +262,6 @@ namespace WebCrawler.UI.ViewModels
                 CrawlLogs = new ObservableCollection<CrawlLogView>();
                 PageInfo = null;
             }
-            else if (IsProcessing)
-            {
-                // load and do filtering from local cache
-                var logs = _crawlLogsCache
-                    .Where(o => (string.IsNullOrEmpty(KeywordsFilter) || o.WebsiteName.Contains(KeywordsFilter) || o.WebsiteHome.Contains(KeywordsFilter))
-                        && (StatusFilter == CrawlStatus.All || o.Status == StatusFilter)
-                    );
-
-                CrawlLogs = new ObservableCollection<CrawlLogView>(logs);
-                PageInfo = null;
-            }
             else
             {
                 TryRunAsync(async () =>
@@ -295,8 +282,6 @@ namespace WebCrawler.UI.ViewModels
 
                 AppendOutput("Started crawl");
 
-                PageInfo = null;
-
                 // create new crawl
                 if (SelectedCrawl == null || SelectedCrawl.Id == 0)
                 {
@@ -308,9 +293,6 @@ namespace WebCrawler.UI.ViewModels
                         SelectedCrawl = crawl;
                     });
                 }
-
-                // copy existing items to the cache list
-                _crawlLogsCache = CrawlLogs.ToList();
 
                 int total = 0;
                 CrawlLogView crawlLog;
@@ -389,11 +371,7 @@ namespace WebCrawler.UI.ViewModels
             };
             List<Article> articles = new List<Article>();
 
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                CrawlLogs.Insert(0, crawlLog);
-                _crawlLogsCache.Insert(0, crawlLog);
-            });
+            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLog));
 
             CatalogItem[] catalogItems = null;
             try

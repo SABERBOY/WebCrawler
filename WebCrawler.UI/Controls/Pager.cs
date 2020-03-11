@@ -82,8 +82,6 @@ namespace WebCrawler.UI.Controls
             previous.Click += Previous_Click;
             next.Click += Next_Click;
             last.Click += Last_Click;
-
-            Visibility = PageInfo == null ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void First_Click(object sender, RoutedEventArgs e)
