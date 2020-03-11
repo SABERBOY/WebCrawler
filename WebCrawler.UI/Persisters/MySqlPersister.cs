@@ -113,7 +113,7 @@ namespace WebCrawler.UI.Persisters
                 CrawlId = crawlLog.CrawlId,
                 WebsiteId = crawlLog.WebsiteId,
                 Success = crawlLog.Success,
-                Failed = crawlLog.Failed,
+                Fail = crawlLog.Fail,
                 Status = crawlLog.Status == CrawlStatus.Failed ? crawlLog.Status : CrawlStatus.Completed,
                 Notes = crawlLog.Notes,
                 LastHandled = crawlLog.LastHandled,

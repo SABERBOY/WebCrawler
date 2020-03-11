@@ -14,7 +14,7 @@ namespace WebCrawler.UI.Models
         public int CrawlId { get; set; }
         public string LastHandled { get; set; }
         public int Success { get; set; }
-        public int Failed { get; set; }
+        public int Fail { get; set; }
         public string Notes { get; set; }
         [Column(TypeName = "ENUM")]
         public CrawlStatus Status { get; set; }

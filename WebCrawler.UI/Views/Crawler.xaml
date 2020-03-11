@@ -97,7 +97,7 @@
                     <DataGridTextColumn Header="Name" Binding="{Binding WebsiteName}" />
                     <DataGridTextColumn Header="Home" Binding="{Binding WebsiteHome}" Width="300" />
                     <DataGridTextColumn Header="Success" Binding="{Binding Success}" />
-                    <DataGridTextColumn Header="Failed" Binding="{Binding Failed}" />
+                    <DataGridTextColumn Header="Fail" Binding="{Binding Fail}" />
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
                     <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="400" />
                     <DataGridTextColumn Header="Last Handled" Binding="{Binding LastHandled}" Width="300" />

@@ -409,11 +409,11 @@ namespace WebCrawler.UI.ViewModels
                     {
                         AppendOutput(ex.Message, item.Url, LogEventLevel.Error);
 
-                        crawlLog.Failed++;
+                        crawlLog.Fail++;
                     }
                 }
 
-                if (crawlLog.Success == 0 && crawlLog.Failed > 0)
+                if (crawlLog.Success == 0 && crawlLog.Fail > 0)
                 {
                     crawlLog.Status = CrawlStatus.Failed;
                     crawlLog.Notes = "Failed as nothing succeeded";
@@ -441,7 +441,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    AppendOutput($"Crawled website (success: {crawlLog.Success}, fail: {crawlLog.Failed}): {website.Home}", website.Home, LogEventLevel.Information);
+                    AppendOutput($"Crawled website (success: {crawlLog.Success}, fail: {crawlLog.Fail}): {website.Home}", website.Home, LogEventLevel.Information);
                 }
             }
             else if (crawlLog.Status == CrawlStatus.Failed)

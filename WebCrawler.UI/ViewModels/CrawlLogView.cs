@@ -103,7 +103,7 @@ namespace WebCrawler.UI.ViewModels
         }
 
         private int _failed;
-        public int Failed
+        public int Fail
         {
             get
             {
@@ -231,7 +231,7 @@ namespace WebCrawler.UI.ViewModels
             WebsiteHome = model.Website.Home;
             LastHandled = model.LastHandled;
             Success = model.Success;
-            Failed = model.Failed;
+            Fail = model.Fail;
             Status = model.Status;
             Notes = model.Notes;
             CrawlId = model.CrawlId;
