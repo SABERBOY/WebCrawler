@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WebCrawler.Common;
 using WebCrawler.UI.Common;
@@ -101,10 +102,24 @@ namespace WebCrawler.UI.Persisters
 
                     _dbContext.Articles.Add(article);
 
-                    // TODO: consider to create separated commits based on the content length
-                    // commit article one by one as some articles might be really large, e.g. the following which involves BASE64 image data
-                    // http://d.drcnet.com.cn/eDRCnet.common.web/DocDetail.aspx?chnid=1012&leafid=5&docid=5738629&uid=030201&version=integrated
-                    await _dbContext.SaveChangesAsync();
+                    try
+                    {
+                        // TODO: consider to create separated commits based on the content length
+                        // commit article one by one as some articles might be really large, e.g. the following which involves BASE64 image data
+                        // http://d.drcnet.com.cn/eDRCnet.common.web/DocDetail.aspx?chnid=1012&leafid=5&docid=5738629&uid=030201&version=integrated
+                        await _dbContext.SaveChangesAsync();
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        if (Regex.IsMatch((ex.InnerException ?? ex).Message, "Duplicate entry '.+' for key 'url_UNIQUE'"))
+                        {
+                            // skip silently as article already exists
+                            _dbContext.Entry(article).State = EntityState.Detached;
+                            continue;
+                        }
+
+                        throw;
+                    }
                 }
             }
 
