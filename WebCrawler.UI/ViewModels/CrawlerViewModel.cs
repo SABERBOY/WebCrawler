@@ -422,7 +422,11 @@ namespace WebCrawler.UI.ViewModels
 
         private async Task<CrawlLogView> CrawlAsync(Website website)
         {
-            CrawlLog previousLog = website.CrawlLogs?.OrderByDescending(o => o.Id).FirstOrDefault();
+            // start from last success crawl
+            CrawlLog previousLog = website.CrawlLogs
+                ?.Where(o => o.Status == CrawlStatus.Completed)
+                .OrderByDescending(o => o.Id)
+                .FirstOrDefault();
 
             CrawlLogView crawlLog = new CrawlLogView
             {
