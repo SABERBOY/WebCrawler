@@ -124,7 +124,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp, StringFormat=HH:mm:ss.fff}" />
                 <DataGridTextColumn Header="Level" Binding="{Binding Level}" />
-                <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="300" />
+                <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="360" />
                 <DataGridTextColumn Header="URL" Binding="{Binding URL}" />
             </DataGrid.Columns>
         </DataGrid>
