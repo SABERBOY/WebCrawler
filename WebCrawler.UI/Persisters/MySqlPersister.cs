@@ -75,12 +75,12 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int crawlId, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1)
+        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1)
         {
             return await _dbContext.CrawlLogs
                 .AsNoTracking()
                 .Include(o => o.Website)
-                .Where(o => o.CrawlId == crawlId
+                .Where(o => (crawlId == null || o.CrawlId == crawlId)
                     && (websiteId == null || o.WebsiteId == websiteId)
                     && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
                     && (status == CrawlStatus.All || o.Status == status)

@@ -478,7 +478,7 @@ namespace WebCrawler.UI.ViewModels
 
                 TryRunAsync(async () =>
                 {
-                    var logs = await _persister.GetCrawlLogsAsync(SelectedWebsite.Id);
+                    var logs = await _persister.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
 
                     CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
                 });
