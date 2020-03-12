@@ -339,7 +339,6 @@ namespace WebCrawler.UI.ViewModels
             {
                 CrawlingStatus = "Processing";
 
-                AppendOutput("Started crawl");
                 // create new crawl
                 if (SelectedCrawl == null || SelectedCrawl.Id == 0)
                 {
@@ -351,6 +350,8 @@ namespace WebCrawler.UI.ViewModels
                         SelectedCrawl = crawl;
                     });
                 }
+
+                AppendOutput("Started crawl");
 
                 int total = 0;
                 CrawlLogView crawlLog;
