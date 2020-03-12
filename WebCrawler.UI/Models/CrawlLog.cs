@@ -18,7 +18,7 @@ namespace WebCrawler.UI.Models
         public string Notes { get; set; }
         [Column(TypeName = "ENUM")]
         public CrawlStatus Status { get; set; }
-        public DateTime Crawled { get; set; }
+        public DateTime? Crawled { get; set; }
 
 
         [ForeignKey("WebsiteId")]

@@ -334,8 +334,6 @@ namespace WebCrawler.UI.ViewModels
 
         private void Crawl()
         {
-            IsCrawling = true;
-
             TryRunAsync(async () =>
             {
                 CrawlingStatus = "Processing";
@@ -343,28 +341,29 @@ namespace WebCrawler.UI.ViewModels
                 // create new crawl
                 if (SelectedCrawl == null || SelectedCrawl.Id == 0)
                 {
-                    var crawl = await _persister.SaveAsync(default(Crawl));
+                    var crawl = await _persister.QueueCrawlAsync();
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        Crawls.Insert(0, crawl);
+                        Crawls.Insert(1, crawl);
                         SelectedCrawl = crawl;
                     });
                 }
 
+                IsCrawling = true;
+
                 AppendOutput("Started crawl");
 
                 int total = 0;
-                CrawlLogView crawlLog;
+                CrawlLogView crawlLogView;
 
-                ActionBlock<Website> workerBlock = null;
-                workerBlock = new ActionBlock<Website>(async website =>
+                ActionBlock<CrawlLog> workerBlock = new ActionBlock<CrawlLog>(async crawlLog =>
                 {
-                    crawlLog = await CrawlAsync(website);
+                    crawlLogView = await CrawlAsync(crawlLog);
 
                     lock (this)
                     {
-                        if (crawlLog.Status == CrawlStatus.Completed)
+                        if (crawlLogView.Status == CrawlStatus.Completed)
                         {
                             SelectedCrawl.Success++;
                         }
@@ -380,16 +379,19 @@ namespace WebCrawler.UI.ViewModels
                     MaxDegreeOfParallelism = _crawlingSettings.MaxDegreeOfParallelism
                 });
 
-                int page = 1;
-                PagedResult<Website> websites;
+                PagedResult<CrawlLog> crawlLogsQueue = null;
                 do
                 {
-                    // TODO: consider to load the last crawl log only, for performance consideration
-                    websites = _persister.GetWebsitesAsync(enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
+                    crawlLogsQueue = _persister.GetCrawlingQueueAsync(SelectedCrawl.Id, crawlLogsQueue?.Items.Last().Id).Result;
 
-                    total = websites.PageInfo.ItemCount;
+                    if (total == 0)
+                    {
+                        total = crawlLogsQueue.PageInfo.ItemCount;
 
-                    foreach (var website in websites.Items)
+                        CrawlingStatus = $"Success: {SelectedCrawl.Success} Fail: {SelectedCrawl.Fail} Total: {total}";
+                    }
+
+                    foreach (var website in crawlLogsQueue.Items)
                     {
                         workerBlock.Post(website);
 
@@ -399,7 +401,7 @@ namespace WebCrawler.UI.ViewModels
                             Thread.Sleep(1000);
                         }
                     }
-                } while (page++ < websites.PageInfo.PageCount);
+                } while (crawlLogsQueue.PageInfo.PageCount > 1);
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
@@ -418,36 +420,27 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        private async Task<CrawlLogView> CrawlAsync(Website website)
+        private async Task<CrawlLogView> CrawlAsync(CrawlLog crawlLog)
         {
-            // start from last success crawl
-            CrawlLog previousLog = website.CrawlLogs
-                ?.Where(o => o.Status == CrawlStatus.Completed)
-                .OrderByDescending(o => o.Id)
-                .FirstOrDefault();
-
-            CrawlLogView crawlLog = new CrawlLogView
+            var crawlLogView = new CrawlLogView(crawlLog)
             {
-                CrawlId = SelectedCrawl.Id,
-                WebsiteId = website.Id,
-                WebsiteName = website.Name,
-                WebsiteHome = website.Home,
                 Status = CrawlStatus.Crawling,
                 Crawled = DateTime.Now
             };
-            List<Article> articles = new List<Article>();
 
-            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLog));
+            var articles = new List<Article>();
+
+            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLogView));
 
             CatalogItem[] catalogItems = null;
             try
             {
-                var data = await _httpClient.GetHtmlAsync(website.Home);
+                var data = await _httpClient.GetHtmlAsync(crawlLog.Website.Home);
 
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(data);
 
-                catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, website.ListPath);
+                catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, crawlLog.Website.ListPath);
                 if (catalogItems.Length == 0)
                 {
                     throw new Exception("Failed to locate catalog items");
@@ -458,20 +451,20 @@ namespace WebCrawler.UI.ViewModels
                     .OrderByDescending(o => o.Published)
                     .ToArray();
 
-                crawlLog.LastHandled = catalogItems[0].Url;
+                // update last handled url
+                crawlLogView.LastHandled = catalogItems[0].Url;
             }
             catch (Exception ex)
             {
-                crawlLog.Status = CrawlStatus.Failed;
-                crawlLog.Notes = ex.Message;
-                crawlLog.LastHandled = previousLog?.LastHandled;
+                crawlLogView.Status = CrawlStatus.Failed;
+                crawlLogView.Notes = ex.Message;
             }
 
-            if (crawlLog.Status == CrawlStatus.Crawling)
+            if (crawlLogView.Status == CrawlStatus.Crawling)
             {
                 foreach (var item in catalogItems)
                 {
-                    if (item.Url.Equals(previousLog?.LastHandled, StringComparison.CurrentCultureIgnoreCase))
+                    if (item.Url.Equals(crawlLog.LastHandled, StringComparison.CurrentCultureIgnoreCase))
                     {
                         break;
                     }
@@ -488,24 +481,24 @@ namespace WebCrawler.UI.ViewModels
                             Published = info.PublishDate ?? item.Published, // use date from article details page first
                             Content = info.Content,
                             ContentHtml = info.ContentWithTags,
-                            WebsiteId = website.Id,
+                            WebsiteId = crawlLog.WebsiteId,
                             Timestamp = DateTime.Now
                         });
                         
-                        crawlLog.Success++;
+                        crawlLogView.Success++;
                     }
                     catch (Exception ex)
                     {
                         AppendOutput(ex.Message, item.Url, LogEventLevel.Error);
 
-                        crawlLog.Fail++;
+                        crawlLogView.Fail++;
                     }
                 }
 
-                if (crawlLog.Success == 0 && crawlLog.Fail > 0)
+                if (crawlLogView.Success == 0 && crawlLogView.Fail > 0)
                 {
-                    crawlLog.Status = CrawlStatus.Failed;
-                    crawlLog.Notes = "Failed as nothing succeeded";
+                    crawlLogView.Status = CrawlStatus.Failed;
+                    crawlLogView.Notes = "Failed as nothing succeeded";
                 }
             }
 
@@ -513,37 +506,41 @@ namespace WebCrawler.UI.ViewModels
             {
                 using (var persister = _serviceProvider.GetRequiredService<IPersister>())
                 {
-                    await persister.SaveAsync(articles, crawlLog);
+                    await persister.SaveAsync(articles, crawlLogView);
                 }
             }
             catch (Exception ex)
             {
-                crawlLog.Status = CrawlStatus.Failed;
-                crawlLog.Notes = $"Failed to save data: {(ex.InnerException ?? ex).ToString()}";
+                crawlLogView.Status = CrawlStatus.Failed;
+                crawlLogView.Notes = $"Failed to save data: {(ex.InnerException ?? ex).ToString()}";
             }
 
-            if (crawlLog.Status == CrawlStatus.Completed)
+            if (crawlLogView.Status == CrawlStatus.Completed)
             {
                 if (articles.Count == 0)
                 {
-                    AppendOutput("No updates", website.Home, LogEventLevel.Information);
+                    AppendOutput("No updates", crawlLogView.WebsiteHome, LogEventLevel.Information);
                 }
                 else
                 {
-                    AppendOutput($"Crawled website, success: {crawlLog.Success}, fail: {crawlLog.Fail}", website.Home, LogEventLevel.Information);
+                    AppendOutput($"Crawled website, success: {crawlLogView.Success}, fail: {crawlLogView.Fail}", crawlLogView.WebsiteHome, LogEventLevel.Information);
                 }
             }
-            else if (crawlLog.Status == CrawlStatus.Failed)
+            else if (crawlLogView.Status == CrawlStatus.Failed)
             {
-                AppendOutput($"Failed to crawl website: {crawlLog.Notes}", website.Home, LogEventLevel.Error);
+                AppendOutput($"Failed to crawl website: {crawlLogView.Notes}", crawlLogView.WebsiteHome, LogEventLevel.Error);
             }
 
-            return crawlLog;
+            return crawlLogView;
         }
 
         private void OnCrawlingStarted()
         {
-            PageInfo = null;
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                CrawlLogs.Clear();
+                PageInfo = null;
+            });
 
             RegisterLiveFiltering();
         }

@@ -85,15 +85,40 @@ namespace WebCrawler.UI.Persisters
                     && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
                     && (status == CrawlStatus.All || o.Status == status)
                 )
-                .OrderByDescending(o => o.Id)
+                .OrderByDescending(o => o.Crawled)
+                .ThenByDescending(o => o.Id)
                 .ToPagedResultAsync(page);
         }
 
-        public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLog)
+        public async Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(int? lastId = null)
         {
-            if (crawlLog.Status != CrawlStatus.Failed)
+            return await _dbContext.Websites
+                .AsNoTracking()
+                .Where(o => o.Enabled
+                    && (lastId == null || o.Id < lastId)
+                )
+                .OrderByDescending(o => o.Id)
+                .ToPagedResultAsync(1);
+        }
+
+        public async Task<PagedResult<CrawlLog>> GetCrawlingQueueAsync(int crawlId, int? lastId = null)
+        {
+            return await _dbContext.CrawlLogs
+                .AsNoTracking()
+                .Include(o => o.Website)
+                .Where(o => o.CrawlId == crawlId
+                    && o.Status != CrawlStatus.Completed
+                    && (lastId == null || o.Id < lastId)
+                )
+                .OrderByDescending(o => o.Id)
+                .ToPagedResultAsync(1);
+        }
+
+        public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLogView)
+        {
+            if (crawlLogView.Status != CrawlStatus.Failed)
             {
-                crawlLog.Status = CrawlStatus.Committing;
+                crawlLogView.Status = CrawlStatus.Committing;
 
                 foreach (var article in articles)
                 {
@@ -123,23 +148,18 @@ namespace WebCrawler.UI.Persisters
                 }
             }
 
-            var log = new CrawlLog
-            {
-                CrawlId = crawlLog.CrawlId,
-                WebsiteId = crawlLog.WebsiteId,
-                Success = crawlLog.Success,
-                Fail = crawlLog.Fail,
-                Status = crawlLog.Status == CrawlStatus.Failed ? crawlLog.Status : CrawlStatus.Completed,
-                Notes = crawlLog.Notes,
-                LastHandled = crawlLog.LastHandled,
-                Crawled = crawlLog.Crawled
-            };
-            _dbContext.CrawlLogs.Add(log);
+            var crawlLogModel = await _dbContext.CrawlLogs.FindAsync(crawlLogView.Id);
+
+            crawlLogModel.Success = crawlLogView.Success;
+            crawlLogModel.Fail = crawlLogView.Fail;
+            crawlLogModel.Status = crawlLogView.Status == CrawlStatus.Failed ? CrawlStatus.Failed : CrawlStatus.Completed;
+            crawlLogModel.Notes = crawlLogView.Notes;
+            crawlLogModel.LastHandled = crawlLogView.LastHandled;
+            crawlLogModel.Crawled = crawlLogView.Crawled;
 
             await _dbContext.SaveChangesAsync();
 
-            crawlLog.Id = log.Id;
-            crawlLog.Status = log.Status;
+            crawlLogView.Status = crawlLogModel.Status;
         }
 
         public async Task SaveAsync(WebsiteView editor)
@@ -253,6 +273,48 @@ namespace WebCrawler.UI.Persisters
             _dbContext.Websites.RemoveRange(models);
 
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<Crawl> QueueCrawlAsync()
+        {
+            var crawl = new Crawl
+            {
+                Status = CrawlStatus.Queued,
+                Started = DateTime.Now,
+            };
+
+            _dbContext.Crawls.Add(crawl);
+            await _dbContext.SaveChangesAsync();
+
+            var sql = @"INSERT INTO atc_crawllogs (websiteid, crawlid, status, lasthandled)
+	            SELECT WS.id, {0}, 'QUEUED', (
+			        SELECT CL.lasthandled FROM atc_crawllogs AS CL WHERE CL.websiteid = WS.id ORDER BY id DESC LIMIT 1
+		        )
+                FROM atc_websites AS WS
+		        WHERE enabled = 1";
+
+            await ExecuteSqlAsync(sql, crawl.Id);
+
+            return crawl;
+        }
+
+        private async Task ExecuteSqlAsync(string sql, params object[] parameters)
+        {
+            using (var tran = await _dbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters);
+
+                    await tran.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await tran.RollbackAsync();
+
+                    throw;
+                }
+            }
         }
 
         public void Dispose()

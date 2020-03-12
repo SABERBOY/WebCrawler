@@ -159,8 +159,8 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private DateTime _crawled;
-        public DateTime Crawled
+        private DateTime? _crawled;
+        public DateTime? Crawled
         {
             get
             {

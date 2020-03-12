@@ -567,15 +567,19 @@ namespace WebCrawler.UI.ViewModels
                     MaxDegreeOfParallelism = _crawlingSettings.MaxDegreeOfParallelism
                 });
 
-                int page = 1;
-                PagedResult<Website> websites;
+                PagedResult<Website> websitesQueue = null;
                 do
                 {
-                    websites = _persister.GetWebsitesAsync(enabled: true, page: page, sortBy: nameof(Website.Id)).Result;
+                    websitesQueue = _persister.GetWebsiteAnalysisQueueAsync(websitesQueue?.Items.Last().Id).Result;
 
-                    total = websites.PageInfo.ItemCount;
+                    if (total == 0)
+                    {
+                        total = websitesQueue.PageInfo.ItemCount;
 
-                    foreach (var website in websites.Items)
+                        ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
+                    }
+
+                    foreach (var website in websitesQueue.Items)
                     {
                         workerBlock.Post(website);
 
@@ -587,7 +591,7 @@ namespace WebCrawler.UI.ViewModels
                             Thread.Sleep(1000);
                         }
                     }
-                } while (page++ < websites.PageInfo.PageCount);
+                } while (websitesQueue.PageInfo.PageCount > 1);
 
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
