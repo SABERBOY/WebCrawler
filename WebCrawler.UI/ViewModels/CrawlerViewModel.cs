@@ -4,12 +4,14 @@ using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using WebCrawler.Common;
 using WebCrawler.Common.Analyzers;
@@ -30,20 +32,16 @@ namespace WebCrawler.UI.ViewModels
         private CrawlingSettings _crawlingSettings;
         private Manage _managePage;
 
-        #region Notify Properties
-
-        private bool _isInitializing;
-        public bool IsInitializing
+        private CollectionViewSource _crawlLogsSource;
+        public ICollectionView CrawlLogsView
         {
-            get { return _isInitializing; }
-            set
+            get
             {
-                if (_isInitializing == value) { return; }
-
-                _isInitializing = value;
-                RaisePropertyChanged();
+                return _crawlLogsSource.View;
             }
         }
+
+        #region Notify Properties
 
         private bool _isProcessing;
         public bool IsProcessing
@@ -58,15 +56,50 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private string _processingStatus;
-        public string ProcessingStatus
+        private bool _isInitializing;
+        public bool IsInitializing
         {
-            get { return _processingStatus; }
+            get { return _isInitializing; }
             set
             {
-                if (_processingStatus == value) { return; }
+                if (_isInitializing == value) { return; }
 
-                _processingStatus = value;
+                _isInitializing = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private bool _isCrawling;
+        public bool IsCrawling
+        {
+            get { return _isCrawling; }
+            set
+            {
+                if (_isCrawling == value) { return; }
+
+                _isCrawling = value;
+                RaisePropertyChanged();
+
+                if (_isCrawling)
+                {
+                    OnCrawlingStarted();
+                }
+                else
+                {
+                    OnCrawlingCompleted();
+                }
+            }
+        }
+
+        private string _crawlingStatus;
+        public string CrawlingStatus
+        {
+            get { return _crawlingStatus; }
+            set
+            {
+                if (_crawlingStatus == value) { return; }
+
+                _crawlingStatus = value;
                 RaisePropertyChanged();
             }
         }
@@ -180,7 +213,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_crawlCommand == null)
                 {
-                    _crawlCommand = new RelayCommand(Crawl, () => !IsProcessing);
+                    _crawlCommand = new RelayCommand(Crawl, () => !IsProcessing && !IsCrawling);
                 }
                 return _crawlCommand;
             }
@@ -193,7 +226,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_stopCommand == null)
                 {
-                    _stopCommand = new RelayCommand(Stop, () => IsProcessing);
+                    _stopCommand = new RelayCommand(Stop, () => IsCrawling);
                 }
                 return _stopCommand;
             }
@@ -234,7 +267,10 @@ namespace WebCrawler.UI.ViewModels
             _crawlingSettings = crawlingSettings;
             _managePage = managePage;
 
+            CrawlLogs = new ObservableCollection<CrawlLogView>();
             Outputs = new ObservableCollection<Output>();
+
+            _crawlLogsSource = new CollectionViewSource { Source = CrawlLogs };
         }
 
         public void LoadData()
@@ -259,29 +295,46 @@ namespace WebCrawler.UI.ViewModels
         {
             if (SelectedCrawl == null || SelectedCrawl.Id == 0)
             {
-                CrawlLogs = new ObservableCollection<CrawlLogView>();
-                PageInfo = null;
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    CrawlLogs.Clear();
+                    PageInfo = null;
+                });
+            }
+            else if (IsCrawling)
+            {
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    // WORKAROUND: Live fitering wouldn't affect the exiting records, until a change happen, e.g. notify property is updated,
+                    // so let's refresh the view manually
+                    CrawlLogsView.Refresh();
+                });
             }
             else
             {
                 TryRunAsync(async () =>
                 {
-                    var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
-
-                    CrawlLogs = new ObservableCollection<CrawlLogView>(logs.Items.Select(o => new CrawlLogView(o)));
-                    PageInfo = logs.PageInfo;
+                    await LoadCrawlLogsCoreAsync(page);
                 });
             }
+        }
+
+        private async Task LoadCrawlLogsCoreAsync(int page = 1)
+        {
+            var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
+
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                CrawlLogs.Clear();
+                logs.Items.Select(o => new CrawlLogView(o)).ForEach(o => CrawlLogs.Add(o));
+                PageInfo = logs.PageInfo;
+            });
         }
 
         private void Crawl()
         {
             TryRunAsync(async () =>
             {
-                ProcessingStatus = "Processing";
-
-                AppendOutput("Started crawl");
-
                 // create new crawl
                 if (SelectedCrawl == null || SelectedCrawl.Id == 0)
                 {
@@ -293,6 +346,12 @@ namespace WebCrawler.UI.ViewModels
                         SelectedCrawl = crawl;
                     });
                 }
+
+                IsCrawling = true;
+
+                CrawlingStatus = "Processing";
+
+                AppendOutput("Started crawl");
 
                 int total = 0;
                 CrawlLogView crawlLog;
@@ -314,7 +373,7 @@ namespace WebCrawler.UI.ViewModels
                         }
                     }
 
-                    ProcessingStatus = $"Success: {SelectedCrawl.Success} Fail: {SelectedCrawl.Fail} Total: {total}";
+                    CrawlingStatus = $"Success: {SelectedCrawl.Success} Fail: {SelectedCrawl.Fail} Total: {total}";
                 }, new ExecutionDataflowBlockOptions
                 {
                     MaxDegreeOfParallelism = _crawlingSettings.MaxDegreeOfParallelism
@@ -353,6 +412,11 @@ namespace WebCrawler.UI.ViewModels
                 await _persister.SaveAsync(SelectedCrawl);
 
                 AppendOutput("Completed crawl");
+
+                IsCrawling = false;
+
+                // reload data
+                await LoadCrawlLogsCoreAsync();
             });
         }
 
@@ -475,6 +539,18 @@ namespace WebCrawler.UI.ViewModels
             return crawlLog;
         }
 
+        private void OnCrawlingStarted()
+        {
+            PageInfo = null;
+
+            RegisterLiveFiltering();
+        }
+
+        private void OnCrawlingCompleted()
+        {
+            UnregisterLiveFiltering();
+        }
+
         private void Stop()
         {
             MessageBox.Show("Stop crawl hasn't been implemented yet");
@@ -545,6 +621,49 @@ namespace WebCrawler.UI.ViewModels
                         Outputs.RemoveAt(_outputs.Count - 1);
                     }
                 });
+            }
+        }
+
+        #endregion
+
+
+        #region Live Filtering
+
+        private void RegisterLiveFiltering()
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                _crawlLogsSource.Filter += CrawlLogsFilter;
+
+                // configure properties which might be updated after being added to the collection and might be used in filtering
+                _crawlLogsSource.LiveFilteringProperties.Add(nameof(CrawlLogView.Status));
+
+                _crawlLogsSource.IsLiveFilteringRequested = true;
+            });
+        }
+
+        private void UnregisterLiveFiltering()
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                _crawlLogsSource.IsLiveFilteringRequested = false;
+                _crawlLogsSource.LiveFilteringProperties.Clear();
+                _crawlLogsSource.Filter -= CrawlLogsFilter;
+            });
+        }
+
+        private void CrawlLogsFilter(object sender, FilterEventArgs args)
+        {
+            var crawlLog = args.Item as CrawlLogView;
+
+            if (IsCrawling)
+            {
+                args.Accepted = (string.IsNullOrEmpty(KeywordsFilter) || crawlLog.WebsiteName.Contains(KeywordsFilter) || crawlLog.WebsiteHome.Contains(KeywordsFilter))
+                    && (StatusFilter == CrawlStatus.All || crawlLog.Status == StatusFilter);
+            }
+            else
+            {
+                args.Accepted = true;
             }
         }
 
