@@ -1,5 +1,6 @@
 ﻿using GalaSoft.MvvmLight.Command;
 using HtmlAgilityPack;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,7 @@ namespace WebCrawler.UI.ViewModels
         private IPersister _persister;
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
+        private IServiceProvider _serviceProvider;
         private Manage _managePage;
 
         private CollectionViewSource _crawlLogsSource;
@@ -260,11 +262,12 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public CrawlerViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings, Manage managePage)
+        public CrawlerViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings, IServiceProvider serviceProvider, Manage managePage)
         {
             _persister = persister;
             _httpClient = clientFactory.CreateClient(WebCrawler.Common.Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
+            _serviceProvider = serviceProvider;
             _managePage = managePage;
 
             CrawlLogs = new ObservableCollection<CrawlLogView>();
@@ -383,11 +386,8 @@ namespace WebCrawler.UI.ViewModels
                 PagedResult<Website> websites;
                 do
                 {
-                    lock (LOCK_DB)
-                    {
-                        // TODO: consider to load the last crawl log only, for performance consideration
-                        websites = _persister.GetWebsitesAsync(enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
-                    }
+                    // TODO: consider to load the last crawl log only, for performance consideration
+                    websites = _persister.GetWebsitesAsync(enabled: true, includeLogs: true, page: page, sortBy: nameof(Website.Id)).Result;
 
                     total = websites.PageInfo.ItemCount;
 
@@ -513,9 +513,9 @@ namespace WebCrawler.UI.ViewModels
 
             try
             {
-                lock (LOCK_DB)
+                using (var persister = _serviceProvider.GetRequiredService<IPersister>())
                 {
-                    _persister.SaveAsync(articles, crawlLog).Wait();
+                    await persister.SaveAsync(articles, crawlLog);
                 }
             }
             catch (Exception ex)
