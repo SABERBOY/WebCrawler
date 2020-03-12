@@ -333,8 +333,13 @@ namespace WebCrawler.UI.ViewModels
 
         private void Crawl()
         {
+            IsCrawling = true;
+
             TryRunAsync(async () =>
             {
+                CrawlingStatus = "Processing";
+
+                AppendOutput("Started crawl");
                 // create new crawl
                 if (SelectedCrawl == null || SelectedCrawl.Id == 0)
                 {
@@ -346,12 +351,6 @@ namespace WebCrawler.UI.ViewModels
                         SelectedCrawl = crawl;
                     });
                 }
-
-                IsCrawling = true;
-
-                CrawlingStatus = "Processing";
-
-                AppendOutput("Started crawl");
 
                 int total = 0;
                 CrawlLogView crawlLog;
