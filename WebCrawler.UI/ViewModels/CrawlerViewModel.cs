@@ -26,12 +26,10 @@ namespace WebCrawler.UI.ViewModels
 {
     public class CrawlerViewModel : NotifyPropertyChanged
     {
-        private static readonly object LOCK_DB = new object();
-
+        private IServiceProvider _serviceProvider;
         private IPersister _persister;
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
-        private IServiceProvider _serviceProvider;
         private Manage _managePage;
 
         private CollectionViewSource _crawlLogsSource;
@@ -262,12 +260,12 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public CrawlerViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings, IServiceProvider serviceProvider, Manage managePage)
+        public CrawlerViewModel(IServiceProvider serviceProvider, IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings, Manage managePage)
         {
+            _serviceProvider = serviceProvider;
             _persister = persister;
             _httpClient = clientFactory.CreateClient(WebCrawler.Common.Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
-            _serviceProvider = serviceProvider;
             _managePage = managePage;
 
             CrawlLogs = new ObservableCollection<CrawlLogView>();

@@ -1,5 +1,6 @@
 ﻿using GalaSoft.MvvmLight.Command;
 using HtmlAgilityPack;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog.Events;
 using System;
 using System.Collections.ObjectModel;
@@ -21,8 +22,7 @@ namespace WebCrawler.UI.ViewModels
 {
     public class ManageViewModel : NotifyPropertyChanged
     {
-        private static readonly object LOCK_DB = new object();
-
+        private IServiceProvider _serviceProvider;
         private IPersister _persister;
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
@@ -403,8 +403,9 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public ManageViewModel(IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
+        public ManageViewModel(IServiceProvider serviceProvider, IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
         {
+            _serviceProvider = serviceProvider;
             _persister = persister;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
@@ -545,13 +546,9 @@ namespace WebCrawler.UI.ViewModels
 
                     try
                     {
-                        lock (LOCK_DB)
+                        using (var persister = _serviceProvider.GetRequiredService<IPersister>())
                         {
-                            //AppendOutput("Innert lock started: " + website.Home, LogEventLevel.Information);
-
-                            _persister.UpdateStatusAsync(website.Id, status, notes).Wait();
-
-                            //AppendOutput("Innert lock completed: " + website.Home, LogEventLevel.Information);
+                            await persister.UpdateStatusAsync(website.Id, status, notes);
                         }
                     }
                     catch (Exception ex)
@@ -574,14 +571,7 @@ namespace WebCrawler.UI.ViewModels
                 PagedResult<Website> websites;
                 do
                 {
-                    lock (LOCK_DB)
-                    {
-                        //AppendOutput("Outer lock started", LogEventLevel.Information);
-
-                        websites = _persister.GetWebsitesAsync(enabled: true, page: page, sortBy: nameof(Website.Id)).Result;
-
-                        //AppendOutput("Outer lock completed", LogEventLevel.Information);
-                    }
+                    websites = _persister.GetWebsitesAsync(enabled: true, page: page, sortBy: nameof(Website.Id)).Result;
 
                     total = websites.PageInfo.ItemCount;
 
