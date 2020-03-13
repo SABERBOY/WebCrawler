@@ -99,11 +99,15 @@ namespace WebCrawler.Common
         /// Read HTML with auto-detected encoding.
         /// </summary>
         /// <returns></returns>
-        public async static Task<string> GetHtmlAsync(this HttpClient httpClient, string requestUri)
+        public async static Task<ResponseData> GetHtmlAsync(this HttpClient httpClient, string requestUri)
         {
+            var data = new ResponseData { RequestUrl = requestUri };
+
             using (var response = await httpClient.GetAsync(requestUri))
             {
                 response.EnsureSuccessStatusCode();
+
+                data.ActualUrl = response.RequestMessage.RequestUri.AbsoluteUri;
 
                 var charset = response.Content.Headers.ContentType?.CharSet;
                 Encoding encoding = charset == null ? null : Encoding.GetEncoding(charset);
@@ -123,38 +127,37 @@ namespace WebCrawler.Common
                         ms.Seek(0, SeekOrigin.Begin);
                         using (var reader = new StreamReader(ms, encoding))
                         {
-                            var html = await reader.ReadToEndAsync();
-
-                            html = Utilities.FixUrls(requestUri, html);
+                            data.Content = await reader.ReadToEndAsync();
+                            data.Content = Utilities.FixUrls(requestUri, data.Content);
 
                             if (encoding != null)
                             {
                                 // use the response content type encoding if present
-                                return html;
+                                return data;
                             }
 
-                            charset = DetectCharSet(html);
+                            charset = DetectCharSet(data.Content);
                             if (string.IsNullOrEmpty(charset))
                             {
                                 // skip as chartset doesn't present
-                                return html;
+                                return data;
                             }
 
                             encoding = Encoding.GetEncoding(charset);
                             if (encoding == reader.CurrentEncoding)
                             {
                                 // skip as it's already the charset encoding
-                                return html;
+                                return data;
                             }
 
                             ms.Seek(0, SeekOrigin.Begin);
                             using (var reader2 = new StreamReader(ms, encoding))
                             {
                                 // re-parse with the charset encoding
-                                html = await reader2.ReadToEndAsync();
-                                html = Utilities.FixUrls(requestUri, html);
+                                data.Content = await reader2.ReadToEndAsync();
+                                data.Content = Utilities.FixUrls(requestUri, data.Content);
 
-                                return html;
+                                return data;
                             }
                         }
                     }
@@ -225,6 +228,20 @@ namespace WebCrawler.Common
         public static string GetAggregatedMessage(this AggregateException aex)
         {
             return null;
+        }
+    }
+
+    public class ResponseData
+    {
+        public string RequestUrl { get; set; }
+        public string ActualUrl { get; set; }
+        public string Content { get; set; }
+        public bool IsRedirected
+        {
+            get
+            {
+                return !RequestUrl.Equals(ActualUrl, StringComparison.CurrentCultureIgnoreCase);
+            }
         }
     }
 }

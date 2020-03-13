@@ -510,17 +510,22 @@ namespace WebCrawler.UI.ViewModels
 
                     try
                     {
-                        var catalogItems = await TestAsync(website.Home, website.ListPath);
+                        var result = await TestAsync(website.Home, website.ListPath);
 
-                        if (catalogItems.Length == 0)
+                        if (result.Redirected)
+                        {
+                            status = WebsiteStatus.WarningRedirected;
+                            notes = "URL redirected";
+                        }
+                        else if (result.Catalogs.Length == 0)
                         {
                             status = WebsiteStatus.ErrorCatalogMissing;
-                            notes = "Couldn't detect the catalog items";
+                            notes = "No catalogs detected";
                         }
                         else
                         {
                             // assume the published date detected above will be always valid or null
-                            var latestPublished = catalogItems.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
+                            var latestPublished = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
                             if (latestPublished == null)
                             {
                                 status = WebsiteStatus.WarningNoDates;
@@ -529,7 +534,7 @@ namespace WebCrawler.UI.ViewModels
                             else if (latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
                             {
                                 status = WebsiteStatus.ErrorOutdate;
-                                notes = $"Outdated as last published date: {latestPublished}";
+                                notes = $"Last published: {latestPublished}";
                             }
                         }
                     }
@@ -694,21 +699,32 @@ namespace WebCrawler.UI.ViewModels
                 ShowTestResult = true;
 
                 // test catalogs
-                var catalogItems = await TestAsync(Editor.Home, Editor.ListPath);
-                CatalogItems = new ObservableCollection<CatalogItem>(catalogItems);
+                var result = await TestAsync(Editor.Home, Editor.ListPath);
+                CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
+
+                if (result.Redirected)
+                {
+                    AppendOutput("Url redirected", LogEventLevel.Warning);
+                }
 
                 // TODO: test pagination
             });
         }
 
-        private async Task<CatalogItem[]> TestAsync(string url, string listPath)
+        private async Task<TestResult> TestAsync(string url, string listPath)
         {
+            var result = new TestResult();
+
             var data = await _httpClient.GetHtmlAsync(url);
 
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(data);
+            result.Redirected = data.IsRedirected;
 
-            return HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(data.Content);
+
+            result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
+
+            return result;
         }
 
         private void Reset()
@@ -753,7 +769,7 @@ namespace WebCrawler.UI.ViewModels
 
                 var data = await _httpClient.GetHtmlAsync(url);
 
-                var article = Html2Article.GetArticle(data);
+                var article = Html2Article.GetArticle(data.Content);
 
                 Article = new Article
                 {

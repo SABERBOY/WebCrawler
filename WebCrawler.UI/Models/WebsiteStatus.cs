@@ -13,11 +13,13 @@ namespace WebCrawler.UI.Models
         Normal = 1,
         [Display(Name = "Warning: No Dates")]
         WarningNoDates = 2,
+        [Display(Name = "Warning: Redirected")]
+        WarningRedirected = 3,
         [Display(Name = "Error: Broken")]
-        ErrorBroken = 3,
+        ErrorBroken = 4,
         [Display(Name = "Error: Catalog Missing")]
-        ErrorCatalogMissing = 4,
+        ErrorCatalogMissing = 5,
         [Display(Name = "Error: Outdate")]
-        ErrorOutdate = 5
+        ErrorOutdate = 6
     }
 }

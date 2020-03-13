@@ -238,7 +238,7 @@ namespace WebCrawler.UI.Persisters
         {
             var model = await _dbContext.Websites.FindAsync(websiteId);
 
-            if (status == WebsiteStatus.WarningNoDates)
+            if (status == WebsiteStatus.WarningNoDates || status == WebsiteStatus.WarningRedirected)
             {
                 if (status != model.Status)
                 {

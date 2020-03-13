@@ -438,7 +438,7 @@ namespace WebCrawler.UI.ViewModels
                 var data = await _httpClient.GetHtmlAsync(crawlLog.Website.Home);
 
                 var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(data);
+                htmlDoc.LoadHtml(data.Content);
 
                 catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, crawlLog.Website.ListPath);
                 if (catalogItems.Length == 0)
@@ -471,12 +471,13 @@ namespace WebCrawler.UI.ViewModels
 
                     try
                     {
-                        var html = await _httpClient.GetHtmlAsync(item.Url);
-                        var info = Html2Article.GetArticle(html);
+                        var data = await _httpClient.GetHtmlAsync(item.Url);
+                        var info = Html2Article.GetArticle(data.Content);
 
                         articles.Add(new Article
                         {
                             Url = item.Url,
+                            ActualUrl = data.IsRedirected ? data.ActualUrl : null,
                             Title = info.Title,
                             Published = info.PublishDate ?? item.Published, // use date from article details page first
                             Content = info.Content,

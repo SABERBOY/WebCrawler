@@ -216,7 +216,7 @@ namespace WebCrawler.UI.ViewModels
                 RaisePropertyChanged();
 
                 // auto disable for error states
-                if (value != WebsiteStatus.Normal && value != WebsiteStatus.WarningNoDates)
+                if (value != WebsiteStatus.Normal && value != WebsiteStatus.WarningNoDates && value != WebsiteStatus.WarningRedirected)
                 {
                     Enabled = false;
                 }
