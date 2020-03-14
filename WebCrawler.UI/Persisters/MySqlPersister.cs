@@ -67,6 +67,20 @@ namespace WebCrawler.UI.Persisters
             return await query.ToPagedResultAsync(page);
         }
 
+        public async Task<List<Website>> GetWebsitesAsync(int[] websiteIds, bool includeLogs = false)
+        {
+            var query = _dbContext.Websites
+               .AsNoTracking()
+               .Where(o => websiteIds.Contains(o.Id));
+
+            if (includeLogs)
+            {
+                query = query.Include(o => o.CrawlLogs);
+            }
+
+            return await query.ToListAsync();
+        }
+
         public async Task<PagedResult<Crawl>> GetCrawlsAsync(int page = 1)
         {
             return await _dbContext.Crawls

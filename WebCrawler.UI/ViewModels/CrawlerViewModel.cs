@@ -3,6 +3,7 @@ using HtmlAgilityPack;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog.Events;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -30,7 +31,6 @@ namespace WebCrawler.UI.ViewModels
         private IPersister _persister;
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
-        private Manage _managePage;
 
         private CollectionViewSource _crawlLogsSource;
         public ICollectionView CrawlLogsView
@@ -150,6 +150,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private CrawlLogView _selectedCrawlLog;
+        public CrawlLogView SelectedCrawlLog
+        {
+            get { return _selectedCrawlLog; }
+            set
+            {
+                if (_selectedCrawlLog == value) { return; }
+
+                _selectedCrawlLog = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private ObservableCollection<Crawl> _crawls;
         public ObservableCollection<Crawl> Crawls
         {
@@ -258,15 +271,27 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private RelayCommand<IList> _manageSelectedCommand;
+        public ICommand ManageSelectedCommand
+        {
+            get
+            {
+                if (_manageSelectedCommand == null)
+                {
+                    _manageSelectedCommand = new RelayCommand<IList>(ManageSelected, (crawlLogs) => SelectedCrawlLog != null);
+                }
+                return _manageSelectedCommand;
+            }
+        }
+
         #endregion
 
-        public CrawlerViewModel(IServiceProvider serviceProvider, IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings, Manage managePage)
+        public CrawlerViewModel(IServiceProvider serviceProvider, IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
         {
             _serviceProvider = serviceProvider;
             _persister = persister;
             _httpClient = clientFactory.CreateClient(WebCrawler.Common.Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
-            _managePage = managePage;
 
             CrawlLogs = new ObservableCollection<CrawlLogView>();
             Outputs = new ObservableCollection<Output>();
@@ -523,7 +548,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    AppendOutput($"Crawled website, success: {crawlLogView.Success}, fail: {crawlLogView.Fail}", crawlLogView.WebsiteHome, LogEventLevel.Information);
+                    AppendOutput("Completed to crawl website", crawlLogView.WebsiteHome, LogEventLevel.Information);
                 }
             }
             else if (crawlLogView.Status == CrawlStatus.Failed)
@@ -562,7 +587,13 @@ namespace WebCrawler.UI.ViewModels
 
         private void Manage()
         {
-            WPFUtilities.Navigate(_managePage);
+            Navigator.Navigate<Manage>();
+        }
+
+        private void ManageSelected(IList crawlLogs)
+        {
+            var websites = crawlLogs.Cast<CrawlLogView>().Select(o => o.WebsiteId).ToArray();
+            Navigator.Navigate<Manage>(websites);
         }
 
         /// <summary>

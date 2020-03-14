@@ -1,15 +1,15 @@
 ﻿using System.ComponentModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Controls;
-using WebCrawler.UI.Models;
+using System.Windows.Navigation;
+using WebCrawler.UI.Common;
 using WebCrawler.UI.ViewModels;
 
 namespace WebCrawler.UI.Views
 {
     public partial class Manage : Page
     {
-        private bool _initialized = false;
+        private bool _defaultViewDataReady = false;
 
         public Manage(ManageViewModel manageViewModel)
         {
@@ -17,17 +17,33 @@ namespace WebCrawler.UI.Views
 
             DataContext = manageViewModel;
 
-            Loaded += Manage_Loaded;
+            Navigator.NavigationService.LoadCompleted += NavigationService_LoadCompleted;
         }
 
-        private void Manage_Loaded(object sender, RoutedEventArgs e)
+        private void NavigationService_LoadCompleted(object sender, NavigationEventArgs e)
         {
-            if (!_initialized)
+            if (e.Content != this)
             {
-                (DataContext as ManageViewModel).LoadData();
+                return;
             }
 
-            _initialized = true;
+            var manageViewModel = DataContext as ManageViewModel;
+
+            if (e.ExtraData is int[] websiteIds)
+            {
+                manageViewModel.LoadData(websiteIds);
+
+                _defaultViewDataReady = false;
+            }
+            else
+            {
+                if (!_defaultViewDataReady)
+                {
+                    manageViewModel.LoadData();
+
+                    _defaultViewDataReady = true;
+                }
+            }
         }
 
         /// <summary>

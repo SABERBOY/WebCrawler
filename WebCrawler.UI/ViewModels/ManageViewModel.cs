@@ -278,7 +278,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_refreshCommand == null)
                 {
-                    _refreshCommand = new RelayCommand(LoadData, () => !IsProcessing);
+                    _refreshCommand = new RelayCommand(() => LoadData(), () => !IsProcessing);
                 }
                 return _refreshCommand;
             }
@@ -422,11 +422,11 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        public void LoadData()
+        public void LoadData(int[] websites = null)
         {
             TryRunAsync(async () =>
             {
-                await LoadDataCoreAsync();
+                await LoadDataCoreAsync(websiteIds: websites);
             });
         }
 
@@ -439,7 +439,7 @@ namespace WebCrawler.UI.ViewModels
 
         #region Private Members
 
-        private async Task LoadDataCoreAsync(SortDescription[] sorts = null, int page = 1)
+        private async Task LoadDataCoreAsync(SortDescription[] sorts = null, int[] websiteIds = null, int page = 1)
         {
             if (sorts != null)
             {
@@ -448,7 +448,19 @@ namespace WebCrawler.UI.ViewModels
 
             var sort = _websiteSorts?.FirstOrDefault();
 
-            var websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+            PagedResult<Website> websites;
+            if (websiteIds == null || websiteIds.Length == 0)
+            {
+                websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+            }
+            else
+            {
+                websites = new PagedResult<Website>
+                {
+                    Items = await _persister.GetWebsitesAsync(websiteIds, false),
+                    PageInfo = null
+                };
+            }
 
             App.Current.Dispatcher.Invoke(() =>
             {

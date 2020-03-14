@@ -1,20 +1,30 @@
-﻿using System.Net.Http;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Net.Http;
 using System.Windows;
-using System.Windows.Navigation;
 using WebCrawler.Common;
 
 namespace WebCrawler.UI.Views
 {
     public partial class MainWindow : Window
     {
-        public MainWindow(Crawler crawler)
+        private IServiceProvider _serviceProvider;
+
+        public MainWindow(IServiceProvider serviceProvider)
         {
+            _serviceProvider = serviceProvider;
+
             InitializeComponent();
 
-            MainFrame.Navigate(crawler);
+            Loaded += MainWindow_Loaded;
         }
 
-        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(_serviceProvider.GetRequiredService<Crawler>());
+        }
+
+        private async void MainWindow_Loaded1(object sender, RoutedEventArgs e)
         {
             var urls = new string[] {
                 "http://roll.finance.sina.com.cn/finance/gncj/jrxw/index_1.shtml",

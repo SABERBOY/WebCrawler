@@ -1,12 +1,12 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
+using WebCrawler.UI.Common;
 using WebCrawler.UI.ViewModels;
 
 namespace WebCrawler.UI.Views
 {
     public partial class Crawler : Page
     {
-        private bool _initialized = false;
+        private bool _defaultViewDataReady = false;
 
         public Crawler(CrawlerViewModel crawlerViewModel)
         {
@@ -14,17 +14,22 @@ namespace WebCrawler.UI.Views
 
             DataContext = crawlerViewModel;
 
-            Loaded += Crawler_Loaded;
+            Navigator.NavigationService.LoadCompleted += NavigationService_LoadCompleted;
         }
 
-        private void Crawler_Loaded(object sender, RoutedEventArgs e)
+        private void NavigationService_LoadCompleted(object sender, System.Windows.Navigation.NavigationEventArgs e)
         {
-            if (!_initialized)
+            if (e.Content != this)
             {
-                (DataContext as CrawlerViewModel).LoadData();
+                return;
             }
 
-            _initialized = true;
+            if (!_defaultViewDataReady)
+            {
+                (DataContext as CrawlerViewModel).LoadData();
+
+                _defaultViewDataReady = true;
+            }
         }
     }
 }

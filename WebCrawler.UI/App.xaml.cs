@@ -39,7 +39,11 @@ namespace WebCrawler.UI
             // NOTICE: Couldn't dispose the service provider here, otherwise it might suffer the issue below, as the Show method will complete immediately.
             // https://github.com/aspnet/DependencyInjection/issues/440#issuecomment-236862811
             var serviceProvider = services.BuildServiceProvider();
-            serviceProvider.GetService<MainWindow>().Show();
+
+            var window = serviceProvider.GetService<MainWindow>();
+            Common.Navigator.Initialize(serviceProvider, window.MainFrame.NavigationService);
+
+            window.Show();
 
             // add encoding support for GB2312 and GDK
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);

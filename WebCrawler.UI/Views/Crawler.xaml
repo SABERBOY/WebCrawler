@@ -75,11 +75,16 @@
                         <Path Data="{StaticResource StopIcon}" />
                     </Viewbox>
                 </Button>
+                <Button Command="{Binding ManageSelectedCommand}" CommandParameter="{Binding SelectedItems, ElementName=CrawlLogsGrid}" Style="{StaticResource LargeButton}" ToolTip="Manage Selected Websites" Visibility="{Binding SelectedCrawlLog, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                    <Viewbox>
+                        <Path Data="{StaticResource SettingsIcon}" />
+                    </Viewbox>
+                </Button>
                 <Label Content="{Binding CrawlingStatus}" VerticalAlignment="Center" FontSize="20" Foreground="Red" />
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Command="{Binding ManageCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze">
+                <Button Command="{Binding ManageCommand}" Style="{StaticResource LargeButton}" ToolTip="Manage">
                     <Viewbox>
                         <Path Data="{StaticResource SettingsIcon}" />
                     </Viewbox>
@@ -94,7 +99,9 @@
             </Grid.RowDefinitions>
 
             <DataGrid Grid.Row="0"
+                      x:Name="CrawlLogsGrid"
                       ItemsSource="{Binding CrawlLogsView}"
+                      SelectedItem="{Binding SelectedCrawlLog}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       CanUserSortColumns="False"
