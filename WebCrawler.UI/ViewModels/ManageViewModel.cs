@@ -265,7 +265,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_backCommand == null)
                 {
-                    _backCommand = new RelayCommand(Back, () => !IsProcessing);
+                    _backCommand = new RelayCommand(Back);
                 }
                 return _backCommand;
             }

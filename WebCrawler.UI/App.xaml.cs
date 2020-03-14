@@ -92,13 +92,13 @@ namespace WebCrawler.UI
                 ServiceLifetime.Transient,
                 ServiceLifetime.Transient);
 
-            services.AddTransient<MainWindow>();
-            services.AddTransient<Crawler>();
-            services.AddTransient<Manage>();
-            services.AddTransient<Settings>();
+            services.AddSingleton<MainWindow>();
+            services.AddSingleton<Crawler>();
+            services.AddSingleton<Manage>();
+            services.AddSingleton<Settings>();
 
-            services.AddTransient<CrawlerViewModel>();
-            services.AddTransient<ManageViewModel>();
+            services.AddSingleton<CrawlerViewModel>();
+            services.AddSingleton<ManageViewModel>();
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
             // https://github.com/dotnet/runtime/issues/30025

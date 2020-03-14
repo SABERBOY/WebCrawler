@@ -9,6 +9,8 @@ namespace WebCrawler.UI.Views
 {
     public partial class Manage : Page
     {
+        private bool _initialized = false;
+
         public Manage(ManageViewModel manageViewModel)
         {
             InitializeComponent();
@@ -20,9 +22,12 @@ namespace WebCrawler.UI.Views
 
         private void Manage_Loaded(object sender, RoutedEventArgs e)
         {
-            var vm = DataContext as ManageViewModel;
+            if (!_initialized)
+            {
+                (DataContext as ManageViewModel).LoadData();
+            }
 
-            vm.LoadData();
+            _initialized = true;
         }
 
         /// <summary>

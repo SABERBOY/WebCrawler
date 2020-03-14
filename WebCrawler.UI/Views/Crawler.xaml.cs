@@ -6,6 +6,8 @@ namespace WebCrawler.UI.Views
 {
     public partial class Crawler : Page
     {
+        private bool _initialized = false;
+
         public Crawler(CrawlerViewModel crawlerViewModel)
         {
             InitializeComponent();
@@ -17,9 +19,12 @@ namespace WebCrawler.UI.Views
 
         private void Crawler_Loaded(object sender, RoutedEventArgs e)
         {
-            var vm = DataContext as CrawlerViewModel;
+            if (!_initialized)
+            {
+                (DataContext as CrawlerViewModel).LoadData();
+            }
 
-            vm.LoadData();
+            _initialized = true;
         }
     }
 }

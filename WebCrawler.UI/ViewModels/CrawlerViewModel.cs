@@ -252,7 +252,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_manageCommand == null)
                 {
-                    _manageCommand = new RelayCommand(Manage, () => !IsProcessing);
+                    _manageCommand = new RelayCommand(Manage);
                 }
                 return _manageCommand;
             }
