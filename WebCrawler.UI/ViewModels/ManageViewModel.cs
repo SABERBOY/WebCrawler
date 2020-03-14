@@ -727,7 +727,7 @@ namespace WebCrawler.UI.ViewModels
 
             var data = await _httpClient.GetHtmlAsync(url);
 
-            result.Redirected = data.IsRedirected;
+            result.Redirected = data.IsRedirectedExcludeHttps;
 
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(data.Content);

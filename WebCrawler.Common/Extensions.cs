@@ -236,11 +236,23 @@ namespace WebCrawler.Common
         public string RequestUrl { get; set; }
         public string ActualUrl { get; set; }
         public string Content { get; set; }
+
         public bool IsRedirected
         {
             get
             {
                 return !RequestUrl.Equals(ActualUrl, StringComparison.CurrentCultureIgnoreCase);
+            }
+        }
+
+        public bool IsRedirectedExcludeHttps
+        {
+            get
+            {
+                var regex = new Regex("https?://", RegexOptions.IgnoreCase);
+
+                return !regex.Replace(RequestUrl, "")
+                    .Equals(regex.Replace(ActualUrl, ""), StringComparison.CurrentCultureIgnoreCase);
             }
         }
     }
