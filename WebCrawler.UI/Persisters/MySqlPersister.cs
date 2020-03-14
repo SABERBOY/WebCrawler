@@ -114,7 +114,7 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(1);
         }
 
-        public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLogView)
+        public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLogView, string lastHandled)
         {
             if (crawlLogView.Status != CrawlStatus.Failed)
             {
@@ -154,12 +154,16 @@ namespace WebCrawler.UI.Persisters
             crawlLogModel.Fail = crawlLogView.Fail;
             crawlLogModel.Status = crawlLogView.Status == CrawlStatus.Failed ? CrawlStatus.Failed : CrawlStatus.Completed;
             crawlLogModel.Notes = crawlLogView.Notes;
-            crawlLogModel.LastHandled = crawlLogView.LastHandled;
             crawlLogModel.Crawled = crawlLogView.Crawled;
+            if (!string.IsNullOrEmpty(lastHandled))
+            {
+                crawlLogModel.LastHandled = lastHandled;
+            }
 
             await _dbContext.SaveChangesAsync();
 
             crawlLogView.Status = crawlLogModel.Status;
+            crawlLogView.LastHandled = crawlLogModel.LastHandled;
         }
 
         public async Task SaveAsync(WebsiteView editor)

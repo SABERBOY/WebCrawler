@@ -450,9 +450,6 @@ namespace WebCrawler.UI.ViewModels
                 catalogItems = catalogItems
                     .OrderByDescending(o => o.Published)
                     .ToArray();
-
-                // update last handled url
-                crawlLogView.LastHandled = catalogItems[0].Url;
             }
             catch (Exception ex)
             {
@@ -505,9 +502,11 @@ namespace WebCrawler.UI.ViewModels
 
             try
             {
+                var lastHandled = crawlLogView.Status == CrawlStatus.Completed ? crawlLogView.LastHandled = catalogItems[0].Url : null;
+
                 using (var persister = _serviceProvider.GetRequiredService<IPersister>())
                 {
-                    await persister.SaveAsync(articles, crawlLogView);
+                    await persister.SaveAsync(articles, crawlLogView, lastHandled);
                 }
             }
             catch (Exception ex)
