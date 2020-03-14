@@ -522,10 +522,10 @@ namespace WebCrawler.UI.ViewModels
                     {
                         var result = await TestAsync(website.Home, website.ListPath);
 
-                        if (result.Redirected)
+                        if (result.CatalogsResponse.IsRedirectedExcludeHttps)
                         {
                             status = WebsiteStatus.WarningRedirected;
-                            notes = "URL redirected";
+                            notes = "URL redirected to: " + result.CatalogsResponse.ActualUrl;
                         }
                         else if (result.Catalogs.Length == 0)
                         {
@@ -712,9 +712,9 @@ namespace WebCrawler.UI.ViewModels
                 var result = await TestAsync(Editor.Home, Editor.ListPath);
                 CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
 
-                if (result.Redirected)
+                if (result.CatalogsResponse.IsRedirected)
                 {
-                    AppendOutput("Url redirected", LogEventLevel.Warning);
+                    AppendOutput("Url redirected to: " + result.CatalogsResponse.ActualUrl, LogEventLevel.Warning);
                 }
 
                 // TODO: test pagination
@@ -727,7 +727,7 @@ namespace WebCrawler.UI.ViewModels
 
             var data = await _httpClient.GetHtmlAsync(url);
 
-            result.Redirected = data.IsRedirectedExcludeHttps;
+            result.CatalogsResponse = data;
 
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(data.Content);
