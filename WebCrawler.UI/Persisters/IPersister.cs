@@ -11,7 +11,7 @@ namespace WebCrawler.UI.Persisters
         Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false);
         Task<PagedResult<Crawl>> GetCrawlsAsync(int page = 1);
         Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1);
-        Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(int? lastId = null);
+        Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool? enabled = true, int? lastId = null);
         Task<PagedResult<CrawlLog>> GetCrawlingQueueAsync(int crawlId, int? lastId = null);
         Task SaveAsync(List<Article> articles, CrawlLogView crawlLog);
         Task SaveAsync(WebsiteView editor);

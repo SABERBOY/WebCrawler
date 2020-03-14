@@ -90,11 +90,11 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(int? lastId = null)
+        public async Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool? enabled = true, int? lastId = null)
         {
             return await _dbContext.Websites
                 .AsNoTracking()
-                .Where(o => o.Enabled
+                .Where(o => (enabled == null || o.Enabled == enabled)
                     && (lastId == null || o.Id < lastId)
                 )
                 .OrderByDescending(o => o.Id)
@@ -238,7 +238,11 @@ namespace WebCrawler.UI.Persisters
         {
             var model = await _dbContext.Websites.FindAsync(websiteId);
 
-            if (status == WebsiteStatus.WarningNoDates || status == WebsiteStatus.WarningRedirected)
+            if (status == WebsiteStatus.Normal)
+            {
+                model.Enabled = true;
+            }
+            else if (status == WebsiteStatus.WarningNoDates || status == WebsiteStatus.WarningRedirected)
             {
                 if (status != model.Status)
                 {

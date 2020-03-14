@@ -493,6 +493,14 @@ namespace WebCrawler.UI.ViewModels
 
         private void Analyze()
         {
+            var dialogResult = MessageBox.Show("Process full analysis?", "Confirmation", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (dialogResult == MessageBoxResult.Cancel)
+            {
+                return;
+            }
+
+            var isFull = dialogResult == MessageBoxResult.Yes;
+
             TryRunAsync(async () =>
             {
                 ProcessingStatus = "Processing";
@@ -575,7 +583,7 @@ namespace WebCrawler.UI.ViewModels
                 PagedResult<Website> websitesQueue = null;
                 do
                 {
-                    websitesQueue = _persister.GetWebsiteAnalysisQueueAsync(websitesQueue?.Items.Last().Id).Result;
+                    websitesQueue = _persister.GetWebsiteAnalysisQueueAsync(isFull ? (bool?)null : true, websitesQueue?.Items.Last().Id).Result;
 
                     if (total == 0)
                     {
