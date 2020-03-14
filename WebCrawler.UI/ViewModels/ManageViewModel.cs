@@ -775,15 +775,13 @@ namespace WebCrawler.UI.ViewModels
 
             TryRunAsync(async () =>
             {
-                var url = Utilities.ResolveResourceUrl(SelectedCatalogItem.Url, SelectedWebsite.Home);
-
-                var data = await _httpClient.GetHtmlAsync(url);
+                var data = await _httpClient.GetHtmlAsync(SelectedCatalogItem.Url);
 
                 var article = Html2Article.GetArticle(data.Content);
 
                 Article = new Article
                 {
-                    Url = url,
+                    Url = SelectedCatalogItem.Url,
                     Title = article.Title,
                     Content = article.Content,
                     Published = article.PublishDate
