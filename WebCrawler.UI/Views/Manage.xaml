@@ -249,8 +249,8 @@
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
                     <DataGridTextColumn Header="Success" Binding="{Binding Success}" />
                     <DataGridTextColumn Header="Fail" Binding="{Binding Fail}" />
-                    <DataGridTextColumn Header="LastHandled" Binding="{Binding Previous}" />
-                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="300" />
+                    <DataGridTextColumn Header="Last Handled" Binding="{Binding LastHandled}" />
                 </DataGrid.Columns>
             </DataGrid>
 
