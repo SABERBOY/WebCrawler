@@ -247,7 +247,9 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Crawled" Binding="{Binding Crawled}" />
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
-                    <DataGridTextColumn Header="Previous" Binding="{Binding Previous}" />
+                    <DataGridTextColumn Header="Success" Binding="{Binding Success}" />
+                    <DataGridTextColumn Header="Fail" Binding="{Binding Fail}" />
+                    <DataGridTextColumn Header="LastHandled" Binding="{Binding Previous}" />
                     <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
                 </DataGrid.Columns>
             </DataGrid>
