@@ -507,6 +507,8 @@ namespace WebCrawler.UI.ViewModels
 
                 AppendOutput("Started analysis");
 
+                var start = DateTime.Now;
+
                 int processed = 0;
                 int total = 0;
 
@@ -609,7 +611,7 @@ namespace WebCrawler.UI.ViewModels
                 workerBlock.Complete();
                 workerBlock.Completion.Wait();
 
-                AppendOutput("Completed analysis");
+                AppendOutput($"Completed analysis, elapsed time: {DateTime.Now - start}");
 
                 // reload data
                 await LoadDataCoreAsync();
