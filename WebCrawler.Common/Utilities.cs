@@ -5,11 +5,6 @@ namespace WebCrawler.Common
 {
     public static class Utilities
     {
-        public static string ResolveResourceUrl(string resourceUrl, string pageUrl)
-        {
-            return new Uri(new Uri(pageUrl), resourceUrl).AbsoluteUri;
-        }
-
         public static string GetRootSiteUrl(string url)
         {
             if (string.IsNullOrEmpty(url))
@@ -26,11 +21,19 @@ namespace WebCrawler.Common
             return url.ToLower();
         }
 
-        public static string FixUrls(string baseUrl, string html)
+        public static string ResolveResourceUrl(string resourceUrl, string pageUrl)
         {
+            return new Uri(new Uri(pageUrl), resourceUrl).AbsoluteUri;
+        }
+
+        public static string ResolveUrls(string html, string pageUrl)
+        {
+            var baseTagMatch = Regex.Match(html, @"(?is)<base +href=[""']?([^""' ]+)");
+
+            var baseUrl = baseTagMatch.Success ? baseTagMatch.Groups[1].Value : pageUrl;
             Uri baseUri = new Uri(baseUrl);
 
-            return Regex.Replace(html, "(?is)(href|src)=((\"|')([^\"\']+)\\3|([^ ]+))", (match) =>
+            return Regex.Replace(html, @"(?is)(href|src)=((""|')([^""']+)\3|([^ ]+))", (match) =>
             {
                 string org = match.Value;
                 string link = !string.IsNullOrEmpty(match.Groups[4].Value) ? match.Groups[4].Value : match.Groups[5].Value;

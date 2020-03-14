@@ -128,7 +128,7 @@ namespace WebCrawler.Common
                         using (var reader = new StreamReader(ms, encoding))
                         {
                             data.Content = await reader.ReadToEndAsync();
-                            data.Content = Utilities.FixUrls(requestUri, data.Content);
+                            data.Content = Utilities.ResolveUrls(data.Content, requestUri);
 
                             if (encoding != null)
                             {
@@ -155,7 +155,7 @@ namespace WebCrawler.Common
                             {
                                 // re-parse with the charset encoding
                                 data.Content = await reader2.ReadToEndAsync();
-                                data.Content = Utilities.FixUrls(requestUri, data.Content);
+                                data.Content = Utilities.ResolveUrls(data.Content, requestUri);
 
                                 return data;
                             }
