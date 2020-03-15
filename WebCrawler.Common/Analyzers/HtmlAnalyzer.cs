@@ -14,6 +14,11 @@ namespace WebCrawler.Common.Analyzers
             if (string.IsNullOrEmpty(listPath)) // auto detect catalog items
             {
                 var blocks = EvaluateCatalogs(htmlDoc);
+                if (blocks.Length == 0)
+                {
+                    throw new Exception("Failed to detect link blocks");
+                }
+
                 var catalogItems = new Dictionary<Block, CatalogItem[]>();
 
                 foreach (var block in blocks)
