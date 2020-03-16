@@ -106,9 +106,10 @@ namespace WebCrawler.UI
 
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
             // https://github.com/dotnet/runtime/issues/30025
-            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT)
+            var userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36";
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
                 .AddPolicyHandler(HttpPolicyHandler);
-            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT)
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
                 .AddPolicyHandler(HttpPolicyHandler);
 
