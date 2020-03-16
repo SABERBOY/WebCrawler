@@ -396,7 +396,7 @@ namespace WebCrawler.UI.ViewModels
 
                 IsCrawling = true;
 
-                AppendOutput("Started crawl");
+                AppendOutput($"Started {(isFull ? "full" : "incremental")} crawl");
 
                 int total = 0;
                 CrawlLogView crawlLogView;
@@ -455,7 +455,7 @@ namespace WebCrawler.UI.ViewModels
 
                 await _persister.SaveAsync(SelectedCrawl);
 
-                AppendOutput("Completed crawl");
+                AppendOutput($"Completed {(isFull ? "full" : "incremental")} crawl");
 
                 IsCrawling = false;
 
