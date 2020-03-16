@@ -31,6 +31,11 @@ namespace WebCrawler.Common
             var baseTagMatch = Regex.Match(html, @"(?is)<base +href=[""']?([^""' ]+)");
 
             var baseUrl = baseTagMatch.Success ? baseTagMatch.Groups[1].Value : pageUrl;
+            if (baseUrl.StartsWith("//"))
+            {
+                baseUrl = new Uri(pageUrl).Scheme + ":" + baseUrl;
+            }
+
             Uri baseUri = new Uri(baseUrl);
 
             return Regex.Replace(html, @"(?is)(href|src)=((""|')([^""']+)\3|([^ ]+))", (match) =>
