@@ -505,7 +505,7 @@ namespace WebCrawler.UI.ViewModels
 
         private void Analyze()
         {
-            var dialogResult = MessageBox.Show("Process full analysis?", "Confirmation", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            var dialogResult = MessageBox.Show("Start full analysis?", "Confirmation", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (dialogResult == MessageBoxResult.Cancel)
             {
                 return;

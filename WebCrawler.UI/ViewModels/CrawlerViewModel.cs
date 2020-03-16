@@ -307,9 +307,9 @@ namespace WebCrawler.UI.ViewModels
             {
                 var crawls = await _persister.GetCrawlsAsync();
 
-                Crawls = new ObservableCollection<Crawl>(new Crawl[] { new Crawl() }.Concat(crawls.Items));
+                Crawls = new ObservableCollection<Crawl>(crawls.Items);
 
-                SelectedCrawl = Crawls.First();
+                SelectedCrawl = Crawls.FirstOrDefault();
 
                 IsInitializing = false;
             });
@@ -319,7 +319,7 @@ namespace WebCrawler.UI.ViewModels
 
         private void LoadCrawlLogs(int page = 1)
         {
-            if (SelectedCrawl == null || SelectedCrawl.Id == 0)
+            if (SelectedCrawl == null)
             {
                 App.Current.Dispatcher.Invoke(() =>
                 {
@@ -359,30 +359,37 @@ namespace WebCrawler.UI.ViewModels
 
         private void Crawl()
         {
+            var dialogResult = MessageBox.Show("Start full crawl?", "Confirmation", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (dialogResult == MessageBoxResult.Cancel)
+            {
+                return;
+            }
+
+            var isFull = dialogResult == MessageBoxResult.Yes || Crawls.Count == 0;
+
             TryRunAsync(async () =>
             {
                 CrawlingStatus = "Processing";
 
-                // create new crawl
-                if (SelectedCrawl == null || SelectedCrawl.Id == 0)
+                if (isFull)
                 {
                     var crawl = await _persister.QueueCrawlAsync();
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        Crawls.Insert(1, crawl);
+                        Crawls.Insert(0, crawl);
                         SelectedCrawl = crawl;
                     });
                 }
                 else
                 {
-                    var crawl = await _persister.ContinueCrawlAsync(SelectedCrawl.Id);
+                    var firstCrawl = Crawls.First();
+                    var crawl = await _persister.ContinueCrawlAsync(firstCrawl.Id);
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        var index = Crawls.IndexOf(SelectedCrawl);
-                        Crawls.RemoveAt(index);
-                        Crawls.Insert(index, crawl);
+                        Crawls.RemoveAt(0);
+                        Crawls.Insert(0, crawl);
                         SelectedCrawl = crawl;
                     });
                 }

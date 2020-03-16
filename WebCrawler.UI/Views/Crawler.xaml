@@ -55,17 +55,7 @@
                           SelectedValue="{Binding StatusFilter}"
                           BorderThickness="1"
                           VerticalAlignment="Center" />
-                <Button Command="{Binding CrawlCommand}" Visibility="{Binding IsCrawling, Converter={StaticResource BinaryConverter}, ConverterParameter=!}">
-                    <Button.Resources>
-                        <Style TargetType="Button" BasedOn="{StaticResource LargeButton}">
-                            <Setter Property="ToolTip" Value="Continue Selected Crawl" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedCrawl.Id}" Value="0">
-                                    <Setter Property="ToolTip" Value="Start Full Crawl" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Resources>
+                <Button Command="{Binding CrawlCommand}" Style="{StaticResource LargeButton}" ToolTip="Start Crawl" Visibility="{Binding IsCrawling, Converter={StaticResource BinaryConverter}, ConverterParameter=!}">
                     <Viewbox>
                         <Path Data="{StaticResource StartIcon}" />
                     </Viewbox>
