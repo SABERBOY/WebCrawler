@@ -108,7 +108,7 @@ namespace WebCrawler.Common.Analyzers
                 .Where(o => !expExcludeSections.IsMatch(o.LinkXPath))
                 .OrderByDescending(o => o.Score);
 
-            var threshold = query.First().Score / 2;
+            var threshold = query.First().Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
 
             return query
                 .Where(o => o.Score > threshold) // pick high posibility blocks
