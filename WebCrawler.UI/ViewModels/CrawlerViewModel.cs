@@ -539,7 +539,7 @@ namespace WebCrawler.UI.ViewModels
 
             try
             {
-                var lastHandled = crawlLogView.Status == CrawlStatus.Completed ? crawlLogView.LastHandled = catalogItems[0].Url : null;
+                var lastHandled = crawlLogView.Status == CrawlStatus.Completed ? catalogItems[0].Url : null;
 
                 using (var persister = _serviceProvider.GetRequiredService<IPersister>())
                 {
