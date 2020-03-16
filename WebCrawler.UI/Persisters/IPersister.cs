@@ -21,5 +21,6 @@ namespace WebCrawler.UI.Persisters
         Task ToggleAsync(bool enabled, params int[] websiteIds);
         Task DeleteAsync(params int[] websiteIds);
         Task<Crawl> QueueCrawlAsync();
+        Task<Crawl> ContinueCrawlAsync(int crawlId);
     }
 }

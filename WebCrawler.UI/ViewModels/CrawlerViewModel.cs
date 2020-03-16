@@ -374,6 +374,18 @@ namespace WebCrawler.UI.ViewModels
                         SelectedCrawl = crawl;
                     });
                 }
+                else
+                {
+                    var crawl = await _persister.ContinueCrawlAsync(SelectedCrawl.Id);
+
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        var index = Crawls.IndexOf(SelectedCrawl);
+                        Crawls.RemoveAt(index);
+                        Crawls.Insert(index, crawl);
+                        SelectedCrawl = crawl;
+                    });
+                }
 
                 IsCrawling = true;
 
@@ -566,6 +578,9 @@ namespace WebCrawler.UI.ViewModels
                 CrawlLogs.Clear();
                 PageInfo = null;
             });
+
+            KeywordsFilter = default;
+            StatusFilter = default;
 
             RegisterLiveFiltering();
         }

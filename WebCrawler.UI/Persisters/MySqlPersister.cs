@@ -320,6 +320,21 @@ namespace WebCrawler.UI.Persisters
             return crawl;
         }
 
+        public async Task<Crawl> ContinueCrawlAsync(int crawlId)
+        {
+            var sql = @"UPDATE atc_crawllogs SET status = 'QUEUED', success = 0, fail = 0, notes = NULL WHERE crawlid = {0} AND status IN ('FAILED', 'CANCELLED')";
+
+            await ExecuteSqlAsync(sql, crawlId);
+
+            var crawl = await _dbContext.Crawls.FindAsync(crawlId);
+
+            crawl.Status = CrawlStatus.Queued;
+
+            await _dbContext.SaveChangesAsync();
+
+            return crawl;
+        }
+
         private async Task ExecuteSqlAsync(string sql, params object[] parameters)
         {
             using (var tran = await _dbContext.Database.BeginTransactionAsync())
