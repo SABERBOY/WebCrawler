@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler", "WebCrawler\We
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.Common", "WebCrawler.Common\WebCrawler.Common.csproj", "{80A78C96-7736-4D04-B018-F5F63C854EF9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawler.UI", "WebCrawler.UI\WebCrawler.UI.csproj", "{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.UI", "WebCrawler.UI\WebCrawler.UI.csproj", "{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{CB8F8092-9E95-482A-8EE3-7EC6DB798BF2}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
