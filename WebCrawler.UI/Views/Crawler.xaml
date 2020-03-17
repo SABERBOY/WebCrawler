@@ -41,10 +41,11 @@
                           IsEnabled="{Binding IsProcessing, Converter={StaticResource BinaryConverter}, ConverterParameter=!}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
-                                <TextBlock Text="" HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}}" />
-                                <TextBlock Text="{Binding Started}" HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}, ConverterParameter=!}" />
-                            </Grid>
+                            <!--<Grid>
+                                <TextBlock Text=" " HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}}" />
+                                <TextBlock Text="{Binding Started, StringFormat=yyyy/MM/dd HH:mm:ss.fff}" HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}, ConverterParameter=!}" />
+                            </Grid>-->
+                            <TextBlock Text="{Binding Started, StringFormat=yyyy/MM/dd HH:mm:ss.fff}" HorizontalAlignment="Stretch" Padding="3" Visibility="{Binding Id, Converter={StaticResource EmptyNumberConverter}, ConverterParameter=!}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
