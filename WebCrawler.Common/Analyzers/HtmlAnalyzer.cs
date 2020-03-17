@@ -41,7 +41,7 @@ namespace WebCrawler.Common.Analyzers
 
         private static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
         {
-            var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a[@href][text()]");
+            var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a");
             if (linkNodes == null)
             {
                 return new Block[0];
@@ -55,7 +55,7 @@ namespace WebCrawler.Common.Analyzers
             }).ToArray();
 
             // test code
-            //var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
+            var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
 
             Dictionary<string, string[]> similarities = new Dictionary<string, string[]>();
 
