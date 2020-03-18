@@ -28,7 +28,7 @@ namespace WebCrawler.Common.Analyzers
 
                 return catalogItems
                     // blocks with published date has higher priority
-                    .OrderByDescending(o => o.Value.First().Published != null)
+                    .OrderByDescending(o => o.Value.First().HasDate)
                     .ThenByDescending(o => o.Key.Score)
                     .Select(o => o.Value)
                     .First();
@@ -122,6 +122,7 @@ namespace WebCrawler.Common.Analyzers
             var itemIterator = htmlDoc.CreateNavigator().Select(block.ContainerPath);
             string linkUrl;
             string linkTitle;
+            CatalogItem linkItem;
             while (itemIterator.MoveNext())
             {
                 linkUrl = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href");
@@ -133,13 +134,16 @@ namespace WebCrawler.Common.Analyzers
                     continue;
                 }
 
-                items.Add(new CatalogItem
+                linkItem = new CatalogItem
                 {
                     Url = linkUrl,
                     Title = TrimText(linkTitle),
                     FullText = TrimText(itemIterator.Current.Value),
-                    Published = Html2Article.GetPublishDate(itemIterator.Current.Value)
-                });
+                    Published = Html2Article.GetPublishDate(itemIterator.Current.Value),
+                    PublishedStr = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
+                };
+
+                items.Add(linkItem);
             }
 
             var results = items
@@ -153,6 +157,10 @@ namespace WebCrawler.Common.Analyzers
             if (results.Any(o => o.Published == null))
             {
                 results.ForEach(o => o.Published = null);
+            }
+            if (results.Any(o => string.IsNullOrEmpty(o.PublishedStr)))
+            {
+                results.ForEach(o => o.PublishedStr = null);
             }
 
             return results;
@@ -475,9 +483,20 @@ namespace WebCrawler.Common.Analyzers
 
     public class CatalogItem
     {
-        public DateTime? Published { get; set; }
         public string Title { get; set; }
         public string Url { get; set; }
         public string FullText { get; set; }
+        public DateTime? Published { get; set; }
+        /// <summary>
+        /// Indicates a date/time string, which might not even be a full date (e.g. exclude year part).
+        /// </summary>
+        public string PublishedStr { get; set; }
+        public bool HasDate
+        {
+            get
+            {
+                return Published != null || !string.IsNullOrEmpty(PublishedStr);
+            }
+        }
     }
 }

@@ -547,16 +547,16 @@ namespace WebCrawler.UI.ViewModels
                         else
                         {
                             // assume the published date detected above will be always valid or null
-                            var latestPublished = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault()?.Published;
-                            if (latestPublished == null)
+                            var latestItem = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault();
+                            if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                            {
+                                status = WebsiteStatus.ErrorOutdate;
+                                notes = $"Last published: {latestItem.Published}";
+                            }
+                            else if (!latestItem.HasDate)
                             {
                                 status = WebsiteStatus.WarningNoDates;
                                 notes = "No published date in catalog items";
-                            }
-                            else if (latestPublished < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
-                            {
-                                status = WebsiteStatus.ErrorOutdate;
-                                notes = $"Last published: {latestPublished}";
                             }
                         }
                     }
