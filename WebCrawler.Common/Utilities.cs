@@ -58,5 +58,26 @@ namespace WebCrawler.Common
                 }
             });
         }
+
+        /// <summary>
+        /// Trim spaces, tabs, linebreaks from the text in a HTML page.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public static string TrimHtmlText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            // trim start/end chars
+            text = text.Trim('\r', '\n', '\t', ' ');
+
+            // trim mid chars to single space
+            text = Regex.Replace(text, @"[\r\n\t ]+", " ");
+
+            return text;
+        }
     }
 }

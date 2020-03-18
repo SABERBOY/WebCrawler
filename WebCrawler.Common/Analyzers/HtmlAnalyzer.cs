@@ -50,7 +50,7 @@ namespace WebCrawler.Common.Analyzers
             var links = linkNodes.Select(o => new Link
             {
                 XPath = o.XPath,
-                Text = TrimText(o.InnerText),
+                Text = Utilities.TrimHtmlText(o.InnerText),
                 Url = o.GetAttributeValue("href", null)
             }).ToArray();
 
@@ -137,8 +137,8 @@ namespace WebCrawler.Common.Analyzers
                 linkItem = new CatalogItem
                 {
                     Url = linkUrl,
-                    Title = TrimText(linkTitle),
-                    FullText = TrimText(itemIterator.Current.Value),
+                    Title = Utilities.TrimHtmlText(linkTitle),
+                    FullText = Utilities.TrimHtmlText(itemIterator.Current.Value),
                     Published = Html2Article.GetPublishDate(itemIterator.Current.Value),
                     PublishedStr = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
                 };
@@ -164,13 +164,6 @@ namespace WebCrawler.Common.Analyzers
             }
 
             return results;
-        }
-
-        private static string TrimText(string text, bool persistLineBreaks = false)
-        {
-            return string.IsNullOrEmpty(text)
-                ? string.Empty
-                : Regex.Replace(text, persistLineBreaks ? Constants.EXP_TEXT_CLEAN : Constants.EXP_TEXT_CLEAN_FULL, "");
         }
 
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)

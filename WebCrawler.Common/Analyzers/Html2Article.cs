@@ -189,7 +189,8 @@ namespace WebCrawler.Common.Analyzers
                     title = h1;
                 }
             }
-            return string.IsNullOrEmpty(title) ? title : Regex.Replace(title, Constants.EXP_TEXT_CLEAN_FULL, "");
+
+            return Utilities.TrimHtmlText(title);
         }
 
         /// <summary>
