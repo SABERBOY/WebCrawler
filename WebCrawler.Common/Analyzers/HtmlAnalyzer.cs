@@ -105,9 +105,9 @@ namespace WebCrawler.Common.Analyzers
             var expExcludeSections = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
 
             var query = blocks
-                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath) // exclude non-body links block
-                    && (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text block
-                    && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links block
+                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath) // exclude non-body links blocks
+                    && (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
+                    && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
                 )
                 .OrderByDescending(o => o.Score);
 
