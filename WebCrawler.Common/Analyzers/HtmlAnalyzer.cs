@@ -75,7 +75,7 @@ namespace WebCrawler.Common.Analyzers
                     block = new Block
                     {
                         LinkXPath = link.XPath,
-                        MatchCount = 1,
+                        LinkCount = 1,
                         LinkTextLength = link.Text.Length
                     };
 
@@ -89,7 +89,7 @@ namespace WebCrawler.Common.Analyzers
                         && expAnyIndex.Matches(genericXPath).Count <= Constants.RULE_CATALOG_LIST_NESTED_MAX_LEVEL)
                     {
                         block.LinkXPath = genericXPath;
-                        block.MatchCount++;
+                        block.LinkCount++;
                         block.LinkTextLength += link.Text.Length;
                     }
                     else
@@ -105,7 +105,10 @@ namespace WebCrawler.Common.Analyzers
             var expExcludeSections = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
 
             var query = blocks
-                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath))
+                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath) // exclude non-body links block
+                    && (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text block
+                    && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links block
+                )
                 .OrderByDescending(o => o.Score);
 
             var threshold = query.First().Score / 2;
@@ -427,7 +430,7 @@ namespace WebCrawler.Common.Analyzers
     public class Block
     {
         public string LinkXPath { get; set; }
-        public int MatchCount { get; set; }
+        public int LinkCount { get; set; }
         public int LinkTextLength { get; set; }
         public int FullTextLength { get; set; }
         public double Score

@@ -16,5 +16,8 @@
         //public const string EXP_TEXT_CLEAN_FULL = @"(^[ \r\n]+|[ \r\n]+$|[ ]{2,}|[\r\n]+)";
 
         public const int RULE_CATALOG_LIST_NESTED_MAX_LEVEL = 2;
+
+        public const int RULE_CATALOG_LIST_MIN_LINKTEXT_LEN = 10;
+        public const int RULE_CATALOG_LIST_MIN_LINKCOUNT = 3;
     }
 }
