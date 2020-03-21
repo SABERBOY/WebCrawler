@@ -721,7 +721,7 @@ namespace WebCrawler.UI.ViewModels
                 ShowTestResult = true;
 
                 // test catalogs
-                var result = await TestAsync(Editor.Home, Editor.ListPath);
+                var result = await TestAsync(Editor.Home, Editor.ListPath, true);
                 CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
 
                 if (result.CatalogsResponse.IsRedirected)
@@ -733,7 +733,7 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        private async Task<TestResult> TestAsync(string url, string listPath)
+        private async Task<TestResult> TestAsync(string url, string listPath, bool showParseErrors = false)
         {
             var result = new TestResult();
 
@@ -744,7 +744,10 @@ namespace WebCrawler.UI.ViewModels
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(data.Content);
 
-            htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
+            if (showParseErrors)
+            {
+                htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
+            }
 
             result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
 
