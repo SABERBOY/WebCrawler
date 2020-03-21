@@ -560,15 +560,23 @@ namespace WebCrawler.UI.ViewModels
                             }
                         }
                     }
+                    catch (HttpRequestException ex)
+                    {
+                        var baseEx = ex.GetBaseException();
+
+                        status = WebsiteStatus.ErrorBroken;
+                        notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
+                    }
                     catch (Exception ex)
                     {
-                        status = WebsiteStatus.ErrorBroken;
+                        // keep previous stats as it might not be a website issue as usual, e.g. TaskCanceledException
+                        status = website.Status;
                         notes = ex.Message;
                     }
 
-                    if (status != WebsiteStatus.Normal)
+                    if (status != website.Status || notes != website.SysNotes)
                     {
-                        AppendOutput($"{website.Name}: {notes}", LogEventLevel.Warning);
+                        AppendOutput($"{website.Name}: {status}: {notes}", status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);
                     }
 
                     try

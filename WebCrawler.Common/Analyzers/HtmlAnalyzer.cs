@@ -16,14 +16,23 @@ namespace WebCrawler.Common.Analyzers
                 var blocks = EvaluateCatalogs(htmlDoc);
                 if (blocks.Length == 0)
                 {
-                    throw new Exception("Failed to detect link blocks");
+                    return new CatalogItem[0];
                 }
 
                 var catalogItems = new Dictionary<Block, CatalogItem[]>();
 
                 foreach (var block in blocks)
                 {
-                    catalogItems.Add(block, ExtractCatalogItems(htmlDoc, block));
+                    var items = ExtractCatalogItems(htmlDoc, block);
+                    if (items.Length > 0)
+                    {
+                        catalogItems.Add(block, items);
+                    }
+                }
+
+                if (catalogItems.Count == 0)
+                {
+                    return new CatalogItem[0];
                 }
 
                 return catalogItems
@@ -55,7 +64,7 @@ namespace WebCrawler.Common.Analyzers
             }).ToArray();
 
             // test code
-            //var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
+            var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
 
             Dictionary<string, string[]> similarities = new Dictionary<string, string[]>();
 
