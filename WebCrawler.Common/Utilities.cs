@@ -30,14 +30,23 @@ namespace WebCrawler.Common
         {
             var baseTagMatch = Regex.Match(html, @"(?is)<base +href=[""']?([^""' ]+)");
 
-            var baseUrl = baseTagMatch.Success ? baseTagMatch.Groups[1].Value : pageUrl;
-            if (baseUrl.StartsWith("//"))
+            string baseUrl;
+            if (baseTagMatch.Success)
             {
-                baseUrl = new Uri(pageUrl).Scheme + ":" + baseUrl;
+                baseUrl = baseTagMatch.Groups[1].Value;
+
+                if (baseUrl.StartsWith("//"))
+                {
+                    baseUrl = new Uri(pageUrl).Scheme + ":" + baseUrl;
+                }
+                else if (baseUrl.StartsWith("/"))
+                {
+                    baseUrl = new Uri(new Uri(pageUrl), baseUrl).AbsoluteUri;
+                }
             }
-            else if (baseUrl.StartsWith("/"))
+            else
             {
-                baseUrl = new Uri(new Uri(pageUrl), baseUrl).AbsoluteUri;
+                baseUrl = pageUrl;
             }
 
             Uri baseUri = new Uri(baseUrl);
