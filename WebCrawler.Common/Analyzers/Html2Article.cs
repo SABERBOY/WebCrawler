@@ -205,7 +205,7 @@ namespace WebCrawler.Common.Analyzers
             Match match = Regex.Match(
                 text,
                 // match dates like 03/16/2020, 2020/03/16, 2020年03月16日
-                @"(\d{1,2}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{4})(\s?\d{2}:\d{2}(:\d{2})?)?|((\d{4}|\d{2})(?<sep2>[-/.])\d{1,2}\k<sep2>\d{1,2})(\s?\d{2}:\d{2}(:\d{2})?)?|(\d{4}年\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
+                @"(\d{1,2}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{4}|(\d{4}|\d{2})(?<sep2>[-/.])\d{1,2}\k<sep2>\d{1,2}|\d{4}年\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
                 RegexOptions.IgnoreCase);
 
             if (match.Success)
@@ -258,7 +258,7 @@ namespace WebCrawler.Common.Analyzers
             string text = Regex.Replace(html, "(?is)<.*?>", "");
             Match match = Regex.Match(
                 text,
-                @"((\d{4}|\d{2})(?<sep1>[-/.])\d{2}(\k<sep1>(\d{4}|\d{2}))?)(\s?\d{2}:\d{2}(:\d{2})?)?|(((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
+                @"((\d{4}|\d{2})(?<sep1>[-/.])\d{2}(\k<sep1>(\d{4}|\d{2}))?|((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
                 RegexOptions.IgnoreCase);
 
             return match.Success ? match.Value : null;
