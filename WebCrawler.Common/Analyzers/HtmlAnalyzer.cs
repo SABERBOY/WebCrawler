@@ -64,7 +64,7 @@ namespace WebCrawler.Common.Analyzers
             }).ToArray();
 
             // test code
-            var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
+            //var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
 
             Dictionary<string, string[]> similarities = new Dictionary<string, string[]>();
 
