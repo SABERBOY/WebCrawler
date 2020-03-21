@@ -189,7 +189,8 @@ namespace WebCrawler.Common.Analyzers
                     title = h1;
                 }
             }
-            return string.IsNullOrEmpty(title) ? title : Regex.Replace(title, Constants.EXP_TEXT_CLEAN_FULL, "");
+
+            return Utilities.TrimHtmlText(title);
         }
 
         /// <summary>
@@ -249,6 +250,18 @@ namespace WebCrawler.Common.Analyzers
             }
 
             return null;
+        }
+
+        public static string GetPublishDateStr(string html)
+        {
+            // 过滤html标签，防止标签对日期提取产生影响
+            string text = Regex.Replace(html, "(?is)<.*?>", "");
+            Match match = Regex.Match(
+                text,
+                @"((\d{4}|\d{2})(?<sep1>[-/.])\d{2}(\k<sep1>(\d{4}|\d{2}))?)(\s?\d{2}:\d{2}(:\d{2})?)?|(((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
+                RegexOptions.IgnoreCase);
+
+            return match.Success ? match.Value : null;
         }
 
         /// <summary>

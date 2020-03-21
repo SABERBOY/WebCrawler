@@ -282,7 +282,15 @@
                       AutoGenerateColumns="True"
                       IsReadOnly="True"
                       CanUserSortColumns="False"
-                      Margin="0 0 10 10" />
+                      Margin="0 0 10 10">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Published" Binding="{Binding Published, StringFormat=yyyy/MM/dd HH:mm:ss}" />
+                    <DataGridTextColumn Header="PublishedStr" Binding="{Binding PublishedStr}" />
+                    <DataGridTextColumn Header="Title" Binding="{Binding Title}" />
+                    <DataGridTextColumn Header="Url" Binding="{Binding Url}" />
+                    <DataGridTextColumn Header="FullText" Binding="{Binding FullText}" />
+                </DataGrid.Columns>
+            </DataGrid>
 
             <Grid Grid.Row="1"
                   Margin="0 0 10 10"
@@ -307,7 +315,7 @@
                     <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Article.Title}" IsReadOnly="True" />
 
                     <Label Grid.Row="2" Grid.Column="0" Content="Published" />
-                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Article.Published}" IsReadOnly="True" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Article.Published, StringFormat=yyyy/MM/dd HH:mm:ss}" IsReadOnly="True" />
 
                     <Label Grid.Row="3" Grid.Column="0" Content="Content" />
                     <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Article.Content}" Height="400" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" IsReadOnly="True" />

@@ -28,7 +28,7 @@ namespace WebCrawler.Common.Analyzers
 
                 return catalogItems
                     // blocks with published date has higher priority
-                    .OrderByDescending(o => o.Value.First().Published != null)
+                    .OrderByDescending(o => o.Value.First().HasDate)
                     .ThenByDescending(o => o.Key.Score)
                     .Select(o => o.Value)
                     .First();
@@ -41,7 +41,7 @@ namespace WebCrawler.Common.Analyzers
 
         private static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
         {
-            var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a[@href][text()]");
+            var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a");
             if (linkNodes == null)
             {
                 return new Block[0];
@@ -50,7 +50,7 @@ namespace WebCrawler.Common.Analyzers
             var links = linkNodes.Select(o => new Link
             {
                 XPath = o.XPath,
-                Text = TrimText(o.InnerText),
+                Text = Utilities.TrimHtmlText(o.InnerText),
                 Url = o.GetAttributeValue("href", null)
             }).ToArray();
 
@@ -75,7 +75,7 @@ namespace WebCrawler.Common.Analyzers
                     block = new Block
                     {
                         LinkXPath = link.XPath,
-                        MatchCount = 1,
+                        LinkCount = 1,
                         LinkTextLength = link.Text.Length
                     };
 
@@ -89,7 +89,7 @@ namespace WebCrawler.Common.Analyzers
                         && expAnyIndex.Matches(genericXPath).Count <= Constants.RULE_CATALOG_LIST_NESTED_MAX_LEVEL)
                     {
                         block.LinkXPath = genericXPath;
-                        block.MatchCount++;
+                        block.LinkCount++;
                         block.LinkTextLength += link.Text.Length;
                     }
                     else
@@ -105,7 +105,10 @@ namespace WebCrawler.Common.Analyzers
             var expExcludeSections = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
 
             var query = blocks
-                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath))
+                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath) // exclude non-body links blocks
+                    && (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
+                    && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
+                )
                 .OrderByDescending(o => o.Score);
 
             var threshold = query.First().Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
@@ -122,6 +125,7 @@ namespace WebCrawler.Common.Analyzers
             var itemIterator = htmlDoc.CreateNavigator().Select(block.ContainerPath);
             string linkUrl;
             string linkTitle;
+            CatalogItem linkItem;
             while (itemIterator.MoveNext())
             {
                 linkUrl = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href");
@@ -133,13 +137,16 @@ namespace WebCrawler.Common.Analyzers
                     continue;
                 }
 
-                items.Add(new CatalogItem
+                linkItem = new CatalogItem
                 {
                     Url = linkUrl,
-                    Title = TrimText(linkTitle),
-                    FullText = TrimText(itemIterator.Current.Value),
-                    Published = Html2Article.GetPublishDate(itemIterator.Current.Value)
-                });
+                    Title = Utilities.TrimHtmlText(linkTitle),
+                    FullText = Utilities.TrimHtmlText(itemIterator.Current.Value),
+                    Published = Html2Article.GetPublishDate(itemIterator.Current.Value),
+                    PublishedStr = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
+                };
+
+                items.Add(linkItem);
             }
 
             var results = items
@@ -154,15 +161,12 @@ namespace WebCrawler.Common.Analyzers
             {
                 results.ForEach(o => o.Published = null);
             }
+            if (results.Any(o => string.IsNullOrEmpty(o.PublishedStr)))
+            {
+                results.ForEach(o => o.PublishedStr = null);
+            }
 
             return results;
-        }
-
-        private static string TrimText(string text, bool persistLineBreaks = false)
-        {
-            return string.IsNullOrEmpty(text)
-                ? string.Empty
-                : Regex.Replace(text, persistLineBreaks ? Constants.EXP_TEXT_CLEAN : Constants.EXP_TEXT_CLEAN_FULL, "");
         }
 
         //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)
@@ -426,7 +430,7 @@ namespace WebCrawler.Common.Analyzers
     public class Block
     {
         public string LinkXPath { get; set; }
-        public int MatchCount { get; set; }
+        public int LinkCount { get; set; }
         public int LinkTextLength { get; set; }
         public int FullTextLength { get; set; }
         public double Score
@@ -475,9 +479,20 @@ namespace WebCrawler.Common.Analyzers
 
     public class CatalogItem
     {
-        public DateTime? Published { get; set; }
         public string Title { get; set; }
         public string Url { get; set; }
         public string FullText { get; set; }
+        public DateTime? Published { get; set; }
+        /// <summary>
+        /// Indicates a date/time string, which might not even be a full date (e.g. exclude year part).
+        /// </summary>
+        public string PublishedStr { get; set; }
+        public bool HasDate
+        {
+            get
+            {
+                return Published != null || !string.IsNullOrEmpty(PublishedStr);
+            }
+        }
     }
 }
