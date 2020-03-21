@@ -111,7 +111,13 @@ namespace WebCrawler.Common.Analyzers
                 )
                 .OrderByDescending(o => o.Score);
 
-            var threshold = query.First().Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
+            var topBlock = query.FirstOrDefault();
+            if (topBlock == null)
+            {
+                return new Block[0];
+            }
+
+            var threshold = topBlock.Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
 
             return query
                 .Where(o => o.Score > threshold) // pick high posibility blocks
@@ -345,7 +351,7 @@ namespace WebCrawler.Common.Analyzers
                         return null;
                     }
 
-                    if (IsNumber(current2) && source[index2 - 1] == '[') // check previous char as the number might be part of head tags, e.g. h1
+                    if (IsNumber(current2) && target[index2 - 1] == '[') // check previous char as the number might be part of head tags, e.g. h1
                     {
                         while (IsNumber(target[++index2])) { }
                     }
