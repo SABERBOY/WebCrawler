@@ -35,6 +35,10 @@ namespace WebCrawler.Common
             {
                 baseUrl = new Uri(pageUrl).Scheme + ":" + baseUrl;
             }
+            else if (baseUrl.StartsWith("/"))
+            {
+                baseUrl = new Uri(new Uri(pageUrl), baseUrl).AbsoluteUri;
+            }
 
             Uri baseUri = new Uri(baseUrl);
 
