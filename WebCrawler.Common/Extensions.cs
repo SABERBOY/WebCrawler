@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -228,6 +229,16 @@ namespace WebCrawler.Common
         public static string GetAggregatedMessage(this AggregateException aex)
         {
             return null;
+        }
+
+        public static void HandleParseErrorsIfAny(this HtmlDocument htmlDoc, Action<string> action)
+        {
+            var parseErrors = string.Join("\r\n", htmlDoc.ParseErrors.Select(o => $"Html parsing error in line {o.Line} column {o.LinePosition}: {o.Reason}"));
+
+            if (!string.IsNullOrEmpty(parseErrors))
+            {
+                action?.Invoke(parseErrors);
+            }
         }
     }
 

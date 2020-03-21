@@ -484,6 +484,8 @@ namespace WebCrawler.UI.ViewModels
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(data.Content);
 
+                htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, crawlLog.Website.Home, LogEventLevel.Warning));
+
                 catalogItems = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, crawlLog.Website.ListPath);
                 if (catalogItems.Length == 0)
                 {

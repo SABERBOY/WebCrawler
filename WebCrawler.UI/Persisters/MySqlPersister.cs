@@ -104,12 +104,13 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool? enabled = true, int? lastId = null)
+        public async Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null)
         {
             return await _dbContext.Websites
                 .AsNoTracking()
-                .Where(o => (enabled == null || o.Enabled == enabled)
+                .Where(o => (isFull || o.Enabled)
                     && (lastId == null || o.Id < lastId)
+                    //&& o.Status != WebsiteStatus.ErrorBroken
                 )
                 .OrderByDescending(o => o.Id)
                 .ToPagedResultAsync(1);

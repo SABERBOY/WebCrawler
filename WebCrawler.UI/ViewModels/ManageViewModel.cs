@@ -597,7 +597,7 @@ namespace WebCrawler.UI.ViewModels
                 PagedResult<Website> websitesQueue = null;
                 do
                 {
-                    websitesQueue = _persister.GetWebsiteAnalysisQueueAsync(isFull ? (bool?)null : true, websitesQueue?.Items.Last().Id).Result;
+                    websitesQueue = _persister.GetWebsiteAnalysisQueueAsync(isFull, websitesQueue?.Items.Last().Id).Result;
 
                     if (total == 0)
                     {
@@ -743,6 +743,8 @@ namespace WebCrawler.UI.ViewModels
 
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(data.Content);
+
+            htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
 
             result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
 
