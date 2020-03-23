@@ -190,7 +190,7 @@ namespace WebCrawler.Common.Analyzers
                 }
             }
 
-            return Utilities.TrimHtmlText(title);
+            return Utilities.NormalizeHtmlText(title);
         }
 
         /// <summary>
@@ -208,45 +208,10 @@ namespace WebCrawler.Common.Analyzers
                 @"(\d{1,2}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{4}|(\d{4}|\d{2})(?<sep2>[-/.])\d{1,2}\k<sep2>\d{1,2}|\d{4}年\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
                 RegexOptions.IgnoreCase);
 
-            if (match.Success)
+            DateTime dateTime;
+            if (match.Success && DateTime.TryParse(match.Value, out dateTime))
             {
-                try
-                {
-                    string dateStr = "";
-                    for (int i = 0; i < match.Groups.Count; i++)
-                    {
-                        dateStr = match.Groups[i].Value;
-                        if (!string.IsNullOrEmpty(dateStr))
-                        {
-                            break;
-                        }
-                    }
-                    // 对中文日期的处理
-                    if (dateStr.Contains("年"))
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        foreach (var ch in dateStr)
-                        {
-                            if (ch == '年' || ch == '月')
-                            {
-                                sb.Append("/");
-                                continue;
-                            }
-                            if (ch == '日')
-                            {
-                                sb.Append(' ');
-                                continue;
-                            }
-                            sb.Append(ch);
-                        }
-                        dateStr = sb.ToString();
-                    }
-
-                    return Convert.ToDateTime(dateStr);
-                }
-                catch (Exception ex)
-                {
-                }
+                return dateTime;
             }
 
             return null;
@@ -256,12 +221,18 @@ namespace WebCrawler.Common.Analyzers
         {
             // 过滤html标签，防止标签对日期提取产生影响
             string text = Regex.Replace(html, "(?is)<.*?>", "");
-            Match match = Regex.Match(
+            MatchCollection matches = Regex.Matches(
                 text,
-                @"((\d{4}|\d{2})(?<sep1>[-/.])\d{2}(\k<sep1>(\d{4}|\d{2}))?|((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
+                @"(\d{4}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{1,2}|\d{1,2}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{4}|\d{1,2}[-/]\d{1,2}|((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}日)(\s?\d{2}:\d{2}(:\d{2})?)?",
                 RegexOptions.IgnoreCase);
 
-            return match.Success ? match.Value : null;
+            var separators = new char[] { '-', '/', '.', '年', '月', '日' };
+
+            // try to pick the completed date/time string if multiple matches detected
+            return matches.Cast<Match>()
+                .OrderByDescending(o => o.Value.Split(separators, StringSplitOptions.RemoveEmptyEntries).Length)
+                .FirstOrDefault()
+                ?.Value;
         }
 
         /// <summary>
