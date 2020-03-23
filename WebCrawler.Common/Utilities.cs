@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace WebCrawler.Common
 {
@@ -77,7 +78,7 @@ namespace WebCrawler.Common
         /// </summary>
         /// <param name="text"></param>
         /// <returns></returns>
-        public static string TrimHtmlText(string text)
+        public static string NormalizeHtmlText(string text)
         {
             if (string.IsNullOrEmpty(text))
             {
@@ -89,6 +90,9 @@ namespace WebCrawler.Common
 
             // trim mid chars to single space
             text = Regex.Replace(text, @"[\r\n\t ]+", " ");
+
+            // resolve code like &lt;
+            text = HttpUtility.HtmlDecode(text);
 
             return text;
         }
