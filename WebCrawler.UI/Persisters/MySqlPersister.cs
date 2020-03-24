@@ -41,7 +41,7 @@ namespace WebCrawler.UI.Persisters
 
             if (string.IsNullOrEmpty(sortBy))
             {
-                query = query.OrderByDescending(o => o.Rank);
+                query = query.OrderByDescending(o => o.Id);
             }
             else
             {
