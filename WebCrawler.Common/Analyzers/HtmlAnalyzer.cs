@@ -50,12 +50,14 @@ namespace WebCrawler.Common.Analyzers
 
         private static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
         {
+            // enumerate all links
             var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a");
             if (linkNodes == null)
             {
                 return new Block[0];
             }
 
+            // extract link data
             var links = linkNodes
                 .Select(o => new Link
                 {
@@ -65,34 +67,21 @@ namespace WebCrawler.Common.Analyzers
                 })
                 .ToArray();
 
+            // put similar links together and exclude invalid links
             var similarLinks = GetSimilarValidLinks(links);
 
+            // determine blocks for each links
             List<Block> blocks = new List<Block>();
             similarLinks.ForEach(o => BlockLinks(o.Value, blocks));
 
 #if DEBUG
+            // show data for debugging
             var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
             var similarLinksPlain = string.Join("\r\n\r\n", similarLinks.Select(o => o.Key + "\r\n" + string.Join("\r\n", o.Value.Select(l => l.XPath + "\t" + l.Text))));
             var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkXPath + "\t" + o.LinkCount + o.LinkText));
 #endif
 
-            var query = blocks
-              .Where(o => (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
-                  && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
-              )
-              .OrderByDescending(o => o.Score);
-
-            var topBlock = query.FirstOrDefault();
-            if (topBlock == null)
-            {
-                return new Block[0];
-            }
-
-            var threshold = topBlock.Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
-
-            return query
-                .Where(o => o.Score > threshold) // pick high posibility blocks
-                .ToArray();
+            return FilterBlocks(blocks);
         }
 
         private static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
@@ -205,6 +194,47 @@ namespace WebCrawler.Common.Analyzers
                     }
                 }
             }
+        }
+
+        private static Block[] FilterBlocks(IEnumerable<Block> blocks)
+        {
+            var query = blocks
+              .Where(o => (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
+                  && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
+              )
+              .OrderByDescending(o => o.Score) as IEnumerable<Block>;
+
+            var topBlock = query.FirstOrDefault();
+            if (topBlock == null)
+            {
+                return new Block[0];
+            }
+            var threshold = topBlock.Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
+
+            // exclude blocks with low score
+            query = query.Where(o => o.Score > threshold);
+
+            /*var genericIndexExp = new Regex(@"\[\*\]");
+
+            query = query.Where(blk =>
+            {
+                var level = genericIndexExp.Matches(blk.LinkXPath).Count;
+                if (level == 0)
+                {
+                    return false;
+                }
+                else if (level == 1)
+                {
+                    return true;
+                }
+                else
+                {
+                    // TODO
+                    return false;
+                }
+            });*/
+
+            return query.ToArray();
         }
 
         /// <summary>
