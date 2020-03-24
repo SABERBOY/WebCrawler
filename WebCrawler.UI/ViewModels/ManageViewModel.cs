@@ -546,17 +546,19 @@ namespace WebCrawler.UI.ViewModels
                         }
                         else
                         {
-                            // assume the published date detected above will be always valid or null
-                            var latestItem = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault();
-                            if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
-                            {
-                                status = WebsiteStatus.ErrorOutdate;
-                                notes = $"Last published: {latestItem.Published}";
-                            }
-                            else if (!latestItem.HasDate)
+                            if (result.Catalogs.Any(o => !o.HasDate))
                             {
                                 status = WebsiteStatus.WarningNoDates;
                                 notes = "No published date in catalog items";
+                            }
+                            else
+                            {
+                                var latestItem = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault();
+                                if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                                {
+                                    status = WebsiteStatus.ErrorOutdate;
+                                    notes = $"Last published: {latestItem.Published}";
+                                }
                             }
                         }
                     }
@@ -574,6 +576,7 @@ namespace WebCrawler.UI.ViewModels
                         notes = ex.Message;
                     }
 
+                    // output for changes only
                     if (status != website.Status || notes != website.SysNotes)
                     {
                         AppendOutput($"{website.Name}: {status}: {notes}", status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);

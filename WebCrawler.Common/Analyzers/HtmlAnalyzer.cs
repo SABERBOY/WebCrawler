@@ -37,7 +37,7 @@ namespace WebCrawler.Common.Analyzers
 
                 return catalogItems
                     // blocks with published date has higher priority
-                    .OrderByDescending(o => o.Value.First().HasDate)
+                    .OrderByDescending(o => o.Value.All(l => l.HasDate))
                     .ThenByDescending(o => o.Key.Score)
                     .Select(o => o.Value)
                     .First();
@@ -56,69 +56,31 @@ namespace WebCrawler.Common.Analyzers
                 return new Block[0];
             }
 
-            var links = linkNodes.Select(o => new Link
-            {
-                XPath = o.XPath,
-                Text = Utilities.TrimHtmlText(o.InnerText),
-                Url = o.GetAttributeValue("href", null)
-            }).ToArray();
+            var links = linkNodes
+                .Select(o => new Link
+                {
+                    XPath = o.XPath,
+                    Text = Utilities.NormalizeHtmlText(o.InnerText),
+                    Url = o.GetAttributeValue("href", null)
+                })
+                .ToArray();
 
-            // test code
-            //var test = links.Select(o => new KeyValuePair<string, string>(o.XPath, o.Text)).ToArray();
-
-            Dictionary<string, string[]> similarities = new Dictionary<string, string[]>();
-
-            var expAnyIndex = new Regex("[*]");
+            var similarLinks = GetSimilarValidLinks(links);
 
             List<Block> blocks = new List<Block>();
-            Block block = null;
-            Link link;
-            string genericXPath;
-            for (var j = 0; j < links.Length; j++)
-            {
-                link = links[j];
+            similarLinks.ForEach(o => BlockLinks(o.Value, blocks));
 
-                if (block == null) // start 1st item
-                {
-                    //start new block
-                    block = new Block
-                    {
-                        LinkXPath = link.XPath,
-                        LinkCount = 1,
-                        LinkTextLength = link.Text.Length
-                    };
-
-                    blocks.Add(block);
-                }
-                else // compare with the items after
-                {
-                    genericXPath = GenerateXPathSimilarity(block.LinkXPath, link.XPath);
-                    if (!string.IsNullOrEmpty(genericXPath)
-                        // accepts 2-level depth of nested catalog lists at most
-                        && expAnyIndex.Matches(genericXPath).Count <= Constants.RULE_CATALOG_LIST_NESTED_MAX_LEVEL)
-                    {
-                        block.LinkXPath = genericXPath;
-                        block.LinkCount++;
-                        block.LinkTextLength += link.Text.Length;
-                    }
-                    else
-                    {
-                        // move back to transact again
-                        j--;
-                        // clear block
-                        block = null;
-                    }
-                }
-            }
-
-            var expExcludeSections = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
+#if DEBUG
+            var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
+            var similarLinksPlain = string.Join("\r\n\r\n", similarLinks.Select(o => o.Key + "\r\n" + string.Join("\r\n", o.Value.Select(l => l.XPath + "\t" + l.Text))));
+            var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkXPath + "\t" + o.LinkCount + o.LinkText));
+#endif
 
             var query = blocks
-                .Where(o => !expExcludeSections.IsMatch(o.LinkXPath) // exclude non-body links blocks
-                    && (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
-                    && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
-                )
-                .OrderByDescending(o => o.Score);
+              .Where(o => (double)o.LinkTextLength / o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
+                  && o.LinkCount > Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
+              )
+              .OrderByDescending(o => o.Score);
 
             var topBlock = query.FirstOrDefault();
             if (topBlock == null)
@@ -155,8 +117,8 @@ namespace WebCrawler.Common.Analyzers
                 linkItem = new CatalogItem
                 {
                     Url = linkUrl,
-                    Title = Utilities.TrimHtmlText(linkTitle),
-                    FullText = Utilities.TrimHtmlText(itemIterator.Current.Value),
+                    Title = Utilities.NormalizeHtmlText(linkTitle),
+                    FullText = Utilities.NormalizeHtmlText(itemIterator.Current.Value),
                     Published = Html2Article.GetPublishDate(itemIterator.Current.Value),
                     PublishedStr = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
                 };
@@ -164,274 +126,157 @@ namespace WebCrawler.Common.Analyzers
                 items.Add(linkItem);
             }
 
-            var results = items
+            return items
                 .GroupBy(o => o.Url)
                 // pick the first link which contains text if duplicate links detected
                 .Select(o => o.FirstOrDefault(lnk => !string.IsNullOrEmpty(lnk.Title)))
                 .Where(o => o != null)
                 .ToArray();
-
-            // the published is considered as valid only when valid in all catalog items
-            if (results.Any(o => o.Published == null))
-            {
-                results.ForEach(o => o.Published = null);
-            }
-            if (results.Any(o => string.IsNullOrEmpty(o.PublishedStr)))
-            {
-                results.ForEach(o => o.PublishedStr = null);
-            }
-
-            return results;
         }
 
-        //private string[] ExtractXPathSimilarity(string xpath1, string xpath2)
-        //{
-        //    // assume xpath1 and xpath2 are the 1st and 2nd occurrence of a formatted list in the HTML DOM, so the index and xpath text length should be same if they are in the same list and depth.
-        //    if (xpath1.Length != xpath2.Length)
-        //    {
-        //        return null;
-        //    }
+        private static Dictionary<string, Link[]> GetSimilarValidLinks(Link[] links)
+        {
+            var noiseAreaExp = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
+            var nodeIndexExp = new Regex(@"\[\d+\]");
 
-        //    List<string> similarity = new List<string>();
+            // exlucde invalid links
+            var validLinks = links
+                .Where(o => o.Url != null
+                    && !o.Url.StartsWith("#")
+                    && !o.Url.StartsWith("javascript", StringComparison.CurrentCultureIgnoreCase)
+                    && !noiseAreaExp.IsMatch(o.XPath) // exclude noise area links
+                )
+                .ToArray();
 
-        //    StringBuilder builder = new StringBuilder();
-        //    char temp;
-        //    for (var i = 0; i < xpath1.Length; i++)
-        //    {
-        //        temp = xpath1[i];
+            // group similar links
+            return links.GroupBy(o => nodeIndexExp.Replace(o.XPath, ""))
+                .Where(o => o.Count() >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small link blocks
+                    && o.Max(l => l.Text?.Length ?? 0) >= Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short text link blocks, NOTICE: couldn't use average tex length here as we haven't exluced all noise links which might degrade the average score
+                )
+                .ToDictionary(o => o.Key, o => o.ToArray());
+        }
 
-        //        if (temp == xpath2[i])
-        //        {
-        //            builder.Append(temp);
-        //        }
-        //        else if (IsNumber(temp))
-        //        {
-        //            if (builder.Length > 0)
-        //            {
-        //                similarity.Add(builder.ToString());
+        private static void BlockLinks(Link[] similarLinks, List<Block> blocks)
+        {
+            Block block = null;
+            Link link;
+            string genericXPath;
+            for (var i = 0; i < similarLinks.Length; i++)
+            {
+                link = similarLinks[i];
 
-        //                builder.Clear();
-        //            }
-        //        }
-        //        else
-        //        {
-        //            return null;
-        //        }
-        //    }
+                if (block == null) // start 1st item
+                {
+                    //start new block
+                    block = new Block
+                    {
+                        LinkXPath = link.XPath,
+                        LinkCount = 1,
+                        LinkTextLength = link.Text.Length
+                    };
 
-        //    if (builder.Length > 0)
-        //    {
-        //        similarity.Add(builder.ToString());
+#if DEBUG
+                    block.LinkText = "\r\n" + link.Text;
+#endif
 
-        //        builder.Clear();
-        //    }
+                    blocks.Add(block);
+                }
+                else // compare with the items after
+                {
+                    genericXPath = GetCommonPath(block.LinkXPath, similarLinks[i - 1].XPath, link.XPath);
 
-        //    return similarity.ToArray();
-        //}
+                    if (!string.IsNullOrEmpty(genericXPath)
+                        // accepts 2-level depth of nested catalog lists at most
+                        /*&& expAnyIndex.Matches(genericXPath).Count <= Constants.RULE_CATALOG_LIST_NESTED_MAX_LEVEL*/)
+                    {
+                        block.LinkXPath = genericXPath;
+                        block.LinkCount++;
+                        block.LinkTextLength += link.Text.Length;
+#if DEBUG
+                        block.LinkText += "\r\n" + link.Text;
+#endif
+                    }
+                    else
+                    {
+                        // move back to transact again
+                        i--;
+                        // clear block
+                        block = null;
+                    }
+                }
+            }
+        }
 
         /// <summary>
-        /// Analyze if two xpathes match exactly, or the the <see cref="target"/> is a subtring of the <see cref="source"/>.
+        /// Works even when <see cref="previous"/> and <see cref="current"/> don't have similar xpath hierarchy
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
-        /// <param name="exact"></param>
+        /// <param name="commonPath"></param>
+        /// <param name="previous"></param>
+        /// <param name="current"></param>
         /// <returns></returns>
-        //private int[] CalculateXPathSimilarity(string source, string target, bool exact = true)
-        //{
-        //    if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(target))
-        //    {
-        //        return null;
-        //    }
-
-        //    List<int> similarity = new List<int>();
-
-        //    char current1;
-        //    char current2;
-        //    int simiCount = 0;
-        //    int index1 = 0;
-        //    int index2 = 0;
-        //    bool startNew = true;
-        //    while (index1 < source.Length && index2 < target.Length)
-        //    {
-        //        current1 = source[index1];
-        //        current2 = target[index2];
-
-        //        if (current1 == current2)
-        //        {
-        //            if (startNew)
-        //            {
-        //                similarity.Add(index1);
-
-        //                simiCount = 0;
-
-        //                startNew = false;
-        //            }
-
-        //            simiCount++;
-
-        //            index1++;
-        //            index2++;
-        //        }
-        //        else
-        //        {
-        //            if (IsNumber(current1))
-        //            {
-        //                index1++;
-        //                startNew = true;
-        //            }
-
-        //            if (IsNumber(current2))
-        //            {
-        //                index2++;
-        //                startNew = true;
-        //            }
-
-        //            if (startNew)
-        //            {
-        //                similarity.Add(simiCount);
-        //            }
-        //            else
-        //            {
-        //                return null;
-        //            }
-        //        }
-        //    }
-
-        //    similarity.Add(simiCount);
-
-        //    if (exact)
-        //    {
-        //        if (index1 != source.Length || index2 != target.Length)
-        //        {
-        //            return null;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (index2 != target.Length)
-        //        {
-        //            return null;
-        //        }
-        //    }
-
-        //    return similarity.ToArray();
-        //}
-
-        private static string GenerateXPathSimilarity(string source, string target)
+        private static string GetCommonPath(string commonPath, string previous, string current)
         {
-            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(target))
+            var nodeExp = new Regex(@"^(\w+)(\[([*\d]+)\])?$");
+
+            var segments0 = commonPath.Split('/');
+            var segments1 = previous.Split('/');
+            var segments2 = current.Split('/');
+
+            if (segments1.Length != segments2.Length)
             {
                 return null;
             }
 
-            char current1;
-            char current2;
-            int index1 = 0;
-            int index2 = 0;
-            StringBuilder builder = new StringBuilder();
-            while (index1 < source.Length && index2 < target.Length)
+            Match nodeMatch0;
+            Match nodeMatch1;
+            Match nodeMatch2;
+            int index1;
+            int index2;
+            //bool newInterationStarted = false;
+            for (var i = 0; i < segments1.Length; i++)
             {
-                current1 = source[index1];
-                current2 = target[index2];
-
-                if (current1 == current2)
+                // identical path segments which including index
+                if (segments1[i] == segments2[i])
                 {
-                    builder.Append(current1);
-
-                    index1++;
-                    index2++;
+                    continue;
                 }
-                else
+
+                nodeMatch0 = nodeExp.Match(segments0[i]);
+                nodeMatch1 = nodeExp.Match(segments1[i]);
+                nodeMatch2 = nodeExp.Match(segments2[i]);
+
+                // check tag name
+                if (nodeMatch1.Groups[1].Value != nodeMatch2.Groups[1].Value)
                 {
-                    if (current1 == '*')
-                    {
-                        builder.Append('*');
+                    return null;
+                }
 
-                        index1++;
-                    }
-                    else if (IsNumber(current1) && source[index1 - 1] == '[') // check previous char as the number might be part of head tags, e.g. h1
-                    {
-                        builder.Append('*');
+                int.TryParse(nodeMatch1.Groups[3].Value, out index1);
+                int.TryParse(nodeMatch2.Groups[3].Value, out index2);
 
-                        while (IsNumber(source[++index1])) { }
+                // check tag index when index1 and index2 are different
+                if (nodeMatch0.Groups[3].Value != "*") // new iteration
+                {
+                    if (index1 == 1 && index2 == index1 + 1) // new iteration must start from 1, and continuous
+                    {
+                        segments0[i] = nodeExp.Replace(segments0[i], "$1[*]");
+
+                        //newInterationStarted = true;
                     }
                     else
                     {
                         return null;
                     }
-
-                    if (IsNumber(current2) && target[index2 - 1] == '[') // check previous char as the number might be part of head tags, e.g. h1
-                    {
-                        while (IsNumber(target[++index2])) { }
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                }
+                else if (index2 != index1 + 1 // new index isn't continuous
+                    && index2 != 1 // new index doesn't start from 1
+                )
+                {
+                    return null;
                 }
             }
 
-            return builder.ToString();
-        }
-
-        //private string[] ExtractXPathSimilarity(string source, string target)
-        //{
-        //    var similarity = CalculateXPathSimilarity(source, target, true);
-        //    if (similarity == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    List<string> segments = new List<string>();
-
-        //    for (var i = 0; i < similarity.Length; i += 2)
-        //    {
-        //        segments.Add(source.Substring(similarity[i], similarity[i + 1]));
-        //    }
-
-        //    return segments.ToArray();
-        //}
-
-        //private List<int[]> ExtractXPathSimilarity(string xpath, List<int[]> similarity)
-        //{
-        //    int i;
-        //    foreach (var simi in similarity)
-        //    {
-        //        if (xpath.StartsWith(simi))
-        //        {
-        //            xpath = xpath.Substring(simi.Length);
-        //        }
-        //        else if (xpath.Length >= simi.Length)
-        //        {
-        //            for (i = 0; i < simi.Length; i++)
-        //            {
-        //                simi[i]
-        //            }
-
-        //            while (xpath[0] >= '0' && xpath[0] <= '9')
-        //            {
-        //                xpath = xpath.Substring(1);
-        //            }
-
-        //            if (xpath.StartsWith(simi))
-        //            {
-        //                xpath = xpath.Substring(simi.Length);
-        //            }
-        //            else
-        //            {
-        //                return false;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            return null;
-        //        }
-        //    }
-        //}
-
-        private static bool IsNumber(char ch)
-        {
-            return ch >= '0' && ch <= '9';
+            return string.Join("/", segments0);
         }
     }
 
@@ -447,6 +292,10 @@ namespace WebCrawler.Common.Analyzers
         public string LinkXPath { get; set; }
         public int LinkCount { get; set; }
         public int LinkTextLength { get; set; }
+        /// <summary>
+        /// Link text captured in debug mode only.
+        /// </summary>
+        public string LinkText { get; set; }
         public int FullTextLength { get; set; }
         public double Score
         {
