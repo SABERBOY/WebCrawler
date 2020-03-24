@@ -109,7 +109,7 @@ namespace WebCrawler.Common.Analyzers
                     Title = Utilities.NormalizeHtmlText(linkTitle),
                     FullText = Utilities.NormalizeHtmlText(itemIterator.Current.Value),
                     Published = Html2Article.GetPublishDate(itemIterator.Current.Value),
-                    PublishedStr = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
+                    PublishedRaw = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
                 };
 
                 items.Add(linkItem);
@@ -380,12 +380,12 @@ namespace WebCrawler.Common.Analyzers
         /// <summary>
         /// Indicates a date/time string, which might not even be a full date (e.g. exclude year part).
         /// </summary>
-        public string PublishedStr { get; set; }
+        public string PublishedRaw { get; set; }
         public bool HasDate
         {
             get
             {
-                return Published != null || !string.IsNullOrEmpty(PublishedStr);
+                return Published != null || !string.IsNullOrEmpty(PublishedRaw);
             }
         }
     }

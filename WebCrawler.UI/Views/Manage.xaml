@@ -279,13 +279,13 @@
 
             <DataGrid ItemsSource="{Binding CatalogItems}"
                       SelectedItem="{Binding SelectedCatalogItem}"
-                      AutoGenerateColumns="True"
+                      AutoGenerateColumns="False"
                       IsReadOnly="True"
                       CanUserSortColumns="False"
                       Margin="0 0 10 10">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Published" Binding="{Binding Published, StringFormat=yyyy/MM/dd HH:mm:ss}" />
-                    <DataGridTextColumn Header="PublishedStr" Binding="{Binding PublishedStr}" />
+                    <DataGridTextColumn Header="PublishedRaw" Binding="{Binding PublishedRaw}" />
                     <DataGridTextColumn Header="Title" Binding="{Binding Title}" />
                     <DataGridTextColumn Header="Url" Binding="{Binding Url}" />
                     <DataGridTextColumn Header="FullText" Binding="{Binding FullText}" />
