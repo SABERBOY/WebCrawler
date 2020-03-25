@@ -579,8 +579,12 @@ namespace WebCrawler.UI.ViewModels
                         {
                             if (result.Catalogs.Any(o => !o.HasDate))
                             {
-                                status = WebsiteStatus.WarningNoDates;
-                                notes = "No published date in catalog items";
+                                // check dates only when ListPath isn't provided
+                                if (string.IsNullOrEmpty(website.ListPath))
+                                {
+                                    status = WebsiteStatus.WarningNoDates;
+                                    notes = "No published date in catalog items";
+                                }
                             }
                             else
                             {
