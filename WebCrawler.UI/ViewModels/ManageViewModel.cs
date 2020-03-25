@@ -119,8 +119,8 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private WebsiteView _editor;
-        public WebsiteView Editor
+        private WebsiteEditor _editor;
+        public WebsiteEditor Editor
         {
             get { return _editor; }
             set
@@ -128,19 +128,6 @@ namespace WebCrawler.UI.ViewModels
                 if (_editor == value) { return; }
 
                 _editor = value;
-                RaisePropertyChanged();
-            }
-        }
-
-        private bool _showTestResult;
-        public bool ShowTestResult
-        {
-            get { return _showTestResult; }
-            set
-            {
-                if (_showTestResult == value) { return; }
-
-                _showTestResult = value;
                 RaisePropertyChanged();
             }
         }
@@ -412,6 +399,8 @@ namespace WebCrawler.UI.ViewModels
 
             Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();
+            Editor = new WebsiteEditor();
+            Editor.PropertyChanged += Editor_PropertyChanged;
         }
 
         public bool Sort(params SortDescription[] sorts)
@@ -435,6 +424,31 @@ namespace WebCrawler.UI.ViewModels
             _websiteSelections = websites;
 
             RefreshToggleState();
+        }
+
+        public void LoadHtml()
+        {
+            TryRunAsync(async () =>
+            {
+                await LoadHtmlCoreAsync();
+            });
+        }
+
+        public void SearchHtmlNodes(string keywords)
+        {
+            Link[] links;
+            if (string.IsNullOrEmpty(keywords) || Editor.HtmlDoc == null)
+            {
+                links = new Link[0];
+            }
+            else
+            {
+                links = HtmlAnalyzer.GetValidLinks(Editor.HtmlDoc)
+                    .Where(o => o.Text.Contains(keywords))
+                    .ToArray();
+            }
+
+            Editor.NodeSuggestions = new ObservableCollection<Link>(links);
         }
 
         #region Private Members
@@ -482,19 +496,36 @@ namespace WebCrawler.UI.ViewModels
 
             if (SelectedWebsite == null)
             {
-                Editor = null;
-                ShowTestResult = false;
+                Editor.Website = null;
             }
             else
             {
-                Editor = SelectedWebsite.Clone();
+                Editor.Website = SelectedWebsite.Clone();
 
                 TryRunAsync(async () =>
                 {
                     var logs = await _persister.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
-
                     CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
+
+                    await LoadHtmlCoreAsync();
                 });
+            }
+        }
+
+        private async Task LoadHtmlCoreAsync()
+        {
+            Editor.Html = null;
+            if (!string.IsNullOrEmpty(Editor.Website.Home))
+            {
+                var data = await _httpClient.GetHtmlAsync(Editor.Website.Home);
+                Editor.Html = data.Content;
+
+                Editor.HtmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
+
+                if (data.IsRedirected)
+                {
+                    AppendOutput("Url redirected to: " + data.ActualUrl, LogEventLevel.Warning);
+                }
             }
         }
 
@@ -681,7 +712,7 @@ namespace WebCrawler.UI.ViewModels
         {
             SelectedWebsite = null;
 
-            Editor = new WebsiteView
+            Editor.Website = new WebsiteView
             {
                 Rank = 1,
                 Enabled = true,
@@ -701,15 +732,15 @@ namespace WebCrawler.UI.ViewModels
         {
             TryRunAsync(async () =>
             {
-                var isNew = Editor.Id == 0;
+                var isNew = Editor.Website.Id == 0;
 
-                await _persister.SaveAsync(Editor);
+                await _persister.SaveAsync(Editor.Website);
 
                 if (isNew)
                 {
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        var website = Editor.Clone();
+                        var website = Editor.Website.Clone();
 
                         Websites.Insert(0, website);
 
@@ -718,7 +749,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    Editor.Clone(SelectedWebsite);
+                    Editor.Website.Clone(SelectedWebsite);
 
                     RefreshToggleState();
                 }
@@ -729,34 +760,27 @@ namespace WebCrawler.UI.ViewModels
         {
             TryRunAsync(async () =>
             {
-                ShowTestResult = true;
-
                 // test catalogs
-                var result = await TestAsync(Editor.Home, Editor.ListPath, true);
+                var result = await TestAsync(Editor.Website.Home, Editor.Website.ListPath, Editor.HtmlDoc);
                 CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
-
-                if (result.CatalogsResponse.IsRedirected)
-                {
-                    AppendOutput("Url redirected to: " + result.CatalogsResponse.ActualUrl, LogEventLevel.Warning);
-                }
 
                 // TODO: test pagination
             });
         }
 
-        private async Task<TestResult> TestAsync(string url, string listPath, bool showParseErrors = false)
+        private async Task<TestResult> TestAsync(string url = null, string listPath = null, HtmlDocument htmlDoc = null)
         {
             var result = new TestResult();
 
-            var data = await _httpClient.GetHtmlAsync(url);
-
-            result.CatalogsResponse = data;
-
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(data.Content);
-
-            if (showParseErrors)
+            if (htmlDoc == null)
             {
+                var data = await _httpClient.GetHtmlAsync(url);
+
+                result.CatalogsResponse = data;
+
+                htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(data.Content);
+
                 htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
             }
 
@@ -773,7 +797,7 @@ namespace WebCrawler.UI.ViewModels
             }
             else
             {
-                SelectedWebsite.Clone(Editor);
+                SelectedWebsite.Clone(Editor.Website);
             }
         }
 
@@ -830,6 +854,16 @@ namespace WebCrawler.UI.ViewModels
             else
             {
                 ToggleAsEnable = true;
+            }
+        }
+
+        private void Editor_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(WebsiteEditor.SelectedNode) && Editor.SelectedNode != null)
+            {
+                var links = HtmlAnalyzer.GetValidLinks(Editor.HtmlDoc);
+
+                Editor.Website.ListPath = HtmlAnalyzer.GetListPath(links, Editor.SelectedNode.XPath);
             }
         }
 

@@ -2,28 +2,48 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace WebCrawler.Common.Analyzers
 {
     public static class HtmlAnalyzer
     {
+        public static Link[] GetValidLinks(HtmlDocument htmlDoc)
+        {
+            var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a");
+            if (linkNodes == null)
+            {
+                return new Link[0];
+            }
+
+            return linkNodes
+                .Select(o => new Link
+                {
+                    XPath = o.XPath,
+                    Text = Utilities.NormalizeHtmlText(o.InnerText),
+                    Url = o.GetAttributeValue("href", null)
+                })
+                .Where(o => o.Url != null
+                    && !o.Url.StartsWith("#")
+                    && !o.Url.StartsWith("javascript", StringComparison.CurrentCultureIgnoreCase)
+                )
+                .ToArray();
+        }
+
         public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, string listPath = null)
         {
             if (string.IsNullOrEmpty(listPath)) // auto detect catalog items
             {
-                var blocks = EvaluateCatalogs(htmlDoc);
+                var blocks = AutoDetectCatalogs(htmlDoc);
                 if (blocks.Length == 0)
                 {
                     return new CatalogItem[0];
                 }
 
                 var catalogItems = new Dictionary<Block, CatalogItem[]>();
-
                 foreach (var block in blocks)
                 {
-                    var items = ExtractCatalogItems(htmlDoc, block);
+                    var items = GetCatalogItems(htmlDoc, block);
                     if (items.Length > 0)
                     {
                         catalogItems.Add(block, items);
@@ -44,31 +64,49 @@ namespace WebCrawler.Common.Analyzers
             }
             else // detect catalog items by list xpath
             {
-                throw new NotImplementedException();
+                return GetCatalogItems(htmlDoc, new Block { LinkXPath = listPath });
             }
         }
 
-        private static Block[] EvaluateCatalogs(HtmlDocument htmlDoc)
+        public static string GetListPath(Link[] links, string xpath)
+        {
+            var nodeIndexExp = new Regex(@"\[\d+\]");
+
+            var genericPath = nodeIndexExp.Replace(xpath, "");
+
+            var similarLinks = links.Where(o => nodeIndexExp.Replace(o.XPath, "") == genericPath)
+                .ToArray();
+
+            List<Block> blocks = new List<Block>();
+            BlockLinks(similarLinks, blocks);
+
+            // TODO: determine the proper block the source xpath inside
+            return "TODO: " + blocks.First().LinkXPath;
+        }
+
+        //private static CatalogItem[] GetCatalogItems(HtmlDocument htmlDoc, string listPath)
+        //{
+        //    return htmlDoc.DocumentNode
+        //        .SelectNodes(listPath)
+        //         .Select(o => new CatalogItem
+        //         {
+        //             Title = Utilities.NormalizeHtmlText(o.InnerText),
+        //             Url = o.GetAttributeValue("href", null)
+        //         })
+        //         .ToArray();
+        //}
+
+        private static Block[] AutoDetectCatalogs(HtmlDocument htmlDoc)
         {
             // enumerate all links
-            var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a");
-            if (linkNodes == null)
+            var links = GetValidLinks(htmlDoc);
+            if (links.Length == 0)
             {
                 return new Block[0];
             }
 
-            // extract link data
-            var links = linkNodes
-                .Select(o => new Link
-                {
-                    XPath = o.XPath,
-                    Text = Utilities.NormalizeHtmlText(o.InnerText),
-                    Url = o.GetAttributeValue("href", null)
-                })
-                .ToArray();
-
             // put similar links together and exclude invalid links
-            var similarLinks = GetSimilarValidLinks(links);
+            var similarLinks = GetSimilarLinks(links);
 
             // determine blocks for each links
             List<Block> blocks = new List<Block>();
@@ -84,7 +122,7 @@ namespace WebCrawler.Common.Analyzers
             return FilterBlocks(blocks);
         }
 
-        private static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, Block block)
+        private static CatalogItem[] GetCatalogItems(HtmlDocument htmlDoc, Block block)
         {
             var items = new List<CatalogItem>();
 
@@ -123,22 +161,15 @@ namespace WebCrawler.Common.Analyzers
                 .ToArray();
         }
 
-        private static Dictionary<string, Link[]> GetSimilarValidLinks(Link[] links)
+        private static Dictionary<string, Link[]> GetSimilarLinks(Link[] links)
         {
             var noiseAreaExp = new Regex(@"\b(header|footer|aside|nav|abbr)\b", RegexOptions.IgnoreCase);
             var nodeIndexExp = new Regex(@"\[\d+\]");
 
-            // exlucde invalid links
-            var validLinks = links
-                .Where(o => o.Url != null
-                    && !o.Url.StartsWith("#")
-                    && !o.Url.StartsWith("javascript", StringComparison.CurrentCultureIgnoreCase)
-                    && !noiseAreaExp.IsMatch(o.XPath) // exclude noise area links
-                )
-                .ToArray();
-
             // group similar links
-            return links.GroupBy(o => nodeIndexExp.Replace(o.XPath, ""))
+            return links
+                .Where(o => !noiseAreaExp.IsMatch(o.XPath)) // exclude noise area links
+                .GroupBy(o => nodeIndexExp.Replace(o.XPath, ""))
                 .Where(o => o.Count() >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small link blocks
                     && o.Max(l => l.Text?.Length ?? 0) >= Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short text link blocks, NOTICE: couldn't use average tex length here as we haven't exluced all noise links which might degrade the average score
                 )

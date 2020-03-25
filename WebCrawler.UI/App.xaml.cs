@@ -47,6 +47,8 @@ namespace WebCrawler.UI
 
             // add encoding support for GB2312 and GDK
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            BrowserEmulation.EnableBrowserEmulation();
         }
 
         #region Events

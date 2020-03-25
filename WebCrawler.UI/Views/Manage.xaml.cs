@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using WebCrawler.UI.Common;
@@ -10,6 +12,7 @@ namespace WebCrawler.UI.Views
     public partial class Manage : Page
     {
         private bool _defaultViewDataReady = false;
+        private string _websiteUrlBeforeChange;
 
         public Manage(ManageViewModel manageViewModel)
         {
@@ -88,6 +91,45 @@ namespace WebCrawler.UI.Views
             var grid = sender as DataGrid;
 
             vm.AcceptSelectedItems(grid.SelectedItems.Cast<WebsiteView>().ToArray());
+        }
+
+        private void HomeTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            _websiteUrlBeforeChange = (sender as TextBox).Text;
+        }
+
+        private void HomeTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if ((sender as TextBox).Text != _websiteUrlBeforeChange)
+            {
+                var vm = DataContext as ManageViewModel;
+
+                vm.LoadHtml();
+            }
+        }
+
+        private void Spinner_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (tabControl.SelectedIndex == 1)
+            {
+                var processing = Convert.ToBoolean(e.NewValue);
+
+                webBrowser.Visibility = processing ? Visibility.Hidden : Visibility.Visible;
+            }
+        }
+
+        private void ListPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var keywords = (sender as TextBox).Text;
+
+            var vm = DataContext as ManageViewModel;
+
+            vm.SearchHtmlNodes(keywords.Trim());
+        }
+
+        private void ListPathTextBox_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            listBoxSuggestions.Width = (sender as TextBox).ActualWidth;
         }
     }
 }
