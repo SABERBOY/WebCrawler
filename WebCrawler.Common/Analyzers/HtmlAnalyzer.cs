@@ -8,6 +8,8 @@ namespace WebCrawler.Common.Analyzers
 {
     public static class HtmlAnalyzer
     {
+        public static Regex EXP_NODE = new Regex(@"^(?<tag>\w+)\[(?<idx1>\d+)(-(?<idx2>\d+))?\]?$");
+
         public static Link[] GetValidLinks(HtmlDocument htmlDoc)
         {
             var linkNodes = htmlDoc.DocumentNode.SelectNodes("//a");
@@ -64,7 +66,7 @@ namespace WebCrawler.Common.Analyzers
             }
             else // detect catalog items by list xpath
             {
-                return GetCatalogItems(htmlDoc, new Block { LinkXPath = listPath });
+                return GetCatalogItems(htmlDoc, new Block { LinkPathSummary = listPath });
             }
         }
 
@@ -84,24 +86,11 @@ namespace WebCrawler.Common.Analyzers
             // show data for debugging
             var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
             var similarLinksPlain = string.Join("\r\n", similarLinks.Select(l => l.XPath + "\t" + l.Text));
-            var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkXPath + "\t" + o.LinkCount + o.LinkText));
+            var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkPathSummary + "\t" + o.LinkCount + "\r\n" + o.LinkPath + o.LinkText));
 #endif
 
-            // TODO: determine the proper block the source xpath inside
-            return "TODO: " + blocks.First().LinkXPath;
+            return blocks.FirstOrDefault(o => ContainsPath(o.LinkPathSummary, xpath))?.LinkPath;
         }
-
-        //private static CatalogItem[] GetCatalogItems(HtmlDocument htmlDoc, string listPath)
-        //{
-        //    return htmlDoc.DocumentNode
-        //        .SelectNodes(listPath)
-        //         .Select(o => new CatalogItem
-        //         {
-        //             Title = Utilities.NormalizeHtmlText(o.InnerText),
-        //             Url = o.GetAttributeValue("href", null)
-        //         })
-        //         .ToArray();
-        //}
 
         private static Block[] AutoDetectCatalogs(HtmlDocument htmlDoc)
         {
@@ -123,7 +112,7 @@ namespace WebCrawler.Common.Analyzers
             // show data for debugging
             var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
             var similarLinksPlain = string.Join("\r\n\r\n", similarLinks.Select(o => o.Key + "\r\n" + string.Join("\r\n", o.Value.Select(l => l.XPath + "\t" + l.Text))));
-            var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkXPath + "\t" + o.LinkCount + o.LinkText));
+            var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkPathSummary + "\t" + o.LinkCount + "\r\n" + o.LinkPath + o.LinkText));
 #endif
 
             return FilterBlocks(blocks);
@@ -187,7 +176,7 @@ namespace WebCrawler.Common.Analyzers
         {
             Block block = null;
             Link link;
-            string genericXPath;
+            string listPathSummary;
             for (var i = 0; i < similarLinks.Length; i++)
             {
                 link = similarLinks[i];
@@ -197,7 +186,7 @@ namespace WebCrawler.Common.Analyzers
                     //start new block
                     block = new Block
                     {
-                        LinkXPath = link.XPath,
+                        LinkPathSummary = link.XPath,
                         LinkCount = 1,
                         LinkTextLength = link.Text.Length
                     };
@@ -210,13 +199,13 @@ namespace WebCrawler.Common.Analyzers
                 }
                 else // compare with the items after
                 {
-                    genericXPath = GetCommonPath(block.LinkXPath, similarLinks[i - 1].XPath, link.XPath);
+                    listPathSummary = GetListPathSummary(block.LinkPathSummary, link.XPath);
 
-                    if (!string.IsNullOrEmpty(genericXPath)
+                    if (!string.IsNullOrEmpty(listPathSummary)
                         // accepts 2-level depth of nested catalog lists at most
                         /*&& expAnyIndex.Matches(genericXPath).Count <= Constants.RULE_CATALOG_LIST_NESTED_MAX_LEVEL*/)
                     {
-                        block.LinkXPath = genericXPath;
+                        block.LinkPathSummary = listPathSummary;
                         block.LinkCount++;
                         block.LinkTextLength += link.Text.Length;
 #if DEBUG
@@ -276,75 +265,79 @@ namespace WebCrawler.Common.Analyzers
         }
 
         /// <summary>
-        /// Works even when <see cref="previous"/> and <see cref="current"/> don't have similar xpath hierarchy
+        /// Summarize and merge path, this could be also used to verify if a xpath is already included in the summary.
         /// </summary>
-        /// <param name="commonPath"></param>
-        /// <param name="previous"></param>
+        /// <param name="summary"></param>
         /// <param name="current"></param>
         /// <returns></returns>
-        private static string GetCommonPath(string commonPath, string previous, string current)
+        private static string GetListPathSummary(string summary, string current)
         {
-            var nodeExp = new Regex(@"^(\w+)(\[([*\d]+)\])?$");
+            var summarySegments = summary.Split('/');
+            var currentSegments = current.Split('/');
 
-            var segments0 = commonPath.Split('/');
-            var segments1 = previous.Split('/');
-            var segments2 = current.Split('/');
-
-            if (segments1.Length != segments2.Length)
+            if (summarySegments.Length != currentSegments.Length)
             {
                 return null;
             }
 
-            Match nodeMatch0;
-            Match nodeMatch1;
-            Match nodeMatch2;
-            int index1;
-            int index2;
-            //bool newInterationStarted = false;
-            for (var i = 0; i < segments1.Length; i++)
+            Match summaryNodeMatch;
+            Match currentNodeMatch;
+            int summaryIndexStart;
+            int summaryIndexEnd;
+            int currentIndex;
+            for (var i = 0; i < summarySegments.Length; i++)
             {
                 // identical path segments which including index
-                if (segments1[i] == segments2[i])
+                if (currentSegments[i] == summarySegments[i])
                 {
                     continue;
                 }
 
-                nodeMatch0 = nodeExp.Match(segments0[i]);
-                nodeMatch1 = nodeExp.Match(segments1[i]);
-                nodeMatch2 = nodeExp.Match(segments2[i]);
+                summaryNodeMatch = EXP_NODE.Match(summarySegments[i]);
+                currentNodeMatch = EXP_NODE.Match(currentSegments[i]);
 
                 // check tag name
-                if (nodeMatch1.Groups[1].Value != nodeMatch2.Groups[1].Value)
+                if (currentNodeMatch.Groups["tag"].Value != summaryNodeMatch.Groups["tag"].Value)
                 {
                     return null;
                 }
 
-                int.TryParse(nodeMatch1.Groups[3].Value, out index1);
-                int.TryParse(nodeMatch2.Groups[3].Value, out index2);
+                int.TryParse(summaryNodeMatch.Groups["idx1"].Value, out summaryIndexStart);
+                int.TryParse(summaryNodeMatch.Groups["idx2"].Value, out summaryIndexEnd);
+                int.TryParse(currentNodeMatch.Groups["idx1"].Value, out currentIndex);
 
                 // check tag index when index1 and index2 are different
-                if (nodeMatch0.Groups[3].Value != "*") // new iteration
+                if (summaryIndexEnd == 0) // new iteration
                 {
-                    if (index1 == 1 && index2 == index1 + 1) // new iteration must start from 1, and continuous
+                    if (summaryIndexStart == 1 && currentIndex == summaryIndexStart + 1) // new iteration must start from 1, and continuous
                     {
-                        segments0[i] = nodeExp.Replace(segments0[i], "$1[*]");
-
-                        //newInterationStarted = true;
+                        summarySegments[i] = EXP_NODE.Replace(summarySegments[i], $"${{tag}}[{summaryIndexStart}-{currentIndex}]");
                     }
                     else
                     {
                         return null;
                     }
                 }
-                else if (index2 != index1 + 1 // new index isn't continuous
-                    && index2 != 1 // new index doesn't start from 1
-                )
+                else if (currentIndex == summaryIndexEnd + 1) // new index is continuous
+                {
+                    summarySegments[i] = EXP_NODE.Replace(summarySegments[i], $"${{tag}}[{summaryIndexStart}-{currentIndex}]");
+                }
+                else if (currentIndex >= summaryIndexStart && currentIndex <= summaryIndexEnd) // path already included, this is used to verify if a xpath is included in a summary
+                {
+                    continue;
+                }
+                else if (currentIndex != 1) // new index doesn't start from 1
                 {
                     return null;
                 }
             }
 
-            return string.Join("/", segments0);
+            return string.Join("/", summarySegments);
+        }
+
+        private static bool ContainsPath(string summary, string xpath)
+        {
+            return summary == GetListPathSummary(summary, xpath);
         }
     }
 
@@ -357,7 +350,6 @@ namespace WebCrawler.Common.Analyzers
 
     public class Block
     {
-        public string LinkXPath { get; set; }
         public int LinkCount { get; set; }
         public int LinkTextLength { get; set; }
         /// <summary>
@@ -373,19 +365,34 @@ namespace WebCrawler.Common.Analyzers
                 return LinkTextLength;
             }
         }
+        public string LinkPath { get; private set; }
+
+        private string _linkPathSummary;
+        public string LinkPathSummary
+        {
+            get
+            {
+                return _linkPathSummary;
+            }
+            set
+            {
+                _linkPathSummary = value;
+                LinkPath = Regex.Replace(LinkPathSummary, @"\[\d+-\d+\]", "[*]");
+            }
+        }
 
         public string ContainerPath
         {
             get
             {
-                if (string.IsNullOrEmpty(LinkXPath))
+                if (string.IsNullOrEmpty(LinkPath))
                 {
                     return string.Empty;
                 }
 
-                int index = LinkXPath.LastIndexOf("[*]");
+                int index = LinkPath.LastIndexOf("[*]");
 
-                return index == -1 ? LinkXPath : LinkXPath.Substring(0, index);
+                return index == -1 ? LinkPath : LinkPath.Substring(0, index);
             }
         }
 
@@ -393,12 +400,12 @@ namespace WebCrawler.Common.Analyzers
         {
             get
             {
-                if (string.IsNullOrEmpty(LinkXPath))
+                if (string.IsNullOrEmpty(LinkPath))
                 {
                     return string.Empty;
                 }
 
-                var xpath = LinkXPath.Substring(ContainerPath.Length);
+                var xpath = LinkPath.Substring(ContainerPath.Length);
                 if (xpath.StartsWith("[*]"))
                 {
                     xpath = xpath.Substring(3);
