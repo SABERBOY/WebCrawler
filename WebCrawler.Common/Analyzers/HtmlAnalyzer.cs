@@ -80,6 +80,13 @@ namespace WebCrawler.Common.Analyzers
             List<Block> blocks = new List<Block>();
             BlockLinks(similarLinks, blocks);
 
+#if DEBUG
+            // show data for debugging
+            var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
+            var similarLinksPlain = string.Join("\r\n", similarLinks.Select(l => l.XPath + "\t" + l.Text));
+            var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkXPath + "\t" + o.LinkCount + o.LinkText));
+#endif
+
             // TODO: determine the proper block the source xpath inside
             return "TODO: " + blocks.First().LinkXPath;
         }
