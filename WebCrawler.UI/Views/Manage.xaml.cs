@@ -131,5 +131,10 @@ namespace WebCrawler.UI.Views
         {
             listBoxSuggestions.Width = (sender as TextBox).ActualWidth;
         }
+
+        private void webBrowser_Navigating(object sender, NavigatingCancelEventArgs e)
+        {
+            webBrowser.SuppressScriptErrors();
+        }
     }
 }

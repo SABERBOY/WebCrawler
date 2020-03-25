@@ -335,7 +335,9 @@
             </TabItem>
             <TabItem Header="BROWSER VIEW">
 
-                <WebBrowser x:Name="webBrowser" ctls:WebBrowserBehavior.Html="{Binding Editor.Html}" />
+                <WebBrowser x:Name="webBrowser"
+                            Navigating="webBrowser_Navigating"
+                            ctls:WebBrowserBehavior.Html="{Binding Editor.Html}" />
 
             </TabItem>
             <TabItem Header="CODE VIEW">
