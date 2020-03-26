@@ -223,13 +223,14 @@ namespace WebCrawler.Common.Analyzers
             string text = Regex.Replace(html, "(?is)<.*?>", "");
             MatchCollection matches = Regex.Matches(
                 text,
-                @"(\d{4}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{1,2}|\d{1,2}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{4}|\d{1,2}[-/]\d{1,2}|((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}(日|号))(\s?\d{2}:\d{2}(:\d{2})?)?",
+                @"(\d{4}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{1,2}|\d{1,2}(?<sep1>[-/.])\d{1,2}\k<sep1>\d{4}|\d{1,2}[-/]\d{1,2}|((\d{4}|\d{2})年)?\d{1,2}月\d{1,2}(日|号))?(\s?\d{2}:\d{2}(:\d{2})?)?",
                 RegexOptions.IgnoreCase);
 
-            var separators = new char[] { '-', '/', '.', '年', '月', '日', '号' };
+            var separators = new char[] { '-', '/', '.', '年', '月', '日', '号', ':' };
 
             // try to pick the completed date/time string if multiple matches detected
             return matches.Cast<Match>()
+                .Where(o => !string.IsNullOrEmpty(o.Value))
                 .OrderByDescending(o => o.Value.Split(separators, StringSplitOptions.RemoveEmptyEntries).Length)
                 .FirstOrDefault()
                 ?.Value;
