@@ -253,28 +253,32 @@ namespace WebCrawler.UI.Persisters
         /// <param name="status"></param>
         /// <param name="notes"></param>
         /// <returns></returns>
-        public async Task UpdateStatusAsync(int websiteId, WebsiteStatus status, string notes = null)
+        public async Task UpdateStatusAsync(int websiteId, WebsiteStatus? status = null, string notes = null)
         {
             var model = await _dbContext.Websites.FindAsync(websiteId);
 
-            if (status == WebsiteStatus.Normal)
+            if (status != null)
             {
-                model.Enabled = true;
-            }
-            else if (status == WebsiteStatus.WarningNoDates || status == WebsiteStatus.WarningRedirected)
-            {
-                if (status != model.Status)
+                if (status == WebsiteStatus.Normal)
                 {
-                    // disable warnings only for the records to be moved to new status
+                    model.Enabled = true;
+                }
+                else if (status == WebsiteStatus.WarningNoDates || status == WebsiteStatus.WarningRedirected)
+                {
+                    if (status != model.Status)
+                    {
+                        // disable warnings only for the records to be moved to new status
+                        model.Enabled = false;
+                    }
+                }
+                else if (status != WebsiteStatus.Normal)
+                {
                     model.Enabled = false;
                 }
-            }
-            else if (status != WebsiteStatus.Normal)
-            {
-                model.Enabled = false;
+
+                model.Status = status.Value;
             }
 
-            model.Status = status;
             model.SysNotes = notes;
 
             await _dbContext.SaveChangesAsync();

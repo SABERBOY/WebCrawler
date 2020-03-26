@@ -338,12 +338,12 @@
 
                 <WebBrowser x:Name="webBrowser"
                             Navigating="webBrowser_Navigating"
-                            ctls:WebBrowserBehavior.Html="{Binding Editor.Html}" />
+                            ctls:WebBrowserBehavior.Html="{Binding Editor.Response.Content}" />
 
             </TabItem>
             <TabItem Header="CODE VIEW">
 
-                <TextBox Text="{Binding Editor.Html}"
+                <TextBox Text="{Binding Editor.Response.Content}"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"

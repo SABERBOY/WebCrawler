@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using System.Collections.ObjectModel;
+using WebCrawler.Common;
 using WebCrawler.Common.Analyzers;
 
 namespace WebCrawler.UI.ViewModels
@@ -25,26 +26,26 @@ namespace WebCrawler.UI.ViewModels
                 _website = value;
                 RaisePropertyChanged();
 
-                Html = null;
+                Response = null;
                 NodeSuggestions = null;
             }
         }
 
-        private string _html;
-        public string Html
+        private ResponseData _response;
+        public ResponseData Response
         {
             get
             {
-                return _html;
+                return _response;
             }
             set
             {
-                if (value == _html)
+                if (value == _response)
                 {
                     return;
                 }
 
-                _html = value;
+                _response = value;
                 RaisePropertyChanged();
 
                 _htmlDoc = null;
@@ -84,10 +85,10 @@ namespace WebCrawler.UI.ViewModels
         {
             get
             {
-                if (_htmlDoc == null && !string.IsNullOrEmpty(Html))
+                if (_htmlDoc == null && !string.IsNullOrEmpty(Response?.Content))
                 {
                     _htmlDoc = new HtmlDocument();
-                    _htmlDoc.LoadHtml(Html);
+                    _htmlDoc.LoadHtml(Response.Content);
                 }
 
                 return _htmlDoc;

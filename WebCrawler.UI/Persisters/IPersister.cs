@@ -17,7 +17,7 @@ namespace WebCrawler.UI.Persisters
         Task SaveAsync(List<Article> articles, CrawlLogView crawlLog, string lastHandled);
         Task SaveAsync(WebsiteView editor);
         Task<Crawl> SaveAsync(Crawl crawl = null);
-        Task UpdateStatusAsync(int websiteId, WebsiteStatus status, string notes = null);
+        Task UpdateStatusAsync(int websiteId, WebsiteStatus? status = null, string notes = null);
         Task ToggleAsync(bool enabled, params int[] websiteIds);
         Task DeleteAsync(params int[] websiteIds);
         Task<Crawl> QueueCrawlAsync();

@@ -514,17 +514,16 @@ namespace WebCrawler.UI.ViewModels
 
         private async Task LoadHtmlCoreAsync()
         {
-            Editor.Html = null;
+            Editor.Response = null;
             if (!string.IsNullOrEmpty(Editor.Website.Home))
             {
-                var data = await _httpClient.GetHtmlAsync(Editor.Website.Home);
-                Editor.Html = data.Content;
+                Editor.Response = await _httpClient.GetHtmlAsync(Editor.Website.Home);
 
-                Editor.HtmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
+                Editor.HtmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, Editor.Website.Home, LogEventLevel.Warning));
 
-                if (data.IsRedirected)
+                if (Editor.Response.IsRedirected)
                 {
-                    AppendOutput("Url redirected to: " + data.ActualUrl, LogEventLevel.Warning);
+                    AppendOutput("Url redirected to: " + Editor.Response.ActualUrl, Editor.Website.Home, LogEventLevel.Warning);
                 }
             }
         }
@@ -558,75 +557,18 @@ namespace WebCrawler.UI.ViewModels
                 ActionBlock<Website> workerBlock = null;
                 workerBlock = new ActionBlock<Website>(async website =>
                 {
-                    WebsiteStatus status = WebsiteStatus.Normal;
-                    string notes = null;
-
-                    try
-                    {
-                        var result = await TestAsync(website.Home, website.ListPath);
-
-                        if (result.CatalogsResponse.IsRedirectedExcludeHttps)
-                        {
-                            status = WebsiteStatus.WarningRedirected;
-                            notes = "URL redirected to: " + result.CatalogsResponse.ActualUrl;
-                        }
-                        else if (result.Catalogs.Length == 0)
-                        {
-                            status = WebsiteStatus.ErrorCatalogMissing;
-                            notes = "No catalogs detected";
-                        }
-                        else
-                        {
-                            if (result.Catalogs.Any(o => !o.HasDate))
-                            {
-                                // check dates only when ListPath isn't provided
-                                if (string.IsNullOrEmpty(website.ListPath))
-                                {
-                                    status = WebsiteStatus.WarningNoDates;
-                                    notes = "No published date in catalog items";
-                                }
-                            }
-                            else
-                            {
-                                var latestItem = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault();
-                                if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
-                                {
-                                    status = WebsiteStatus.ErrorOutdate;
-                                    notes = $"Last published: {latestItem.Published}";
-                                }
-                            }
-                        }
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        var baseEx = ex.GetBaseException();
-
-                        status = WebsiteStatus.ErrorBroken;
-                        notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
-                    }
-                    catch (Exception ex)
-                    {
-                        // keep previous stats as it might not be a website issue as usual, e.g. TaskCanceledException
-                        status = website.Status;
-                        notes = ex.Message;
-                    }
-
-                    // output for changes only
-                    if (status != website.Status || notes != website.SysNotes)
-                    {
-                        AppendOutput($"{website.Name}: {status}: {notes}", status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);
-                    }
+                    var result = await TestAsync(website.Home, website.ListPath, website.Status, website.SysNotes);
 
                     try
                     {
                         using (var persister = _serviceProvider.GetRequiredService<IPersister>())
                         {
-                            await persister.UpdateStatusAsync(website.Id, status, notes);
+                            await persister.UpdateStatusAsync(website.Id, result.Status, result.Notes);
                         }
                     }
                     catch (Exception ex)
                     {
-                        AppendOutput($"{(ex.InnerException ?? ex).Message} {website.Home}", LogEventLevel.Error);
+                        AppendOutput((ex.InnerException ?? ex).Message, website.Home, LogEventLevel.Error);
                     }
 
                     lock (this)
@@ -765,30 +707,97 @@ namespace WebCrawler.UI.ViewModels
             TryRunAsync(async () =>
             {
                 // test catalogs
-                var result = await TestAsync(Editor.Website.Home, Editor.Website.ListPath, Editor.HtmlDoc);
+                var result = await TestAsync(Editor.Website.Home, Editor.Website.ListPath, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
                 CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
 
                 // TODO: test pagination
             });
         }
 
-        private async Task<TestResult> TestAsync(string url = null, string listPath = null, HtmlDocument htmlDoc = null)
+        private async Task<TestResult> TestAsync(string url, string listPath, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
         {
             var result = new TestResult();
 
-            if (htmlDoc == null)
+            try
             {
-                var data = await _httpClient.GetHtmlAsync(url);
+                if (response == null)
+                {
+                    result.CatalogsResponse = await _httpClient.GetHtmlAsync(url);
+                }
+                else
+                {
+                    result.CatalogsResponse = response;
+                }
 
-                result.CatalogsResponse = data;
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(result.CatalogsResponse.Content);
 
-                htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(data.Content);
+                if (response == null)
+                {
+                    // show parsing errors only when the HTML is requested in this scope
+                    htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, url, LogEventLevel.Warning));
+                }
 
-                htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, LogEventLevel.Warning));
+                result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
+
+                if (result.CatalogsResponse.IsRedirectedExcludeHttps)
+                {
+                    result.Status = WebsiteStatus.WarningRedirected;
+                    result.Notes = "URL redirected to: " + result.CatalogsResponse.ActualUrl;
+                }
+                else if (result.Catalogs.Length == 0)
+                {
+                    result.Status = WebsiteStatus.ErrorCatalogMissing;
+                    result.Notes = "No catalogs detected";
+                }
+                else
+                {
+                    if (result.Catalogs.Any(o => !o.HasDate))
+                    {
+                        // check dates only when ListPath isn't provided
+                        if (string.IsNullOrEmpty(listPath))
+                        {
+                            result.Status = WebsiteStatus.WarningNoDates;
+                            result.Notes = "No published date in catalog items";
+                        }
+                    }
+                    else
+                    {
+                        var latestItem = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault();
+                        if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                        {
+                            result.Status = WebsiteStatus.ErrorOutdate;
+                            result.Notes = $"Last published: {latestItem.Published}";
+                        }
+                    }
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                var baseEx = ex.GetBaseException();
+
+                result.Status = WebsiteStatus.ErrorBroken;
+                result.Notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
+            }
+            catch (Exception ex)
+            {
+                // keep previous stats as it might not be a website issue as usual, e.g. TaskCanceledException
+                result.Status = null;
+                result.Notes = ex.Message;
             }
 
-            result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
+            // output for changes only
+            if (result.Status == null)
+            {
+                if (!string.IsNullOrEmpty(result.Notes))
+                {
+                    AppendOutput(result.Notes, url, LogEventLevel.Warning);
+                }
+            }
+            else if (result.Status != previousStatus || result.Notes != previousSysNotes)
+            {
+                AppendOutput($"{result.Status}: {result.Notes}", url, result.Status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);
+            }
 
             return result;
         }
@@ -896,7 +905,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    AppendOutput((ex.InnerException ?? ex).Message, LogEventLevel.Error);
+                    AppendOutput((ex.InnerException ?? ex).Message, null, LogEventLevel.Error);
                 }
                 finally
                 {
@@ -907,7 +916,7 @@ namespace WebCrawler.UI.ViewModels
             return true;
         }
 
-        private void AppendOutput(string message, LogEventLevel level = LogEventLevel.Information)
+        private void AppendOutput(string message, string url = null, LogEventLevel level = LogEventLevel.Information)
         {
             lock (this)
             {
@@ -916,6 +925,7 @@ namespace WebCrawler.UI.ViewModels
                     Outputs.Insert(0, new Output
                     {
                         Level = level,
+                        URL = url,
                         Message = message,
                         Timestamp = DateTime.Now
                     });
