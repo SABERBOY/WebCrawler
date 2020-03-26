@@ -710,13 +710,20 @@ namespace WebCrawler.UI.ViewModels
                 var result = await TestAsync(Editor.Website.Home, Editor.Website.ListPath, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
                 CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
 
+                // update editor but doens't commit
+                if (result.Status != null)
+                {
+                    Editor.Website.Status = result.Status.Value;
+                }
+                Editor.Website.SysNotes = result.Notes;
+
                 // TODO: test pagination
             });
         }
 
         private async Task<TestResult> TestAsync(string url, string listPath, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
         {
-            var result = new TestResult();
+            var result = new TestResult { Status = WebsiteStatus.Normal };
 
             try
             {

@@ -212,13 +212,15 @@ namespace WebCrawler.UI.ViewModels
                     return;
                 }
 
+                var previous = _status;
+
                 _status = value;
                 RaisePropertyChanged();
 
-                // auto disable for error states
-                if (value != WebsiteStatus.Normal && value != WebsiteStatus.WarningNoDates && value != WebsiteStatus.WarningRedirected)
+                var enabled = DetermineWebsiteEnabledStatus(_status, previous);
+                if (enabled != null)
                 {
-                    Enabled = false;
+                    Enabled = enabled.Value;
                 }
             }
         }
@@ -298,6 +300,28 @@ namespace WebCrawler.UI.ViewModels
             target.Enabled = Enabled;
 
             return target;
+        }
+
+        public static bool? DetermineWebsiteEnabledStatus(WebsiteStatus current, WebsiteStatus previous)
+        {
+            if (current == WebsiteStatus.Normal)
+            {
+                return true;
+            }
+            else if (current == WebsiteStatus.WarningNoDates || current == WebsiteStatus.WarningRedirected)
+            {
+                if (current != previous)
+                {
+                    // disable warnings only for the records to be moved to new status
+                    return false;
+                }
+            }
+            else if (current != WebsiteStatus.Normal)
+            {
+                return false;
+            }
+
+            return null;
         }
     }
 }

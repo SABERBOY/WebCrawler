@@ -259,21 +259,10 @@ namespace WebCrawler.UI.Persisters
 
             if (status != null)
             {
-                if (status == WebsiteStatus.Normal)
+                var enabled = WebsiteView.DetermineWebsiteEnabledStatus(status.Value, model.Status);
+                if (enabled != null)
                 {
-                    model.Enabled = true;
-                }
-                else if (status == WebsiteStatus.WarningNoDates || status == WebsiteStatus.WarningRedirected)
-                {
-                    if (status != model.Status)
-                    {
-                        // disable warnings only for the records to be moved to new status
-                        model.Enabled = false;
-                    }
-                }
-                else if (status != WebsiteStatus.Normal)
-                {
-                    model.Enabled = false;
+                    model.Enabled = enabled.Value;
                 }
 
                 model.Status = status.Value;
