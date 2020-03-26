@@ -732,11 +732,11 @@ namespace WebCrawler.UI.ViewModels
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(result.CatalogsResponse.Content);
 
-                if (response == null)
-                {
-                    // show parsing errors only when the HTML is requested in this scope
-                    htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, url, LogEventLevel.Warning));
-                }
+                //if (response == null)
+                //{
+                //    // show parsing errors only when the HTML is requested in this scope
+                //    htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, url, LogEventLevel.Warning));
+                //}
 
                 result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
 
