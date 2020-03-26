@@ -746,7 +746,7 @@ namespace WebCrawler.UI.ViewModels
                 //    htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, url, LogEventLevel.Warning));
                 //}
 
-                result.Catalogs = HtmlAnalyzer.ExtractCatalogItems(htmlDoc, listPath);
+                result.Catalogs = HtmlAnalyzer.DetectCatalogItems(htmlDoc, listPath);
 
                 if (result.CatalogsResponse.IsRedirectedExcludeHttps)
                 {
@@ -884,7 +884,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 var links = HtmlAnalyzer.GetValidLinks(Editor.HtmlDoc);
 
-                Editor.Website.ListPath = HtmlAnalyzer.GetListPath(links, Editor.SelectedNode.XPath);
+                Editor.Website.ListPath = HtmlAnalyzer.DetectListPath(links, Editor.SelectedNode.XPath);
             }
         }
 

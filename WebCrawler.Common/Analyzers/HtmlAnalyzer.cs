@@ -32,7 +32,7 @@ namespace WebCrawler.Common.Analyzers
                 .ToArray();
         }
 
-        public static CatalogItem[] ExtractCatalogItems(HtmlDocument htmlDoc, string listPath = null)
+        public static CatalogItem[] DetectCatalogItems(HtmlDocument htmlDoc, string listPath = null)
         {
             if (string.IsNullOrEmpty(listPath)) // auto detect catalog items
             {
@@ -70,7 +70,7 @@ namespace WebCrawler.Common.Analyzers
             }
         }
 
-        public static string GetListPath(Link[] links, string xpath)
+        public static string DetectListPath(Link[] links, string xpath)
         {
             var nodeIndexExp = new Regex(@"\[\d+\]");
 
