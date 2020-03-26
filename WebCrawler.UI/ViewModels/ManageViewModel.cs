@@ -132,6 +132,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private int _selectedViewIndex;
+        public int SelectedViewIndex
+        {
+            get { return _selectedViewIndex; }
+            set
+            {
+                if (_selectedViewIndex == value) { return; }
+
+                _selectedViewIndex = value;
+                RaisePropertyChanged();
+            }
+        }
+        
         private CatalogItem _selectedCatalogItem;
         public CatalogItem SelectedCatalogItem
         {
@@ -718,6 +731,8 @@ namespace WebCrawler.UI.ViewModels
                 Editor.Website.SysNotes = result.Notes;
 
                 // TODO: test pagination
+
+                SelectedViewIndex = 0;
             });
         }
 

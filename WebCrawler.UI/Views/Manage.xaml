@@ -276,6 +276,7 @@
         <TabControl Grid.Row="1"
                     Grid.Column="2"
                     x:Name="tabControl"
+                    SelectedIndex="{Binding SelectedViewIndex}"
                     Margin="0 0 10 10"
                     Padding="0"
                     BorderThickness="0">
