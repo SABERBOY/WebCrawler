@@ -296,6 +296,7 @@
                             <DataGridTextColumn Header="Published" Binding="{Binding Published, StringFormat=yyyy/MM/dd HH:mm:ss}" />
                             <DataGridTextColumn Header="Published Raw" Binding="{Binding PublishedRaw}" />
                             <DataGridTextColumn Header="Title" Binding="{Binding Title}" />
+                            <DataGridTextColumn Header="XPath" Binding="{Binding XPath}" />
                             <DataGridTextColumn Header="Url" Binding="{Binding Url}" />
                             <DataGridTextColumn Header="Full Text" Binding="{Binding FullText}" />
                         </DataGrid.Columns>

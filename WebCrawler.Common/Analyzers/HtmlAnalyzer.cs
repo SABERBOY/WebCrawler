@@ -122,28 +122,36 @@ namespace WebCrawler.Common.Analyzers
         {
             var items = new List<CatalogItem>();
 
-            var itemIterator = htmlDoc.CreateNavigator().Select(block.ContainerPath);
+            var blockNodes = htmlDoc.DocumentNode.SelectNodes(block.ContainerPath);
             string linkUrl;
             string linkTitle;
             CatalogItem linkItem;
-            while (itemIterator.MoveNext())
+            HtmlNode linkNode;
+            foreach (HtmlNode blockNode in blockNodes)
             {
-                linkUrl = itemIterator.Current.GetValue(block.RelativeLinkXPath + "/@href");
-                linkTitle = itemIterator.Current.GetValue(block.RelativeLinkXPath);
+                linkNode = blockNode.SelectSingleNode(block.RelativeLinkXPath);
+                if (linkNode == null)
+                {
+                    continue;
+                }
+
+                linkUrl = linkNode.GetAttributeValue("href", null);
+                linkTitle = linkNode.InnerText;
 
                 if (string.IsNullOrEmpty(linkUrl))
                 {
-                    // skip invalid list item
+                    // skip list item with invalid link
                     continue;
                 }
 
                 linkItem = new CatalogItem
                 {
+                    XPath = linkNode.XPath,
                     Url = linkUrl,
                     Title = Utilities.NormalizeHtmlText(linkTitle),
-                    FullText = Utilities.NormalizeHtmlText(itemIterator.Current.Value),
-                    Published = Html2Article.GetPublishDate(itemIterator.Current.Value),
-                    PublishedRaw = Html2Article.GetPublishDateStr(itemIterator.Current.Value)
+                    FullText = Utilities.NormalizeHtmlText(blockNode.InnerText),
+                    Published = Html2Article.GetPublishDate(blockNode.InnerText),
+                    PublishedRaw = Html2Article.GetPublishDateStr(blockNode.InnerText)
                 };
 
                 items.Add(linkItem);
@@ -418,6 +426,7 @@ namespace WebCrawler.Common.Analyzers
 
     public class CatalogItem
     {
+        public string XPath { get; set; }
         public string Title { get; set; }
         public string Url { get; set; }
         public string FullText { get; set; }
