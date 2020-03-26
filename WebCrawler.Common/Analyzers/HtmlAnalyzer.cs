@@ -151,7 +151,7 @@ namespace WebCrawler.Common.Analyzers
                     Title = Utilities.NormalizeHtmlText(linkTitle),
                     FullText = Utilities.NormalizeHtmlText(blockNode.InnerText),
                     Published = Html2Article.GetPublishDate(blockNode.InnerText),
-                    PublishedRaw = Html2Article.GetPublishDateStr(blockNode.InnerText)
+                    PublishedRaw = Html2Article.GetPublishDateRaw(blockNode.InnerText)
                 };
 
                 items.Add(linkItem);

@@ -217,7 +217,7 @@ namespace WebCrawler.Common.Analyzers
             return null;
         }
 
-        public static string GetPublishDateStr(string html)
+        public static string GetPublishDateRaw(string html)
         {
             // 过滤html标签，防止标签对日期提取产生影响
             string text = Regex.Replace(html, "(?is)<.*?>", "");
