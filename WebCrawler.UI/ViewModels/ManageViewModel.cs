@@ -732,6 +732,7 @@ namespace WebCrawler.UI.ViewModels
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(result.CatalogsResponse.Content);
 
+                // suppress HTML parsing error in TestAsync as there're too many warnings, such error will still be handled in single website mode
                 //if (response == null)
                 //{
                 //    // show parsing errors only when the HTML is requested in this scope
