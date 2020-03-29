@@ -242,6 +242,39 @@ namespace WebCrawler.Common
                 action?.Invoke(parseErrors);
             }
         }
+
+        public static int FirstIndex<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate)
+        {
+            int index = -1;
+            foreach (var item in source)
+            {
+                index++;
+                if (predicate(item))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+
+        public static int LastIndex<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate)
+        {
+            source = source.Reverse();
+
+            int index = source.Count();
+            foreach (var item in source)
+            {
+                index--;
+                if (predicate(item))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
     }
 
     public class ResponseData

@@ -86,15 +86,18 @@ namespace WebCrawler.Common.Analyzers
 
             // locate the target link tree
             var linkTree = linkTrees.FirstOrDefault(o => o.GetDescendants(true).Any(d => d.Path == xpath));
-
             if (linkTree == null)
             {
                 return null;
             }
 
-            linkTrees.ForEach(o => PopulatePublishDate(o, htmlDoc));
+            PopulatePublishDate(linkTree, htmlDoc);
 
             linkTree = RemoveNoiseBranches(linkTree);
+            if (linkTree == null)
+            {
+                return null;
+            }
 
             var block = linkTree.ConvertToBlock();
 #if DEBUG
@@ -121,7 +124,9 @@ namespace WebCrawler.Common.Analyzers
             var similarLinks = GetSimilarLinks(links);
 
             // build link trees
-            var linkTrees = similarLinks.SelectMany(o => BuildLinkTrees(o.Value)).ToArray();
+            var linkTrees = similarLinks
+                .SelectMany(o => BuildLinkTrees(o.Value))
+                .ToArray();
 
 #if DEBUG
             // show data for debugging
@@ -134,7 +139,10 @@ namespace WebCrawler.Common.Analyzers
 
             var linkTreesWithPublishDatePlain = string.Join("\r\n\r\n", linkTrees.Select(o => PrintLinkTree(o)));
 
-            linkTrees = linkTrees.Select(o => RemoveNoiseBranches(o)).ToArray();
+            linkTrees = linkTrees
+                .Select(o => RemoveNoiseBranches(o))
+                .Where(o => o != null)
+                .ToArray();
 
             var linkTreesCleanPlain = string.Join("\r\n\r\n", linkTrees.Select(o => PrintLinkTree(o)));
 
@@ -183,13 +191,30 @@ namespace WebCrawler.Common.Analyzers
                 items.Add(linkItem);
             }
 
-            return items
+            var filteredItems = items
                 .GroupBy(o => o.Url)
                 // pick the first link which contains text if duplicate links detected
                 // duplicate links might be removed already in RemoveNoiseBranches call, but just in case the scenarios without the RemoveNoiseBranches call.
                 .Select(o => o.FirstOrDefault(lnk => !string.IsNullOrEmpty(lnk.Title)))
                 .Where(o => o != null)
                 .ToArray();
+
+            // when lots of items have date/time
+            // exclude noise items
+            // e.g. page index, section header, etc.
+            if (filteredItems.Count(o => o.HasDate) >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT_DATED)
+            {
+                var from = filteredItems.FirstIndex(o => o.HasDate);
+                var last = filteredItems.LastIndex(o => o.HasDate);
+
+                // exclude head/tail items without date/time
+                filteredItems = filteredItems
+                    .Skip(from)
+                    .Take(last - from + 1)
+                    .ToArray();
+            }
+
+            return filteredItems;
         }
 
         private static Dictionary<string, Link[]> GetSimilarLinks(Link[] links)
@@ -313,27 +338,34 @@ namespace WebCrawler.Common.Analyzers
         /// <returns></returns>
         private static LinkTreeNode RemoveNoiseBranches(LinkTreeNode root)
         {
-            var treeNodes = root.GetDescendants();
-            var leafNodes = treeNodes.Where(o => o.Link != null).ToArray();
+            #region Analyze by date/time list row iteration, and trim from column perspective
 
-            // seek for a node with the most date/time children, and all its children (wanted list items iteration) have date/time
+            var treeNodes = root.GetDescendants();
+            var leafNodes = treeNodes.Where(o => o.IsLeafLink).ToArray();
+
+            // seek for a node with the most date/time children, and all its children (wanted list row iteration) have date/time
             var datedRoot = treeNodes
-                .Where(o => o.Link == null)
+                .Where(o => !o.IsLeafLink)
                 .Select(o => new KeyValuePair<LinkTreeNode, int>(o, o.GetDatedChildrenDepth()))
                 .Where(o => o.Value > 0)
                 .OrderByDescending(o => o.Value)
                 .FirstOrDefault();
 
+            bool datedIteration = false;
             if (datedRoot.Key != null)
             {
-                root = datedRoot.Key;
+                treeNodes = datedRoot.Key.GetDescendants();
 
-                treeNodes = root.GetDescendants();
-
-                // continue only when lots of nodes have date/time
-                if (treeNodes.Count(o => o.HasDate) >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT)
+                // considered as dated iteration when lots of nodes have date/time
+                datedIteration = treeNodes.Count(o => o.HasDate) >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT_DATED;
+                if (datedIteration)
                 {
-                    leafNodes = treeNodes.Where(o => o.Link != null).ToArray();
+                    root = datedRoot.Key;
+
+                    // adopt this dated iteration and separte from parent tree
+                    root.UpdateRelations(null);
+
+                    leafNodes = treeNodes.Where(o => o.IsLeafLink).ToArray();
 
                     // group the nodes by columns under each list rows
                     var listItemsByColumns = leafNodes.GroupBy(o => string.Join("/", o.Segments.Skip(datedRoot.Value)));
@@ -369,11 +401,70 @@ namespace WebCrawler.Common.Analyzers
                             // remove noise column nodes from the tree
                             column.ForEach(o => o.UpdateRelations(null));
                         }
+
+                        root = root.Simplify();
                     }
                 }
             }
 
+            #endregion
+
+            if (root == null
+                || root.IsLeafLink // exclude link tree with single link node only
+            )
+            {
+                return null;
+            }
+
+            #region Exclude head/tail link groups with short text links
+
+            // exclude head link groups with short text links
+            RemoveShortContinuousLinksFromTree(root.GetDescendants(true), true);
+
+            // exclude tail link groups with short text links
+            RemoveShortContinuousLinksFromTree(root.GetDescendants(true), false);
+
+            #endregion
+
             return root.Simplify();
+        }
+
+        private static void RemoveShortContinuousLinksFromTree(IEnumerable<LinkTreeNode> leafNodes, bool startFromHead)
+        {
+            int index = 0;
+            var lenth = leafNodes.Count();
+            IEnumerable<LinkTreeNode> continousSiblings;
+
+            if (!startFromHead)
+            {
+                leafNodes = leafNodes.Reverse();
+            }
+
+            while (index < lenth)
+            {
+                var lnkNode = leafNodes.ElementAt(index);
+
+                continousSiblings = leafNodes.Skip(index);
+
+                var nextGroupIndex = continousSiblings.FirstIndex(o => o.Parent != lnkNode.Parent);
+                if (nextGroupIndex != -1)
+                {
+                    continousSiblings = continousSiblings.Take(nextGroupIndex);
+                }
+
+                if ((double)continousSiblings.Sum(o => o.Link.Text.Length) / continousSiblings.Count() < Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN_SAFE)
+                {
+                    // remove siblings one by one
+                    // NOTICE: couldn't remove the parent from the tree, as its parent might contain other container nodes
+                    continousSiblings.ForEach(o => o.UpdateRelations(null));
+
+                    index += continousSiblings.Count();
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         private static string PrintLinkTree(LinkTreeNode root)
@@ -499,6 +590,14 @@ namespace WebCrawler.Common.Analyzers
             }
         }
 
+        public bool IsLeafLink
+        {
+            get
+            {
+                return Link != null;
+            }
+        }
+
         public LinkTreeNode(string path)
         {
             Path = path;
@@ -526,6 +625,8 @@ namespace WebCrawler.Common.Analyzers
                 {
                     Parent.Children.Remove(this);
                 }
+
+                Parent = null;
             }
             else if (parent != Parent)
             {
@@ -602,7 +703,7 @@ namespace WebCrawler.Common.Analyzers
                 output = new List<LinkTreeNode>();
             }
 
-            if (!leafOnly || Link != null)
+            if (!leafOnly || IsLeafLink)
             {
                 output.Add(this);
             }
@@ -647,16 +748,15 @@ namespace WebCrawler.Common.Analyzers
         public string GetIterationPath()
         {
             var treeNodes = GetDescendants();
-            var firstLeafNode = treeNodes.FirstOrDefault(o => o.Link != null);
+            var firstLeafNode = treeNodes.FirstOrDefault(o => o.IsLeafLink);
             if (firstLeafNode == null)
             {
                 // invalid tree without leaf nodes
                 return null;
             }
 
-            // TODO: /div/a[*] 这样的如何处理？以下逻辑是否也需要将叶子节点包含进来？
             var iterationDepths = treeNodes
-                .Where(o => o.Link == null)
+                .Where(o => !o.IsLeafLink)
                 .Select(o => o.Depth)
                 .Distinct()
                 .OrderBy(o => o)
@@ -685,51 +785,35 @@ namespace WebCrawler.Common.Analyzers
         /// <returns></returns>
         public LinkTreeNode Simplify()
         {
-            if (Children.Count == 0)
+            var validChildren = Children
+                .ToArray()
+                .Select(o => o.Simplify())
+                .Where(o => o != null)
+                .ToArray();
+
+            if (validChildren.Length == 0)
             {
-                if (Parent == null || Link != null)
+                if (IsLeafLink)
                 {
                     return this;
                 }
                 else
                 {
+                    UpdateRelations(null);
+
                     return null;
                 }
             }
+            else if (validChildren.Length == 1)
+            {
+                validChildren[0].UpdateRelations(Parent);
+                UpdateRelations(null);
+
+                return validChildren[0];
+            }
             else
             {
-                var revisedChildren = Children
-                    .ToArray()
-                    .Select(o => o.Simplify())
-                    .Where(o => o != null)
-                    .ToArray();
-
-                if (revisedChildren.Length == 0)
-                {
-                    if (Parent == null)
-                    {
-                        Children.Clear();
-
-                        return this;
-                    }
-                    else
-                    {
-                        UpdateRelations(null);
-
-                        return null;
-                    }
-                }
-                else if (revisedChildren.Length == 1)
-                {
-                    revisedChildren[0].UpdateRelations(Parent);
-                    UpdateRelations(null);
-
-                    return revisedChildren[0];
-                }
-                else
-                {
-                    return this;
-                }
+                return this;
             }
         }
 
