@@ -276,7 +276,7 @@ namespace WebCrawler.UI.ViewModels
         /// Shadow copy
         /// </summary>
         /// <returns></returns>
-        public WebsiteView Clone(WebsiteView target = null)
+        public WebsiteView CloneTo(WebsiteView target = null)
         {
             if (target == null)
             {

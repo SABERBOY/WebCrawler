@@ -9,6 +9,25 @@ namespace WebCrawler.UI.ViewModels
     {
         #region Notify Properties
 
+        private bool _isEditing;
+        public bool IsEditing
+        {
+            get
+            {
+                return _isEditing;
+            }
+            set
+            {
+                if (value == _isEditing)
+                {
+                    return;
+                }
+
+                _isEditing = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private WebsiteView _website;
         public WebsiteView Website
         {

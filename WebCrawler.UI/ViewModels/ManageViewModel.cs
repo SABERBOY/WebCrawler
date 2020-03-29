@@ -412,8 +412,12 @@ namespace WebCrawler.UI.ViewModels
 
             Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();
-            Editor = new WebsiteEditor();
+            Editor = new WebsiteEditor
+            {
+                Website = new WebsiteView()
+            };
             Editor.PropertyChanged += Editor_PropertyChanged;
+            Editor.Website.PropertyChanged += Website_PropertyChanged;
         }
 
         public bool Sort(params SortDescription[] sorts)
@@ -437,14 +441,6 @@ namespace WebCrawler.UI.ViewModels
             _websiteSelections = websites;
 
             RefreshToggleState();
-        }
-
-        public void LoadHtml()
-        {
-            TryRunAsync(async () =>
-            {
-                await LoadHtmlCoreAsync();
-            });
         }
 
         public void SearchHtmlNodes(string keywords)
@@ -502,6 +498,14 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
+        private void LoadHtml()
+        {
+            TryRunAsync(async () =>
+            {
+                await LoadHtmlCoreAsync();
+            });
+        }
+
         private void OnSelectedWebsiteChanged()
         {
             CrawlLogs = null;
@@ -509,11 +513,13 @@ namespace WebCrawler.UI.ViewModels
 
             if (SelectedWebsite == null)
             {
-                Editor.Website = null;
+                Editor.IsEditing = false;
             }
             else
             {
-                Editor.Website = SelectedWebsite.Clone();
+                Editor.IsEditing = true;
+
+                SelectedWebsite.CloneTo(Editor.Website);
 
                 TryRunAsync(async () =>
                 {
@@ -670,13 +676,14 @@ namespace WebCrawler.UI.ViewModels
         private void Add()
         {
             SelectedWebsite = null;
+            Editor.IsEditing = true;
 
-            Editor.Website = new WebsiteView
+            new WebsiteView
             {
                 Rank = 1,
                 Enabled = true,
                 Status = WebsiteStatus.Normal
-            };
+            }.CloneTo(Editor.Website);
         }
 
         private void Navigate()
@@ -699,7 +706,7 @@ namespace WebCrawler.UI.ViewModels
                 {
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        var website = Editor.Website.Clone();
+                        var website = Editor.Website.CloneTo();
 
                         Websites.Insert(0, website);
 
@@ -708,7 +715,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    Editor.Website.Clone(SelectedWebsite);
+                    Editor.Website.CloneTo(SelectedWebsite);
 
                     RefreshToggleState();
                 }
@@ -833,7 +840,7 @@ namespace WebCrawler.UI.ViewModels
             }
             else
             {
-                SelectedWebsite.Clone(Editor.Website);
+                SelectedWebsite.CloneTo(Editor.Website);
             }
         }
 
@@ -898,6 +905,14 @@ namespace WebCrawler.UI.ViewModels
             if (e.PropertyName == nameof(WebsiteEditor.SelectedNode) && Editor.SelectedNode != null)
             {
                 Editor.Website.ListPath = HtmlAnalyzer.DetectListPath(Editor.HtmlDoc, Editor.SelectedNode.XPath);
+            }
+        }
+
+        private void Website_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(WebsiteView.Home))
+            {
+                LoadHtml();
             }
         }
 

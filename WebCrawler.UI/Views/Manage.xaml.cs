@@ -12,7 +12,6 @@ namespace WebCrawler.UI.Views
     public partial class Manage : Page
     {
         private bool _defaultViewDataReady = false;
-        private string _websiteUrlBeforeChange;
 
         public Manage(ManageViewModel manageViewModel)
         {
@@ -91,21 +90,6 @@ namespace WebCrawler.UI.Views
             var grid = sender as DataGrid;
 
             vm.AcceptSelectedItems(grid.SelectedItems.Cast<WebsiteView>().ToArray());
-        }
-
-        private void HomeTextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            _websiteUrlBeforeChange = (sender as TextBox).Text;
-        }
-
-        private void HomeTextBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox).Text != _websiteUrlBeforeChange)
-            {
-                var vm = DataContext as ManageViewModel;
-
-                vm.LoadHtml();
-            }
         }
 
         private void Spinner_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
