@@ -897,9 +897,7 @@ namespace WebCrawler.UI.ViewModels
         {
             if (e.PropertyName == nameof(WebsiteEditor.SelectedNode) && Editor.SelectedNode != null)
             {
-                var links = HtmlAnalyzer.GetValidLinks(Editor.HtmlDoc);
-
-                Editor.Website.ListPath = HtmlAnalyzer.DetectListPath(links, Editor.SelectedNode.XPath);
+                Editor.Website.ListPath = HtmlAnalyzer.DetectListPath(Editor.HtmlDoc, Editor.SelectedNode.XPath);
             }
         }
 
