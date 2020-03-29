@@ -96,7 +96,7 @@ namespace WebCrawler.Common.Analyzers
             linkTree = RemoveNoiseBranches(linkTree);
             if (linkTree == null)
             {
-                return null;
+                linkTree = linkTrees.FirstOrDefault(o => o.GetDescendants(true).Any(d => d.Path == xpath));
             }
 
             var block = linkTree.ConvertToBlock();
@@ -157,6 +157,11 @@ namespace WebCrawler.Common.Analyzers
             var items = new List<CatalogItem>();
 
             var blockNodes = htmlDoc.DocumentNode.SelectNodes(block.ContainerPath);
+            if (blockNodes == null)
+            {
+                return new CatalogItem[0];
+            }
+
             string linkUrl;
             string linkTitle;
             CatalogItem linkItem;
