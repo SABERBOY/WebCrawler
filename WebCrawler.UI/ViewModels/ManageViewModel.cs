@@ -544,6 +544,8 @@ namespace WebCrawler.UI.ViewModels
                 {
                     AppendOutput("Url redirected to: " + Editor.Response.ActualUrl, Editor.Website.Home, LogEventLevel.Warning);
                 }
+
+                SelectedViewIndex = 1;
             }
         }
 
