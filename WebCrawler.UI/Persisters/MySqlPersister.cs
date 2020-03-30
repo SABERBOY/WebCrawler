@@ -129,6 +129,12 @@ namespace WebCrawler.UI.Persisters
                 .ToPagedResultAsync(1);
         }
 
+        public async Task<T> GetAsync<T>(int id)
+            where T : class
+        {
+            return await _dbContext.FindAsync<T>(id);
+        }
+
         public async Task SaveAsync(List<Article> articles, CrawlLogView crawlLogView, string lastHandled)
         {
             if (crawlLogView.Status != CrawlStatus.Failed)

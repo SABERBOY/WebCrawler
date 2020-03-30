@@ -14,6 +14,7 @@ namespace WebCrawler.UI.Persisters
         Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1);
         Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null);
         Task<PagedResult<CrawlLog>> GetCrawlingQueueAsync(int crawlId, int? lastId = null);
+        Task<T> GetAsync<T>(int id) where T : class;
         Task SaveAsync(List<Article> articles, CrawlLogView crawlLog, string lastHandled);
         Task SaveAsync(WebsiteView editor);
         Task<Crawl> SaveAsync(Crawl crawl = null);
