@@ -84,14 +84,25 @@ namespace WebCrawler.Common.Analyzers
             // build link trees
             var linkTrees = BuildLinkTrees(similarLinks);
 
+#if DEBUG
+            // show data for debugging
+            var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
+            var similarLinksPlain = string.Join("\r\n", similarLinks.Select(l => l.XPath + "\t" + l.Text));
+            var linkTreesPlain = string.Join("\r\n\r\n", linkTrees.Select(o => PrintLinkTree(o)));
+#endif
+
             // locate the target link tree
             var linkTree = linkTrees.FirstOrDefault(o => o.GetDescendants(true).Any(d => d.Path == xpath));
             if (linkTree == null)
             {
-                return null;
+                return xpath;
             }
 
             PopulatePublishDate(linkTree, htmlDoc);
+
+#if DEBUG
+            var linkTreeWithPublishDatePlain = PrintLinkTree(linkTree);
+#endif
 
             linkTree = RemoveNoiseBranches(linkTree);
             if (linkTree == null)
@@ -100,10 +111,9 @@ namespace WebCrawler.Common.Analyzers
             }
 
             var block = linkTree.ConvertToBlock();
+
 #if DEBUG
             // show data for debugging
-            var linksPlain = string.Join("\r\n", links.Select(o => o.XPath + "\t" + o.Text));
-            var similarLinksPlain = string.Join("\r\n", similarLinks.Select(l => l.XPath + "\t" + l.Text));
             var linkTreeCleanPlain = PrintLinkTree(linkTree);
             var blockPlain = block.LinkPath + "\t" + block.LinkCount + "\t" + block.LinkTextLength + "\r\n" + block.LinkText;
 #endif
@@ -137,17 +147,21 @@ namespace WebCrawler.Common.Analyzers
 
             linkTrees.ForEach(o => PopulatePublishDate(o, htmlDoc));
 
+#if DEBUG
             var linkTreesWithPublishDatePlain = string.Join("\r\n\r\n", linkTrees.Select(o => PrintLinkTree(o)));
+#endif
 
             linkTrees = linkTrees
                 .Select(o => RemoveNoiseBranches(o))
                 .Where(o => o != null)
                 .ToArray();
 
-            var linkTreesCleanPlain = string.Join("\r\n\r\n", linkTrees.Select(o => PrintLinkTree(o)));
-
             var blocks = linkTrees.Select(o => o.ConvertToBlock());
+
+#if DEBUG
+            var linkTreesCleanPlain = string.Join("\r\n\r\n", linkTrees.Select(o => PrintLinkTree(o)));
             var blocksPlain = string.Join("\r\n\r\n", blocks.Select(o => o.LinkPath + "\t" + o.LinkCount + "\t" + o.LinkTextLength + "\r\n" + o.LinkText));
+#endif
 
             return FilterBlocks(blocks);
         }
@@ -293,7 +307,7 @@ namespace WebCrawler.Common.Analyzers
                         }
                         else // start new tree
                         {
-                            curLeaf = null;
+                            trees.Add(curLeaf);
                         }
                     }
                     else if (temp.Parent.Path == parentPath) // same match
@@ -304,7 +318,7 @@ namespace WebCrawler.Common.Analyzers
                         }
                         else // start new tree
                         {
-                            curLeaf = null;
+                            trees.Add(curLeaf);
                         }
                     }
                     else if (temp.Parent.Depth < parentDepth) // travel down
@@ -315,7 +329,7 @@ namespace WebCrawler.Common.Analyzers
                         }
                         else // start new tree
                         {
-                            curLeaf = null;
+                            trees.Add(curLeaf);
                         }
                     }
                 }
