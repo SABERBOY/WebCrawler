@@ -141,6 +141,30 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private bool _noDate;
+        public bool NoDate
+        {
+            get
+            {
+                return _noDate;
+            }
+            set
+            {
+                if (value == _noDate)
+                {
+                    return;
+                }
+
+                _noDate = value;
+                RaisePropertyChanged();
+
+                if (NoDate && Status == WebsiteStatus.WarningNoDates)
+                {
+                    Status = WebsiteStatus.Normal;
+                }
+            }
+        }
+
         private string _notes;
         public string Notes
         {
@@ -263,6 +287,7 @@ namespace WebCrawler.UI.ViewModels
             ListPath = model.ListPath;
             UrlFormat = model.UrlFormat;
             StartIndex = model.StartIndex;
+            NoDate = model.NoDate;
             Notes = model.Notes;
             SysNotes = model.SysNotes;
             Registered = model.Registered;
@@ -291,6 +316,7 @@ namespace WebCrawler.UI.ViewModels
             target.ListPath = ListPath;
             target.UrlFormat = UrlFormat;
             target.StartIndex = StartIndex;
+            target.NoDate = NoDate;
             target.Notes = Notes;
             target.SysNotes = SysNotes;
             target.Registered = Registered;

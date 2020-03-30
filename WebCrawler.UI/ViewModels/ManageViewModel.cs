@@ -608,7 +608,7 @@ namespace WebCrawler.UI.ViewModels
                 ActionBlock<Website> workerBlock = null;
                 workerBlock = new ActionBlock<Website>(async website =>
                 {
-                    var result = await TestAsync(website.Id, website.Home, website.ListPath, website.Status, website.SysNotes);
+                    var result = await TestAsync(website.Id, website.Home, website.ListPath, website.NoDate, website.Status, website.SysNotes);
 
                     try
                     {
@@ -761,7 +761,7 @@ namespace WebCrawler.UI.ViewModels
             TryRunAsync(async () =>
             {
                 // test catalogs
-                var result = await TestAsync(Editor.Website.Id, Editor.Website.Home, Editor.Website.ListPath, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
+                var result = await TestAsync(Editor.Website.Id, Editor.Website.Home, Editor.Website.ListPath, Editor.Website.NoDate, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
                 if (result.Catalogs != null)
                 {
                     CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
@@ -780,7 +780,7 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        private async Task<TestResult> TestAsync(int websiteId, string url, string listPath, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
+        private async Task<TestResult> TestAsync(int websiteId, string url, string listPath, bool noDate, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
         {
             var result = new TestResult { Status = WebsiteStatus.Normal };
 
@@ -822,7 +822,7 @@ namespace WebCrawler.UI.ViewModels
                     if (result.Catalogs.Any(o => !o.HasDate))
                     {
                         // check dates only when ListPath isn't provided
-                        if (string.IsNullOrEmpty(listPath))
+                        if (string.IsNullOrEmpty(listPath) && !noDate)
                         {
                             result.Status = WebsiteStatus.WarningNoDates;
                             result.Notes = "No published date in catalog items";
