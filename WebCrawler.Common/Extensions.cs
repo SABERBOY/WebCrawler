@@ -240,11 +240,11 @@ namespace WebCrawler.Common
 
         public static void HandleParseErrorsIfAny(this HtmlDocument htmlDoc, Action<string> action)
         {
-            var parseErrors = string.Join("\r\n", htmlDoc.ParseErrors.Select(o => $"Line {o.Line} column {o.LinePosition}: {o.Reason}"));
+            var parseErrors = string.Join(" ", htmlDoc.ParseErrors.Select(o => $"Line {o.Line} column {o.LinePosition}: {o.Reason}."));
 
             if (!string.IsNullOrEmpty(parseErrors))
             {
-                parseErrors = "Html parsing errors:\r\n" + parseErrors;
+                parseErrors = "Html parsing errors: " + parseErrors;
 
                 action?.Invoke(parseErrors);
             }
