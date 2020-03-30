@@ -195,6 +195,7 @@ namespace WebCrawler.UI.Persisters
                 model.StartIndex = editor.StartIndex;
                 model.ListPath = editor.ListPath;
                 model.Notes = editor.Notes;
+                model.SysNotes = editor.SysNotes;
                 model.Enabled = editor.Enabled;
                 model.Status = editor.Status;
             }
