@@ -183,7 +183,7 @@ namespace WebCrawler.Common
             }
             else
             {
-                charset = Regex.Match(rawContent, @"[\w-]+").Value;
+                charset = Regex.Match(rawContent, @"[a-zA-Z0-9-]{4,}").Value;
             }
 
             // charset correction
