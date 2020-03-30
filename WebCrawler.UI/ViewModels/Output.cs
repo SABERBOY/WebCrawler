@@ -80,5 +80,24 @@ namespace WebCrawler.UI.ViewModels
                 RaisePropertyChanged();
             }
         }
+
+        private int? _websiteId;
+        public int? WebsiteId
+        {
+            get
+            {
+                return _websiteId;
+            }
+            set
+            {
+                if (value == _websiteId)
+                {
+                    return;
+                }
+
+                _websiteId = value;
+                RaisePropertyChanged();
+            }
+        }
     }
 }

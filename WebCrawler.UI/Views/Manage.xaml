@@ -257,6 +257,7 @@
 
             <DataGrid Grid.Row="2"
                       ItemsSource="{Binding Outputs}"
+                      SelectedItem="{Binding SelectedOutput}"
                       AutoGenerateColumns="False"
                       Margin="0 0 10 10"
                       IsReadOnly="True"
@@ -267,6 +268,9 @@
                     <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="360" />
                     <DataGridTextColumn Header="URL" Binding="{Binding URL}" />
                 </DataGrid.Columns>
+                <DataGrid.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding ViewOutputWebsiteCommand}" />
+                </DataGrid.InputBindings>
             </DataGrid>
 
         </Grid>

@@ -134,6 +134,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private Output _selectedOutput;
+        public Output SelectedOutput
+        {
+            get { return _selectedOutput; }
+            set
+            {
+                if (_selectedOutput == value) { return; }
+
+                _selectedOutput = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private int _selectedViewIndex;
         public int SelectedViewIndex
         {
@@ -403,6 +416,19 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
+        private RelayCommand _viewOutputWebsiteCommand;
+        public ICommand ViewOutputWebsiteCommand
+        {
+            get
+            {
+                if (_viewOutputWebsiteCommand == null)
+                {
+                    _viewOutputWebsiteCommand = new RelayCommand(ViewOutputWebsite, () => SelectedOutput?.WebsiteId != null && !IsProcessing);
+                }
+                return _viewOutputWebsiteCommand;
+            }
+        }
+
         #endregion
 
         public ManageViewModel(IServiceProvider serviceProvider, IPersister persister, ILogger logger, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
@@ -537,15 +563,16 @@ namespace WebCrawler.UI.ViewModels
         private async Task LoadHtmlCoreAsync()
         {
             Editor.Response = null;
+
             if (!string.IsNullOrEmpty(Editor.Website.Home))
             {
                 Editor.Response = await _httpClient.GetHtmlAsync(Editor.Website.Home);
 
-                Editor.HtmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, Editor.Website.Home, LogEventLevel.Warning));
+                Editor.HtmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, Editor.Website.Home, Editor.Website.Id, LogEventLevel.Warning));
 
                 if (Editor.Response.IsRedirected)
                 {
-                    AppendOutput("Url redirected to: " + Editor.Response.ActualUrl, Editor.Website.Home, LogEventLevel.Warning);
+                    AppendOutput("Url redirected to: " + Editor.Response.ActualUrl, Editor.Website.Home, Editor.Website.Id, LogEventLevel.Warning);
                 }
 
                 SelectedViewIndex = 1;
@@ -581,7 +608,7 @@ namespace WebCrawler.UI.ViewModels
                 ActionBlock<Website> workerBlock = null;
                 workerBlock = new ActionBlock<Website>(async website =>
                 {
-                    var result = await TestAsync(website.Home, website.ListPath, website.Status, website.SysNotes);
+                    var result = await TestAsync(website.Id, website.Home, website.ListPath, website.Status, website.SysNotes);
 
                     try
                     {
@@ -592,7 +619,7 @@ namespace WebCrawler.UI.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        AppendOutput((ex.InnerException ?? ex).Message, website.Home, LogEventLevel.Error);
+                        AppendOutput((ex.InnerException ?? ex).Message, website.Home, website.Id, LogEventLevel.Error);
 
                         _logger.LogError(ex, website.Home);
                     }
@@ -734,7 +761,7 @@ namespace WebCrawler.UI.ViewModels
             TryRunAsync(async () =>
             {
                 // test catalogs
-                var result = await TestAsync(Editor.Website.Home, Editor.Website.ListPath, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
+                var result = await TestAsync(Editor.Website.Id, Editor.Website.Home, Editor.Website.ListPath, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
                 if (result.Catalogs != null)
                 {
                     CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
@@ -753,7 +780,7 @@ namespace WebCrawler.UI.ViewModels
             });
         }
 
-        private async Task<TestResult> TestAsync(string url, string listPath, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
+        private async Task<TestResult> TestAsync(int websiteId, string url, string listPath, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
         {
             var result = new TestResult { Status = WebsiteStatus.Normal };
 
@@ -833,12 +860,15 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (!string.IsNullOrEmpty(result.Notes))
                 {
-                    AppendOutput(result.Notes, url, LogEventLevel.Warning);
+                    AppendOutput(result.Notes, url, websiteId, LogEventLevel.Warning);
                 }
             }
             else if (result.Status != previousStatus || result.Notes != previousSysNotes)
             {
-                AppendOutput($"{result.Status} | {result.Notes}", url, result.Status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);
+                var message = string.IsNullOrWhiteSpace(result.Notes) ? $"{result.Status}" : $"{result.Status} | {result.Notes}";
+                var level = result.Status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning;
+
+                AppendOutput(message, url, websiteId, level);
             }
 
             return result;
@@ -868,6 +898,27 @@ namespace WebCrawler.UI.ViewModels
                 await _persister.DeleteAsync(SelectedWebsite.Id);
 
                 App.Current.Dispatcher.Invoke(() => Websites.Remove(SelectedWebsite));
+            });
+        }
+
+        private void ViewOutputWebsite()
+        {
+            if (SelectedOutput?.WebsiteId == null)
+            {
+                return;
+            }
+
+            TryRunAsync(async () =>
+            {
+                SelectedWebsite = null;
+                Editor.IsEditing = true;
+
+                var website = await _persister.GetAsync<Website>(SelectedOutput.WebsiteId.Value);
+
+                new WebsiteView(website).CloneTo(Editor.Website);
+
+                // trigger html loading manually as that wouldn't be auto-triggered inside the TryRunAsync context (IsProcessing = true)
+                await LoadHtmlCoreAsync();
             });
         }
 
@@ -953,7 +1004,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    AppendOutput((ex.InnerException ?? ex).Message, null, LogEventLevel.Error);
+                    AppendOutput((ex.InnerException ?? ex).Message, level: LogEventLevel.Error);
 
                     _logger.LogError(ex, null);
                 }
@@ -966,7 +1017,7 @@ namespace WebCrawler.UI.ViewModels
             return true;
         }
 
-        private void AppendOutput(string message, string url = null, LogEventLevel level = LogEventLevel.Information)
+        private void AppendOutput(string message, string url = null, int? websiteId = null, LogEventLevel level = LogEventLevel.Information)
         {
             lock (this)
             {
@@ -976,6 +1027,7 @@ namespace WebCrawler.UI.ViewModels
                     {
                         Level = level,
                         URL = url,
+                        WebsiteId = websiteId,
                         Message = message,
                         Timestamp = DateTime.Now
                     });
