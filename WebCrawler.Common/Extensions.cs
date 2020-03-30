@@ -116,13 +116,7 @@ namespace WebCrawler.Common
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        byte[] buffer = new byte[1024];
-                        int length = stream.Read(buffer, 0, buffer.Length);
-                        while (length > 0)
-                        {
-                            ms.Write(buffer, 0, length);
-                            length = stream.Read(buffer, 0, buffer.Length);
-                        }
+                        await stream.CopyToAsync(ms);
 
                         ms.Seek(0, SeekOrigin.Begin);
                         using (var reader = new StreamReader(ms, encoding))
