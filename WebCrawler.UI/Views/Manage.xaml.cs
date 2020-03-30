@@ -94,12 +94,9 @@ namespace WebCrawler.UI.Views
 
         private void Spinner_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (tabControl.SelectedIndex == 1)
-            {
-                var processing = Convert.ToBoolean(e.NewValue);
+            var processing = Convert.ToBoolean(e.NewValue);
 
-                webBrowser.Visibility = processing ? Visibility.Hidden : Visibility.Visible;
-            }
+            webBrowser.Visibility = processing ? Visibility.Hidden : Visibility.Visible;
         }
 
         private void ListPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
