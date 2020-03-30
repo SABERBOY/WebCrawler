@@ -110,8 +110,7 @@ namespace WebCrawler.Common
 
                 data.ActualUrl = response.RequestMessage.RequestUri.AbsoluteUri;
 
-                var charset = response.Content.Headers.ContentType?.CharSet;
-                Encoding encoding = charset == null ? null : Encoding.GetEncoding(charset);
+                Encoding encoding = DetectEncoding(response.Content.Headers.ContentType?.CharSet);
 
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 {
@@ -137,17 +136,10 @@ namespace WebCrawler.Common
                                 return data;
                             }
 
-                            charset = DetectCharSet(data.Content);
-                            if (string.IsNullOrEmpty(charset))
+                            encoding = DetectEncoding(data.Content);
+                            if (encoding == null || encoding.EncodingName == reader.CurrentEncoding.EncodingName)
                             {
-                                // skip as chartset doesn't present
-                                return data;
-                            }
-
-                            encoding = Encoding.GetEncoding(charset);
-                            if (encoding == reader.CurrentEncoding)
-                            {
-                                // skip as it's already the charset encoding
+                                // skip the HTML meta encoding
                                 return data;
                             }
 
@@ -166,20 +158,41 @@ namespace WebCrawler.Common
             }
         }
 
-        private static string DetectCharSet(string rawContent)
+        private static Encoding DetectEncoding(string rawContent)
         {
-            Match m = Regex.Match(rawContent, @"\<meta [^<>]+charset= *([\w-]+)", RegexOptions.IgnoreCase);
-            if (m.Success)
+            if (string.IsNullOrEmpty(rawContent))
             {
-                return m.Groups[1].Value;
+                return null;
             }
 
-            m = Regex.Match(rawContent, @"\<meta [^<>]*charset=[^\w]? *([\w-]+)", RegexOptions.IgnoreCase);
+            string charset;
 
-            var charset = m.Success ? m.Groups[1].Value : string.Empty;
+            if (rawContent.Contains('<'))
+            {
+                Match m = Regex.Match(rawContent, @"\<meta [^<>]+charset= *([\w-]+)", RegexOptions.IgnoreCase);
+                if (m.Success)
+                {
+                    charset = m.Groups[1].Value;
+                }
+                else
+                {
+                    m = Regex.Match(rawContent, @"\<meta [^<>]*charset=[^\w]? *([\w-]+)", RegexOptions.IgnoreCase);
+
+                    charset = m.Success ? m.Groups[1].Value : string.Empty;
+                }
+            }
+            else
+            {
+                charset = Regex.Match(rawContent, @"[\w-]+").Value;
+            }
 
             // charset correction
-            return charset.Equals("utf8", StringComparison.CurrentCultureIgnoreCase) ? "utf-8" : charset;
+            if (charset.Equals("utf8", StringComparison.CurrentCultureIgnoreCase))
+            {
+                charset = "utf-8";
+            }
+
+            return string.IsNullOrEmpty(charset) ? null : Encoding.GetEncoding(charset);
         }
 
         #endregion
