@@ -142,7 +142,7 @@ namespace WebCrawler.UI
         {
             IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
 
-            var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger>();
+            //var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger>();
 
             return HttpPolicyExtensions
                 .HandleTransientHttpError()
@@ -154,7 +154,7 @@ namespace WebCrawler.UI
                     retryAttempt => TimeSpan.FromSeconds(int.Parse(config["HttpClient:HttpErrorRetrySleep"])),
                     (response, timespan, retryCount, context) =>
                     {
-                        logger.LogError("Request failed in #{0} try: {1}. {2}", retryCount, request.RequestUri, response.Result?.ReasonPhrase ?? response.Exception.Message);
+                        //logger.LogError("Request failed in #{0} try: {1}. {2}", retryCount, request.RequestUri, response.Result?.ReasonPhrase ?? response.Exception.Message);
                     });
         }
 

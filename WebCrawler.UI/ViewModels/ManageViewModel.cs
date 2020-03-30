@@ -1,6 +1,7 @@
 ﻿using GalaSoft.MvvmLight.Command;
 using HtmlAgilityPack;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog.Events;
 using System;
 using System.Collections.ObjectModel;
@@ -24,6 +25,7 @@ namespace WebCrawler.UI.ViewModels
     {
         private IServiceProvider _serviceProvider;
         private IPersister _persister;
+        private ILogger _logger;
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
 
@@ -403,10 +405,11 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public ManageViewModel(IServiceProvider serviceProvider, IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
+        public ManageViewModel(IServiceProvider serviceProvider, IPersister persister, ILogger logger, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
         {
             _serviceProvider = serviceProvider;
             _persister = persister;
+            _logger = logger;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
 
@@ -590,6 +593,8 @@ namespace WebCrawler.UI.ViewModels
                     catch (Exception ex)
                     {
                         AppendOutput((ex.InnerException ?? ex).Message, website.Home, LogEventLevel.Error);
+
+                        _logger.LogError(ex, website.Home);
                     }
 
                     lock (this)
@@ -819,6 +824,8 @@ namespace WebCrawler.UI.ViewModels
                 // keep previous stats as it might not be a website issue as usual, e.g. TaskCanceledException
                 result.Status = null;
                 result.Notes = ex.Message;
+
+                _logger.LogError(ex, url);
             }
 
             // output for changes only
@@ -947,6 +954,8 @@ namespace WebCrawler.UI.ViewModels
                 catch (Exception ex)
                 {
                     AppendOutput((ex.InnerException ?? ex).Message, null, LogEventLevel.Error);
+
+                    _logger.LogError(ex, null);
                 }
                 finally
                 {

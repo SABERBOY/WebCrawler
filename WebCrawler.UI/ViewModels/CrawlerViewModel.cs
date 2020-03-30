@@ -1,6 +1,7 @@
 ﻿using GalaSoft.MvvmLight.Command;
 using HtmlAgilityPack;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog.Events;
 using System;
 using System.Collections;
@@ -29,6 +30,7 @@ namespace WebCrawler.UI.ViewModels
     {
         private IServiceProvider _serviceProvider;
         private IPersister _persister;
+        private ILogger _logger;
         private HttpClient _httpClient;
         private CrawlingSettings _crawlingSettings;
 
@@ -286,10 +288,11 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public CrawlerViewModel(IServiceProvider serviceProvider, IPersister persister, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
+        public CrawlerViewModel(IServiceProvider serviceProvider, IPersister persister, ILogger logger, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
         {
             _serviceProvider = serviceProvider;
             _persister = persister;
+            _logger = logger;
             _httpClient = clientFactory.CreateClient(WebCrawler.Common.Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
 
@@ -499,6 +502,11 @@ namespace WebCrawler.UI.ViewModels
             {
                 crawlLogView.Status = CrawlStatus.Failed;
                 crawlLogView.Notes = ex.Message;
+
+                if (!(ex is HttpRequestException))
+                {
+                    _logger.LogError(ex, crawlLog.Website.Home);
+                }
             }
 
             if (crawlLogView.Status == CrawlStatus.Crawling)
@@ -526,12 +534,17 @@ namespace WebCrawler.UI.ViewModels
                             WebsiteId = crawlLog.WebsiteId,
                             Timestamp = DateTime.Now
                         });
-                        
+
                         crawlLogView.Success++;
                     }
                     catch (Exception ex)
                     {
                         AppendOutput(ex.Message, item.Url, LogEventLevel.Error);
+
+                        if (!(ex is HttpRequestException))
+                        {
+                            _logger.LogError(ex, item.Url);
+                        }
 
                         crawlLogView.Fail++;
                     }
@@ -557,6 +570,8 @@ namespace WebCrawler.UI.ViewModels
             {
                 crawlLogView.Status = CrawlStatus.Failed;
                 crawlLogView.Notes = $"Failed to save data: {(ex.InnerException ?? ex).ToString()}";
+
+                _logger.LogError(ex, crawlLog.Website.Home);
             }
 
             if (crawlLogView.Status == CrawlStatus.Completed)
@@ -644,6 +659,8 @@ namespace WebCrawler.UI.ViewModels
                 catch (Exception ex)
                 {
                     AppendOutput((ex.InnerException ?? ex).Message, null, LogEventLevel.Error);
+
+                    _logger.LogError(ex, null);
                 }
                 finally
                 {
