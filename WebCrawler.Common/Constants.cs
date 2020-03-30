@@ -9,6 +9,5 @@
         public const int RULE_CATALOG_LIST_MIN_LINKTEXT_LEN_SAFE = 5;
         public const int RULE_CATALOG_LIST_MIN_LINKCOUNT = 3;
         public const int RULE_CATALOG_LIST_MIN_LINKCOUNT_DATED = 5;
-        public const double RULE_CATALOG_BLOCK_MINSCORE_FACTOR = 0.3;
     }
 }

@@ -256,18 +256,7 @@ namespace WebCrawler.Common.Analyzers
             var query = blocks
               .Where(o => (double)o.LinkTextLength / o.LinkCount >= Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN // exclude short link text blocks
                   && o.LinkCount >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT // exclude small set links blocks
-              )
-              .OrderByDescending(o => o.Score) as IEnumerable<Block>;
-
-            var topBlock = query.FirstOrDefault();
-            if (topBlock == null)
-            {
-                return new Block[0];
-            }
-            var threshold = topBlock.Score * Constants.RULE_CATALOG_BLOCK_MINSCORE_FACTOR;
-
-            // exclude blocks with low score
-            query = query.Where(o => o.Score > threshold);
+              );
 
             return query.ToArray();
         }
