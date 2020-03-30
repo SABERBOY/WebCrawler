@@ -288,7 +288,7 @@ namespace WebCrawler.Common.Analyzers
                 }
                 else
                 {
-                    var parentPath = curLeaf.GetParentPath(prevLeaf, out int parentDepth);
+                    var parentPath = curLeaf.GetSharedParentPath(prevLeaf, out int parentDepth);
 
                     temp = prevLeaf;
                     while (temp.Parent != null && temp.Parent.Depth > parentDepth) // locate the ascendant container
@@ -301,7 +301,11 @@ namespace WebCrawler.Common.Analyzers
 
                     if (temp.Parent == null) // travel up, new iteration
                     {
-                        if (index1 == 1 && index2 == index1 + 1) // new iteration must start from 1, and continuous
+                        if (index2 == index1 + 1 // continuous
+                            && (index1 == 1 // starts from 1
+                                || temp.GetIterationRelativePath(parentPath) == curLeaf.GetIterationRelativePath(parentPath) // child path identical
+                            )
+                        )
                         {
                             new LinkTreeNode(parentPath).UpdateRelations(null, temp, curLeaf);
                         }
@@ -344,7 +348,7 @@ namespace WebCrawler.Common.Analyzers
 
         private static void PopulatePublishDate(LinkTreeNode root, HtmlDocument htmlDoc)
         {
-            var text = htmlDoc.DocumentNode.SelectSingleNode(root.RelativeRoot).InnerText;
+            var text = htmlDoc.DocumentNode.SelectSingleNode(root.GetIterationContainerPath()).InnerText;
             root.PublishedRaw = Html2Article.GetPublishDateRaw(text);
 
             root.Children.ToArray().ForEach(o => PopulatePublishDate(o, htmlDoc));
@@ -387,7 +391,7 @@ namespace WebCrawler.Common.Analyzers
                     leafNodes = treeNodes.Where(o => o.IsLeafLink).ToArray();
 
                     // group the nodes by columns under each list rows
-                    var listItemsByColumns = leafNodes.GroupBy(o => string.Join("/", o.Segments.Skip(datedRoot.Value)));
+                    var listItemsByColumns = leafNodes.GroupBy(o => o.GetRelativePath(datedRoot.Value));
 
                     // continue only for more than 1 columns
                     if (listItemsByColumns.Count() < leafNodes.Length)
@@ -590,17 +594,6 @@ namespace WebCrawler.Common.Analyzers
         public LinkTreeNode Parent { get; private set; }
         public List<LinkTreeNode> Children { get; set; }
 
-        /// <summary>
-        /// Full root path distinguishs from other siblings under the same parent, which is also the most closed container under the parent.
-        /// </summary>
-        public string RelativeRoot
-        {
-            get
-            {
-                return Parent == null ? Path : string.Join("/", Segments.Take(Parent.Depth + 1));
-            }
-        }
-
         public bool HasDate
         {
             get
@@ -661,7 +654,10 @@ namespace WebCrawler.Common.Analyzers
             children.ForEach(o => o.UpdateRelations(this));
         }
 
-        public string GetParentPath(LinkTreeNode linkNode, out int depth)
+        /// <summary>
+        /// Get shared path path of two link nodes, e.g. (/html/body/ul) for the link nodes (/html/body/ul/li[1]/a) and (/html/body/ul/li[2]/a)
+        /// </summary>
+        public string GetSharedParentPath(LinkTreeNode linkNode, out int depth)
         {
             int lvl;
             for (lvl = 0; lvl < Segments.Length && lvl < linkNode.Segments.Length; lvl++)
@@ -673,7 +669,7 @@ namespace WebCrawler.Common.Analyzers
             }
 
             depth = lvl;
-            return string.Join("/", Segments.Take(lvl));
+            return GetContainerPath(depth);
         }
 
         public int GetIndex(string parent)
@@ -684,8 +680,8 @@ namespace WebCrawler.Common.Analyzers
             }
             else
             {
-                var firstRelative = Segments.Skip(parent.Split('/').Length).First();
-                return int.Parse(Regex.Match(firstRelative, @"\d+").Value);
+                var relativePath = GetRelativePath(GetDepth(parent));
+                return int.Parse(Regex.Match(relativePath, @"\d+").Value);
             }
         }
 
@@ -698,8 +694,8 @@ namespace WebCrawler.Common.Analyzers
             }
             else
             {
-                var firstRelative = Segments.Skip(parent.Depth).First();
-                return int.Parse(Regex.Match(firstRelative, @"\d+").Value);
+                var relativePath = GetRelativePath(parent);
+                return int.Parse(Regex.Match(relativePath, @"\d+").Value);
             }
         }
 
@@ -752,7 +748,23 @@ namespace WebCrawler.Common.Analyzers
         }
 
         /// <summary>
-        /// Path related to the parent
+        /// Get relative path in the given depth.
+        /// </summary>
+        public string GetRelativePath(int depth)
+        {
+            return string.Join("/", Segments.Skip(depth));
+        }
+
+        /// <summary>
+        /// Get container path in the given depth.
+        /// </summary>
+        public string GetContainerPath(int depth)
+        {
+            return string.Join("/", Segments.Take(depth));
+        }
+
+        /// <summary>
+        /// Get relative path related to the parent, e.g. (li[3]/a) for the current node (/html/body/ul/li[3]/a) related to this parent (/html/body/ul)
         /// </summary>
         public string GetRelativePath(LinkTreeNode parent = null)
         {
@@ -761,9 +773,35 @@ namespace WebCrawler.Common.Analyzers
                 parent = Parent;
             }
 
-            return string.Join("/", Segments.Skip(parent.Depth));
+            return GetRelativePath(parent.Depth);
         }
 
+        /// <summary>
+        /// Get relative path related to the parent, e.g. (a) for the current node (/html/body/ul/li[3]/a) related to this parent (/html/body/ul)
+        /// </summary>
+        public string GetIterationRelativePath(string parent = null)
+        {
+            if (string.IsNullOrEmpty(parent))
+            {
+                return Path;
+            }
+
+            int parentDepth = parent == null ? Parent.Depth : GetDepth(parent);
+
+            return GetRelativePath(parentDepth + 1);
+        }
+
+        /// <summary>
+        /// Get container path of the iterations, e.g. (/html/body/ul/li[1]) for the link node (/html/body/ul/li[1]/a) whose parent node is (/html/body/ul)
+        /// </summary>
+        public string GetIterationContainerPath()
+        {
+            return Parent == null ? Path : GetContainerPath(Parent.Depth + 1);
+        }
+
+        /// <summary>
+        /// Get iteration path of this tree, e.g. (/html/body/ul/li[*]/a) for the links in the tree: (/html/body/ul/li[1]/a), (/html/body/ul/li[2]/a), (/html/body/ul/li[3]/a)
+        /// </summary>
         public string GetIterationPath()
         {
             var treeNodes = GetDescendants();
@@ -848,6 +886,11 @@ namespace WebCrawler.Common.Analyzers
                 LinkText = string.Join("\r\n", links.Select(o => o.Link.Text))
 #endif
             };
+        }
+
+        public static int GetDepth(string xpath)
+        {
+            return xpath.Split('/').Length;
         }
     }
 }
