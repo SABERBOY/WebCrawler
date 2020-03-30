@@ -838,7 +838,7 @@ namespace WebCrawler.UI.ViewModels
             }
             else if (result.Status != previousStatus || result.Notes != previousSysNotes)
             {
-                AppendOutput($"{result.Status}: {result.Notes}", url, result.Status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);
+                AppendOutput($"{result.Status} | {result.Notes}", url, result.Status == WebsiteStatus.Normal ? LogEventLevel.Information : LogEventLevel.Warning);
             }
 
             return result;
