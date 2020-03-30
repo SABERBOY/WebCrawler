@@ -730,7 +730,10 @@ namespace WebCrawler.UI.ViewModels
             {
                 // test catalogs
                 var result = await TestAsync(Editor.Website.Home, Editor.Website.ListPath, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
-                CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
+                if (result.Catalogs != null)
+                {
+                    CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
+                }
 
                 // update editor but doens't commit
                 if (result.Status != null)
