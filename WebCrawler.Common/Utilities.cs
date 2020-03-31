@@ -99,7 +99,7 @@ namespace WebCrawler.Common
 
         public static string TrimBase64String(string html)
         {
-            return Regex.Replace(html, @"(?<=src=['""])data:image/png;base64,.*?==", "", RegexOptions.IgnoreCase);
+            return Regex.Replace(html, @"(?<=src=['""])data:image/\w+;base64,[^'"" ]*", "", RegexOptions.IgnoreCase);
         }
     }
 }
