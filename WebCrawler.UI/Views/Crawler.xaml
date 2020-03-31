@@ -97,7 +97,7 @@
                       CanUserSortColumns="False"
                       Margin="10 0 10 10">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Binding="{Binding WebsiteName}" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding WebsiteName}" Width="150" />
                     <DataGridTextColumn Header="Home" Binding="{Binding WebsiteHome}" Width="300" />
                     <DataGridTextColumn Header="Success" Binding="{Binding Success}" />
                     <DataGridTextColumn Header="Fail" Binding="{Binding Fail}" />

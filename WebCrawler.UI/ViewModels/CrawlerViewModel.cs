@@ -582,7 +582,7 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    AppendOutput("Completed to crawl website", crawlLogView.WebsiteHome, LogEventLevel.Information);
+                    AppendOutput("Completed website crawl", crawlLogView.WebsiteHome, LogEventLevel.Information);
                 }
             }
             else if (crawlLogView.Status == CrawlStatus.Failed)
