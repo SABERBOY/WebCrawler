@@ -82,7 +82,7 @@ namespace WebCrawler.Common
         {
             if (string.IsNullOrEmpty(text))
             {
-                return text;
+                return string.Empty;
             }
 
             // trim start/end chars

@@ -240,6 +240,17 @@ namespace WebCrawler.Common.Analyzers
                 }
             }
 
+            // exclude head/tail short text links
+            var fromIndex = filteredItems.FirstIndex(o => o.Title.Length >= Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN_SAFE);
+            var endIndex = filteredItems.LastIndex(o => o.Title.Length >= Constants.RULE_CATALOG_LIST_MIN_LINKTEXT_LEN_SAFE);
+            if (fromIndex > 0 || endIndex > 0)
+            {
+                filteredItems = filteredItems
+                    .Skip(fromIndex)
+                    .Take(endIndex - fromIndex + 1)
+                    .ToArray();
+            }
+
             return filteredItems;
         }
 
