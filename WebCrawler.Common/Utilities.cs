@@ -78,7 +78,7 @@ namespace WebCrawler.Common
         /// </summary>
         /// <param name="text"></param>
         /// <returns></returns>
-        public static string NormalizeHtmlText(string text)
+        public static string NormalizeText(string text)
         {
             if (string.IsNullOrEmpty(text))
             {
@@ -97,9 +97,25 @@ namespace WebCrawler.Common
             return text;
         }
 
-        public static string TrimBase64String(string html)
+        public static string NormalizeHtml(string html, bool stripBase64Image = false)
         {
-            return Regex.Replace(html, @"(?<=src=['""])data:image/\w+;base64,[^'"" ]*", "", RegexOptions.IgnoreCase);
+            if (string.IsNullOrEmpty(html))
+            {
+                return string.Empty;
+            }
+
+            // trim start/end chars
+            html = html.Trim('\r', '\n', '\t', ' ');
+
+            // trim mid chars to single space
+            html = Regex.Replace(html, @"[\r\n\t ]+", " ");
+
+            if (stripBase64Image)
+            {
+                html = Regex.Replace(html, @"(?<=src=['""])data:image/\w+;base64,[^'"" ]*", "", RegexOptions.IgnoreCase);
+            }
+
+            return html;
         }
     }
 }

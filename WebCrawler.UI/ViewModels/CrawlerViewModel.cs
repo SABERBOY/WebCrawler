@@ -535,10 +535,10 @@ namespace WebCrawler.UI.ViewModels
                         {
                             Url = item.Url,
                             ActualUrl = data.IsRedirected ? data.ActualUrl : null,
-                            Title = info.Title,
+                            Title = Utilities.NormalizeText(info.Title),
                             Published = info.PublishDate ?? item.Published, // use date from article details page first
-                            Content = info.Content,
-                            ContentHtml = Utilities.TrimBase64String(info.ContentWithTags),
+                            Content = Utilities.NormalizeText(info.Content),
+                            ContentHtml = Utilities.NormalizeHtml(info.ContentWithTags, true),
                             WebsiteId = crawlLog.WebsiteId,
                             Timestamp = DateTime.Now
                         });
