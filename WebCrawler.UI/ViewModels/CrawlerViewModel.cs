@@ -493,9 +493,17 @@ namespace WebCrawler.UI.ViewModels
                     throw new Exception("Failed to locate catalog items");
                 }
 
-                // sort by published, as some website might have highlights always shown on the top
+                if (catalogItems.All(o => o.HasDate))
+                {
+                    // sort by published, as some website might have highlights always shown on the top
+                    catalogItems = catalogItems
+                        .OrderByDescending(o => o.Published)
+                        .ToArray();
+                }
+
+                // take the first x records only as some list might contains thousands of records
                 catalogItems = catalogItems
-                    .OrderByDescending(o => o.Published)
+                    .Take(Common.Constants.MAX_RECORDS)
                     .ToArray();
             }
             catch (Exception ex)

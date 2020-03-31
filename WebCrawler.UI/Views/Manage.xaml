@@ -112,8 +112,8 @@
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
                     <DataGridTextColumn Header="Validate Date" Binding="{Binding ValidateDate}" />
                     <DataGridTextColumn Header="List Path" Binding="{Binding ListPath}" Width="100" />
-                    <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" Width="300" />
-                    <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" Width="400" />
+                    <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" Width="200" />
+                    <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" Width="300" />
                     <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
                 </DataGrid.Columns>
             </DataGrid>
