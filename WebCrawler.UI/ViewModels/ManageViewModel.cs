@@ -410,7 +410,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (_deleteCurrentCommand == null)
                 {
-                    _deleteCurrentCommand = new RelayCommand(Delete, () => SelectedWebsite != null && !IsProcessing);
+                    _deleteCurrentCommand = new RelayCommand(Delete, () => Editor.Website.Id > 0 && !IsProcessing);
                 }
                 return _deleteCurrentCommand;
             }
@@ -750,7 +750,12 @@ namespace WebCrawler.UI.ViewModels
                 }
                 else
                 {
-                    Editor.Website.CloneTo(SelectedWebsite);
+                    // the current website might not be the selected one, as it might be opened from the output list
+                    var website = Websites.FirstOrDefault(o => o.Id == Editor.Website.Id);
+                    if (website != null)
+                    {
+                        Editor.Website.CloneTo(website);
+                    }
 
                     RefreshToggleState();
                 }
@@ -876,28 +881,38 @@ namespace WebCrawler.UI.ViewModels
 
         private void Reset()
         {
-            if (SelectedWebsite == null)
+            if (Editor.Website.Id == 0)
             {
                 Add();
             }
             else
             {
-                SelectedWebsite.CloneTo(Editor.Website);
+                // the current website might not be the selected one, as it might be opened from the output list
+                var website = Websites.FirstOrDefault(o => o.Id == Editor.Website.Id);
+                if (website != null)
+                {
+                    website.CloneTo(Editor.Website);
+                }
             }
         }
 
         private void Delete()
         {
-            if (MessageBox.Show($"Are you sure to delete [{SelectedWebsite.Name}]?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            if (MessageBox.Show($"Are you sure to delete [{Editor.Website.Name}]?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             {
                 return;
             }
 
             TryRunAsync(async () =>
             {
-                await _persister.DeleteAsync(SelectedWebsite.Id);
+                await _persister.DeleteAsync(Editor.Website.Id);
 
-                App.Current.Dispatcher.Invoke(() => Websites.Remove(SelectedWebsite));
+                // the current website might not be the selected one, as it might be opened from the output list
+                var website = Websites.FirstOrDefault(o => o.Id == Editor.Website.Id);
+                if (website != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => Websites.Remove(website));
+                }
             });
         }
 
