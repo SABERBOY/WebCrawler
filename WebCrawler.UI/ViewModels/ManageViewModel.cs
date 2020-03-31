@@ -823,15 +823,12 @@ namespace WebCrawler.UI.ViewModels
                     result.Status = WebsiteStatus.ErrorCatalogMissing;
                     result.Notes = "No catalogs detected";
                 }
-                else
+                else if (validateDate)
                 {
                     if (result.Catalogs.Any(o => !o.HasDate))
                     {
-                        if (validateDate)
-                        {
-                            result.Status = WebsiteStatus.WarningNoDates;
-                            result.Notes = "No published date in catalog items";
-                        }
+                        result.Status = WebsiteStatus.WarningNoDates;
+                        result.Notes = "No published date in catalog items";
                     }
                     else
                     {
