@@ -96,5 +96,10 @@ namespace WebCrawler.Common
 
             return text;
         }
+
+        public static string TrimBase64String(string html)
+        {
+            return Regex.Replace(html, @"(?<=src=['""])data:image/png;base64,.*?==", "", RegexOptions.IgnoreCase);
+        }
     }
 }

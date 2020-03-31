@@ -538,7 +538,7 @@ namespace WebCrawler.UI.ViewModels
                             Title = info.Title,
                             Published = info.PublishDate ?? item.Published, // use date from article details page first
                             Content = info.Content,
-                            ContentHtml = info.ContentWithTags,
+                            ContentHtml = Utilities.TrimBase64String(info.ContentWithTags),
                             WebsiteId = crawlLog.WebsiteId,
                             Timestamp = DateTime.Now
                         });
