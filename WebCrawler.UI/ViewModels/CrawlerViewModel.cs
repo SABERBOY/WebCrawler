@@ -487,7 +487,7 @@ namespace WebCrawler.UI.ViewModels
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(data.Content);
 
-                catalogItems = HtmlAnalyzer.DetectCatalogItems(htmlDoc, crawlLog.Website.ListPath);
+                catalogItems = HtmlAnalyzer.DetectCatalogItems(htmlDoc, crawlLog.Website.ListPath, crawlLog.Website.ValidateDate);
                 if (catalogItems.Length == 0)
                 {
                     throw new Exception("Failed to locate catalog items");

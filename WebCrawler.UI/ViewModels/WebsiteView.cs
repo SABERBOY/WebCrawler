@@ -141,27 +141,22 @@ namespace WebCrawler.UI.ViewModels
             }
         }
 
-        private bool _noDate;
-        public bool NoDate
+        private bool _validateDate;
+        public bool ValidateDate
         {
             get
             {
-                return _noDate;
+                return _validateDate;
             }
             set
             {
-                if (value == _noDate)
+                if (value == _validateDate)
                 {
                     return;
                 }
 
-                _noDate = value;
+                _validateDate = value;
                 RaisePropertyChanged();
-
-                if (NoDate && Status == WebsiteStatus.WarningNoDates)
-                {
-                    Status = WebsiteStatus.Normal;
-                }
             }
         }
 
@@ -287,13 +282,13 @@ namespace WebCrawler.UI.ViewModels
             ListPath = model.ListPath;
             UrlFormat = model.UrlFormat;
             StartIndex = model.StartIndex;
-            NoDate = model.NoDate;
+            ValidateDate = model.ValidateDate;
             Notes = model.Notes;
             SysNotes = model.SysNotes;
             Registered = model.Registered;
             CrawlLogs = model.CrawlLogs;
 
-            // Enabled should be assigned after Status, otherwise it might be overwritten
+            // The following should be assigned after Status, otherwise it might be overwritten
             Enabled = model.Enabled;
         }
 
@@ -316,13 +311,13 @@ namespace WebCrawler.UI.ViewModels
             target.ListPath = ListPath;
             target.UrlFormat = UrlFormat;
             target.StartIndex = StartIndex;
-            target.NoDate = NoDate;
+            target.ValidateDate = ValidateDate;
             target.Notes = Notes;
             target.SysNotes = SysNotes;
             target.Registered = Registered;
             target.CrawlLogs = CrawlLogs;
 
-            // Enabled should be assigned after Status, otherwise it might be overwritten
+            // The following should be assigned after Status, otherwise it might be overwritten
             target.Enabled = Enabled;
 
             return target;

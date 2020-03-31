@@ -31,7 +31,7 @@ namespace WebCrawler.Common.Analyzers
                 .ToArray();
         }
 
-        public static CatalogItem[] DetectCatalogItems(HtmlDocument htmlDoc, string listPath = null)
+        public static CatalogItem[] DetectCatalogItems(HtmlDocument htmlDoc, string listPath = null, bool validateDate = true)
         {
             if (string.IsNullOrEmpty(listPath)) // auto detect catalog items
             {
@@ -44,7 +44,7 @@ namespace WebCrawler.Common.Analyzers
                 var catalogItems = new Dictionary<Block, CatalogItem[]>();
                 foreach (var block in blocks)
                 {
-                    var items = GetCatalogItems(htmlDoc, block);
+                    var items = GetCatalogItems(htmlDoc, block, validateDate);
                     if (items.Length > 0)
                     {
                         catalogItems.Add(block, items);
@@ -65,7 +65,7 @@ namespace WebCrawler.Common.Analyzers
             }
             else // detect catalog items by list xpath
             {
-                return GetCatalogItems(htmlDoc, new Block { LinkPath = listPath });
+                return GetCatalogItems(htmlDoc, new Block { LinkPath = listPath }, validateDate);
             }
         }
 
@@ -108,6 +108,10 @@ namespace WebCrawler.Common.Analyzers
             if (linkTree == null)
             {
                 linkTree = linkTrees.FirstOrDefault(o => o.GetDescendants(true).Any(d => d.Path == xpath));
+                if (linkTree == null)
+                {
+                    return xpath;
+                }
             }
 
             var block = linkTree.ConvertToBlock();
@@ -166,7 +170,7 @@ namespace WebCrawler.Common.Analyzers
             return FilterBlocks(blocks);
         }
 
-        private static CatalogItem[] GetCatalogItems(HtmlDocument htmlDoc, Block block)
+        private static CatalogItem[] GetCatalogItems(HtmlDocument htmlDoc, Block block, bool validateDate)
         {
             var items = new List<CatalogItem>();
 
@@ -218,19 +222,22 @@ namespace WebCrawler.Common.Analyzers
                 .Where(o => o != null)
                 .ToArray();
 
-            // when lots of items have date/time
-            // exclude noise items
-            // e.g. page index, section header, etc.
-            if (filteredItems.Count(o => o.HasDate) >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT_DATED)
+            if (validateDate)
             {
-                var from = filteredItems.FirstIndex(o => o.HasDate);
-                var last = filteredItems.LastIndex(o => o.HasDate);
+                // when lots of items have date/time
+                // exclude noise items
+                // e.g. page index, section header, etc.
+                if (filteredItems.Count(o => o.HasDate) >= Constants.RULE_CATALOG_LIST_MIN_LINKCOUNT_DATED)
+                {
+                    var from = filteredItems.FirstIndex(o => o.HasDate);
+                    var last = filteredItems.LastIndex(o => o.HasDate);
 
-                // exclude head/tail items without date/time
-                filteredItems = filteredItems
-                    .Skip(from)
-                    .Take(last - from + 1)
-                    .ToArray();
+                    // exclude head/tail items without date/time
+                    filteredItems = filteredItems
+                        .Skip(from)
+                        .Take(last - from + 1)
+                        .ToArray();
+                }
             }
 
             return filteredItems;
