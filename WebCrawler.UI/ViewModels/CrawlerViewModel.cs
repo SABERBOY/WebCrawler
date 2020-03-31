@@ -577,7 +577,7 @@ namespace WebCrawler.UI.ViewModels
             catch (Exception ex)
             {
                 crawlLogView.Status = CrawlStatus.Failed;
-                crawlLogView.Notes = $"Failed to save data: {(ex.InnerException ?? ex).ToString()}";
+                crawlLogView.Notes = $"Failed to save data: {(ex.InnerException ?? ex).Message}";
 
                 _logger.LogError(ex, crawlLog.Website.Home);
             }
