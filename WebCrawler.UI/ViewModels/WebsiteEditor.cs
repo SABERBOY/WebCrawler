@@ -1,7 +1,7 @@
 ﻿using HtmlAgilityPack;
 using System.Collections.ObjectModel;
-using WebCrawler.Common;
-using WebCrawler.Common.Analyzers;
+using WebCrawler.Core;
+using WebCrawler.Core.Analyzers;
 
 namespace WebCrawler.UI.ViewModels
 {

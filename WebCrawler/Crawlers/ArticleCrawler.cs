@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using WebCrawler.Common;
+using WebCrawler.Core;
 using WebCrawler.Models;
 using WebCrawler.Persisters;
 

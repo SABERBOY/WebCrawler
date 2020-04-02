@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Web;
 
-namespace WebCrawler.Common
+namespace WebCrawler.Core
 {
     public static class Utilities
     {

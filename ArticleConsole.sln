@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Html2Article", "Html2Articl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler", "WebCrawler\WebCrawler.csproj", "{1EA0F1F1-4E84-4930-8194-7C259F3D5599}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.Common", "WebCrawler.Common\WebCrawler.Common.csproj", "{80A78C96-7736-4D04-B018-F5F63C854EF9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.Core", "WebCrawler.Core\WebCrawler.Core.csproj", "{80A78C96-7736-4D04-B018-F5F63C854EF9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.UI", "WebCrawler.UI\WebCrawler.UI.csproj", "{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}"
 EndProject
@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{CB
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawler.Housing", "WebCrawler.Housing\WebCrawler.Housing.csproj", "{08764CA0-E1BB-40E8-9D76-E91B36B4B3A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8A85378-C94E-434A-BBFE-CDCB01B0E1C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08764CA0-E1BB-40E8-9D76-E91B36B4B3A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08764CA0-E1BB-40E8-9D76-E91B36B4B3A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08764CA0-E1BB-40E8-9D76-E91B36B4B3A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08764CA0-E1BB-40E8-9D76-E91B36B4B3A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

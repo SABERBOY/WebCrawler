@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using WebCrawler.Common;
+using WebCrawler.Core;
 using WebCrawler.UI.Common;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.ViewModels;

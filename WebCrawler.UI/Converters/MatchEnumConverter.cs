@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using WebCrawler.Common;
+using WebCrawler.Core;
 
 namespace WebCrawler.UI.Converters
 {

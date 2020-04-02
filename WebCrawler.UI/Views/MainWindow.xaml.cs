@@ -2,7 +2,7 @@
 using System;
 using System.Net.Http;
 using System.Windows;
-using WebCrawler.Common;
+using WebCrawler.Core;
 
 namespace WebCrawler.UI.Views
 {

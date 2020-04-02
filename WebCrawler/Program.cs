@@ -9,7 +9,7 @@ using Serilog;
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using WebCrawler.Common;
+using WebCrawler.Core;
 using WebCrawler.Crawlers;
 using WebCrawler.Persisters;
 

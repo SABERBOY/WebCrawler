@@ -16,8 +16,8 @@ using System.Threading.Tasks.Dataflow;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using WebCrawler.Common;
-using WebCrawler.Common.Analyzers;
+using WebCrawler.Core;
+using WebCrawler.Core.Analyzers;
 using WebCrawler.UI.Common;
 using WebCrawler.UI.Crawlers;
 using WebCrawler.UI.Models;
@@ -293,7 +293,7 @@ namespace WebCrawler.UI.ViewModels
             _serviceProvider = serviceProvider;
             _persister = persister;
             _logger = logger;
-            _httpClient = clientFactory.CreateClient(WebCrawler.Common.Constants.HTTP_CLIENT_NAME_DEFAULT);
+            _httpClient = clientFactory.CreateClient(Core.Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlingSettings = crawlingSettings;
 
             CrawlLogs = new ObservableCollection<CrawlLogView>();

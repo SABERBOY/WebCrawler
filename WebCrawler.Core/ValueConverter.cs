@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace WebCrawler.Common
+namespace WebCrawler.Core
 {
     public class ValueConverter
     {

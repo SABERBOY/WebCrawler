@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WebCrawler.Common\WebCrawler.Common.csproj" />
+    <ProjectReference Include="..\WebCrawler.Core\WebCrawler.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 
-namespace WebCrawler.Common
+namespace WebCrawler.Core
 {
     public static class LinqHelper
     {

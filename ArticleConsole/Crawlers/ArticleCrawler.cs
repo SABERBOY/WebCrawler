@@ -9,7 +9,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using WebCrawler.Common;
+using WebCrawler.Core;
 
 namespace ArticleConsole.Crawlers
 {

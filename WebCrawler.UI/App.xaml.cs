@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using WebCrawler.Common;
+using WebCrawler.Core;
 using WebCrawler.UI.Crawlers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;

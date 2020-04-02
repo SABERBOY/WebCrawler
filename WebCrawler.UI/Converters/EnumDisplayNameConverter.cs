@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows.Data;
-using WebCrawler.Common;
+using WebCrawler.Core;
 
 namespace WebCrawler.UI.Converters
 {

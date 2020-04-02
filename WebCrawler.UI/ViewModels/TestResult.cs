@@ -1,5 +1,5 @@
-﻿using WebCrawler.Common;
-using WebCrawler.Common.Analyzers;
+﻿using WebCrawler.Core;
+using WebCrawler.Core.Analyzers;
 using WebCrawler.UI.Models;
 
 namespace WebCrawler.UI.ViewModels

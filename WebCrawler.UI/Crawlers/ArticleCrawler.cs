@@ -7,8 +7,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using WebCrawler.Common;
-using WebCrawler.Common.Analyzers;
+using WebCrawler.Core;
+using WebCrawler.Core.Analyzers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
 

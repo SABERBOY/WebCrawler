@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.XPath;
 
-namespace WebCrawler.Common
+namespace WebCrawler.Core
 {
     public static class Extensions
     {

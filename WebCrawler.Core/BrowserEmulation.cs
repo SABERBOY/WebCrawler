@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace WebCrawler.Common
+namespace WebCrawler.Core
 {
     public static class BrowserEmulation
     {

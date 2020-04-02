@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace WebCrawler.Common.Analyzers
+namespace WebCrawler.Core.Analyzers
 {
     /// <summary>
     /// 文章正文数据模型
