@@ -307,7 +307,7 @@
                             <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="300" />
                             <DataGridTextColumn Header="XPath" Binding="{Binding XPath}" />
                             <DataGridTextColumn Header="Url" Binding="{Binding Url}" Width="300" />
-                            <DataGridTextColumn Header="Full Text" Binding="{Binding FullText}" />
+                            <DataGridTextColumn Header="Full Text" Binding="{Binding FullText}" Width="300" />
                         </DataGrid.Columns>
                     </DataGrid>
 
