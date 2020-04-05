@@ -176,7 +176,7 @@ namespace WebCrawler.Housing.Crawlers
             }
 
             var projData = htmlDoc.DocumentNode.SelectNodes("//table[@id='resultTable']//tr/td[1]/a")
-                .Select(o => Utilities.ResolveResourceUrl(o.GetAttributeValue("href", null), URL_HOME))
+                .Select(o => HtmlHelper.ResolveResourceUrl(o.GetAttributeValue("href", null), URL_HOME))
                 .Select(o => new ProjectData { Town = town, ProjectUrl = o })
                 .ToArray();
 
@@ -200,7 +200,7 @@ namespace WebCrawler.Housing.Crawlers
 
             var dataDict = htmlDoc.DocumentNode
                 .SelectNodes("//table[@class='resultTable2']//tr")
-                .ToDictionary(o => Utilities.NormalizeText(o.SelectSingleNode("td[1]").InnerText).Trim('：'), o => Utilities.NormalizeText(o.SelectSingleNode("td[2]").InnerText));
+                .ToDictionary(o => HtmlHelper.NormalizeText(o.SelectSingleNode("td[1]").InnerText).Trim('：'), o => HtmlHelper.NormalizeText(o.SelectSingleNode("td[2]").InnerText));
 
             var proj = new Project
             {

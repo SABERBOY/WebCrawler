@@ -566,9 +566,9 @@ namespace WebCrawler.UI.ViewModels
 
             if (!string.IsNullOrEmpty(Editor.Website.Home))
             {
-                Editor.Response = await _httpClient.GetHtmlAsync(Editor.Website.Home);
+                Editor.Response = await HtmlHelper.GetHtmlAsync(Editor.Website.Home, _httpClient);
 
-                Editor.HtmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, Editor.Website.Home, Editor.Website.Id, LogEventLevel.Warning));
+                HtmlHelper.HandleParseErrorsIfAny(Editor.HtmlDoc, (errors) => AppendOutput(errors, Editor.Website.Home, Editor.Website.Id, LogEventLevel.Warning));
 
                 if (Editor.Response.IsRedirected)
                 {
@@ -794,7 +794,7 @@ namespace WebCrawler.UI.ViewModels
             {
                 if (response == null)
                 {
-                    result.CatalogsResponse = await _httpClient.GetHtmlAsync(url);
+                    result.CatalogsResponse = await HtmlHelper.GetHtmlAsync(url, _httpClient);
                 }
                 else
                 {
@@ -945,7 +945,7 @@ namespace WebCrawler.UI.ViewModels
 
             TryRunAsync(async () =>
             {
-                var data = await _httpClient.GetHtmlAsync(SelectedCatalogItem.Url);
+                var data = await HtmlHelper.GetHtmlAsync(SelectedCatalogItem.Url, _httpClient);
 
                 var article = Html2Article.GetArticle(data.Content);
 

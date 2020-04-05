@@ -93,7 +93,7 @@ namespace ArticleConsole.Crawlers
                         var articleLink = feedItemLinkIterator.Current.Value?.Trim();
                         if (!string.IsNullOrEmpty(articleLink))
                         {
-                            articleLink = Utilities.ResolveResourceUrl(articleLink, feedUrl);
+                            articleLink = HtmlHelper.ResolveResourceUrl(articleLink, feedUrl);
                             if (articleLink.Equals(previousLink, StringComparison.CurrentCultureIgnoreCase))
                             {
                                 exceedPrevious = true;

@@ -190,7 +190,7 @@ namespace WebCrawler.Core.Analyzers
                 }
             }
 
-            return Utilities.NormalizeText(title);
+            return HtmlHelper.NormalizeText(title);
         }
 
         /// <summary>

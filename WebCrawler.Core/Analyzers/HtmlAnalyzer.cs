@@ -21,7 +21,7 @@ namespace WebCrawler.Core.Analyzers
                 .Select(o => new Link
                 {
                     XPath = o.XPath,
-                    Text = Utilities.NormalizeText(o.InnerText),
+                    Text = HtmlHelper.NormalizeText(o.InnerText),
                     Url = o.GetAttributeValue("href", null)
                 })
                 .Where(o => o.Url != null
@@ -205,8 +205,8 @@ namespace WebCrawler.Core.Analyzers
                 {
                     XPath = linkNode.XPath,
                     Url = linkUrl,
-                    Title = Utilities.NormalizeText(linkTitle),
-                    FullText = Utilities.NormalizeText(blockNode.InnerText),
+                    Title = HtmlHelper.NormalizeText(linkTitle),
+                    FullText = HtmlHelper.NormalizeText(blockNode.InnerText),
                     Published = Html2Article.GetPublishDate(blockNode.InnerText),
                     PublishedRaw = Html2Article.GetPublishDateRaw(blockNode.InnerText)
                 };

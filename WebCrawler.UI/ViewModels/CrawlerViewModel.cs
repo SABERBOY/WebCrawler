@@ -482,7 +482,7 @@ namespace WebCrawler.UI.ViewModels
             CatalogItem[] catalogItems = null;
             try
             {
-                var data = await _httpClient.GetHtmlAsync(crawlLog.Website.Home);
+                var data = await HtmlHelper.GetHtmlAsync(crawlLog.Website.Home, _httpClient);
 
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(data.Content);
@@ -528,17 +528,17 @@ namespace WebCrawler.UI.ViewModels
 
                     try
                     {
-                        var data = await _httpClient.GetHtmlAsync(item.Url);
+                        var data = await HtmlHelper.GetHtmlAsync(item.Url, _httpClient);
                         var info = Html2Article.GetArticle(data.Content);
 
                         articles.Add(new Article
                         {
                             Url = item.Url,
                             ActualUrl = data.IsRedirected ? data.ActualUrl : null,
-                            Title = Utilities.NormalizeText(info.Title),
+                            Title = HtmlHelper.NormalizeText(info.Title),
                             Published = info.PublishDate ?? item.Published, // use date from article details page first
-                            Content = Utilities.NormalizeText(info.Content),
-                            ContentHtml = Utilities.NormalizeHtml(info.ContentWithTags, true),
+                            Content = HtmlHelper.NormalizeText(info.Content),
+                            ContentHtml = HtmlHelper.NormalizeHtml(info.ContentWithTags, true),
                             WebsiteId = crawlLog.WebsiteId,
                             Timestamp = DateTime.Now
                         });
