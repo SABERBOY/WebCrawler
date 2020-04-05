@@ -1,6 +1,6 @@
-﻿namespace WebCrawler.UI.Crawlers
+﻿namespace WebCrawler.UI.ViewModels
 {
-    public class CrawlingSettings
+    public class CrawlSettings
     {
         public int MaxDegreeOfParallelism { get; set; }
         public int FeedMaxPagesLimit { get; set; }

@@ -14,8 +14,6 @@ namespace WebCrawler.UI.Persisters
 {
     public class MySqlPersister : IPersister
     {
-        private readonly static int BATCH_SIZE = 100;
-
         private readonly ArticleDbContext _dbContext;
         private readonly ILogger _logger;
 

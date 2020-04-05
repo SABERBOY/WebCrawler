@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using WebCrawler.Core;
-using WebCrawler.UI.Crawlers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
 using WebCrawler.UI.ViewModels;
@@ -81,9 +80,9 @@ namespace WebCrawler.UI
 
             services.AddSingleton<IConfiguration>(config);
 
-            services.AddSingleton<CrawlingSettings>((serviceProvider) =>
+            services.AddSingleton<CrawlSettings>((serviceProvider) =>
             {
-                var crawlSettings = new CrawlingSettings();
+                var crawlSettings = new CrawlSettings();
                 config.Bind("Crawling", crawlSettings);
 
                 return crawlSettings;

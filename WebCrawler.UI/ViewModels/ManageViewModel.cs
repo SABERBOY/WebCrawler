@@ -15,7 +15,6 @@ using System.Windows;
 using System.Windows.Input;
 using WebCrawler.Core;
 using WebCrawler.Core.Analyzers;
-using WebCrawler.UI.Crawlers;
 using WebCrawler.UI.Models;
 using WebCrawler.UI.Persisters;
 
@@ -27,7 +26,7 @@ namespace WebCrawler.UI.ViewModels
         private IPersister _persister;
         private ILogger _logger;
         private HttpClient _httpClient;
-        private CrawlingSettings _crawlingSettings;
+        private CrawlSettings _crawlSettings;
 
         private SortDescription[] _websiteSorts;
         private WebsiteView[] _websiteSelections;
@@ -431,13 +430,13 @@ namespace WebCrawler.UI.ViewModels
 
         #endregion
 
-        public ManageViewModel(IServiceProvider serviceProvider, IPersister persister, ILogger logger, IHttpClientFactory clientFactory, CrawlingSettings crawlingSettings)
+        public ManageViewModel(IServiceProvider serviceProvider, IPersister persister, ILogger logger, IHttpClientFactory clientFactory, CrawlSettings crawlSettings)
         {
             _serviceProvider = serviceProvider;
             _persister = persister;
             _logger = logger;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
-            _crawlingSettings = crawlingSettings;
+            _crawlSettings = crawlSettings;
 
             Websites = new ObservableCollection<WebsiteView>();
             Outputs = new ObservableCollection<Output>();
@@ -632,7 +631,7 @@ namespace WebCrawler.UI.ViewModels
                     ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
                 }, new ExecutionDataflowBlockOptions
                 {
-                    MaxDegreeOfParallelism = _crawlingSettings.MaxDegreeOfParallelism
+                    MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
                 });
 
                 PagedResult<Website> websitesQueue = null;
@@ -654,7 +653,7 @@ namespace WebCrawler.UI.ViewModels
                         ProcessingStatus = $"Processing {workerBlock.InputCount}/{processed}/{total}";
 
                         // accept queue items in the amount of batch size x 3
-                        while (workerBlock.InputCount >= _crawlingSettings.MaxDegreeOfParallelism * 2)
+                        while (workerBlock.InputCount >= _crawlSettings.MaxDegreeOfParallelism * 2)
                         {
                             Thread.Sleep(1000);
                         }
@@ -833,7 +832,7 @@ namespace WebCrawler.UI.ViewModels
                     else
                     {
                         var latestItem = result.Catalogs.OrderByDescending(o => o.Published).FirstOrDefault();
-                        if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlingSettings.OutdateDaysAgo * -1))
+                        if (latestItem.Published != null && latestItem.Published < DateTime.Now.AddDays(_crawlSettings.OutdateDaysAgo * -1))
                         {
                             result.Status = WebsiteStatus.ErrorOutdate;
                             result.Notes = $"Last published: {latestItem.Published}";

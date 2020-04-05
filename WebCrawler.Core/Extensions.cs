@@ -47,7 +47,7 @@ namespace WebCrawler.Core
         {
             if (string.IsNullOrEmpty(xpath))
             {
-                return default(T);
+                return default;
             }
 
             var pathValue = xNav.SelectSingleNode(xpath);
