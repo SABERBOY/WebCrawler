@@ -171,7 +171,7 @@
                              Text="{Binding Editor.Website.ListPath}"
                              TextChanged="ListPathTextBox_TextChanged"
                              SizeChanged="ListPathTextBox_SizeChanged"
-                             ctls:Placeholder.PlaceholderText="Leave empty to auto detect or provide a keywords to search" />
+                             ctls:Placeholder.PlaceholderText="Leave empty to auto detect or provide keywords to search" />
                     <Canvas Grid.Row="3"
                             Grid.Column="1"
                             Panel.ZIndex="2"
