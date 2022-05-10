@@ -1,0 +1,249 @@
+﻿using HtmlAgilityPack;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Net.Sockets;
+using System.Threading.Tasks.Dataflow;
+using WebCrawler.Analyzers;
+using WebCrawler.Common;
+using WebCrawler.DataLayer;
+using WebCrawler.Models;
+
+namespace WebCrawler.Crawlers
+{
+    public class ArticleCrawler : ICrawler
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IDataLayer _persister;
+        private readonly ILogger _logger;
+        private readonly HttpClient _httpClient;
+        private readonly CrawlSettings _crawlSettings;
+
+        public ArticleCrawler(IServiceProvider serviceProvider, IDataLayer persister, ILogger<MySqlDataLayer> logger, IHttpClientFactory clientFactory, CrawlSettings crawlSettings)
+        {
+            _serviceProvider = serviceProvider;
+            _persister = persister;
+            _logger = logger;
+            _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
+            _crawlSettings = crawlSettings;
+        }
+
+        public async Task ExecuteAsync(bool continuePrevious = false)
+        {
+            try
+            {
+                var crawls = (await _persister.GetCrawlsAsync()).Items;
+
+                Crawl? crawl = crawls.FirstOrDefault();
+                if (continuePrevious && (crawl?.Status == CrawlStatus.Failed || crawl?.Status == CrawlStatus.Cancelled))
+                {
+                    crawl = await _persister.ContinueCrawlAsync(crawl.Id);
+                }
+                else
+                {
+                    crawl = await _persister.QueueCrawlAsync();
+                }
+
+                _logger.LogInformation($"Started {(continuePrevious ? "incremental" : "full")} crawling");
+
+                int total = 0;
+                ActionBlock<CrawlLog> workerBlock = new ActionBlock<CrawlLog>(async crawlLog =>
+                {
+                    await CrawlAsync(crawlLog);
+
+                    lock (this)
+                    {
+                        if (crawlLog.Status == CrawlStatus.Completed)
+                        {
+                            crawl.Success++;
+                        }
+                        else
+                        {
+                            crawl.Fail++;
+                        }
+                    }
+
+                    _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
+                }, new ExecutionDataflowBlockOptions
+                {
+                    MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
+                });
+
+                PagedResult<CrawlLog> crawlLogsQueue = null;
+                do
+                {
+                    crawlLogsQueue = await _persister.GetCrawlingQueueAsync(crawl.Id, crawlLogsQueue?.Items.Last().Id);
+
+                    if (total == 0)
+                    {
+                        total = crawlLogsQueue.PageInfo.ItemCount;
+
+                        _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
+                    }
+
+                    foreach (var website in crawlLogsQueue.Items)
+                    {
+                        workerBlock.Post(website);
+
+                        // accept queue items in the amount of batch size x 3
+                        while (workerBlock.InputCount >= _crawlSettings.MaxDegreeOfParallelism * 2)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                    }
+                } while (crawlLogsQueue.PageInfo.PageCount > 1);
+
+                workerBlock.Complete();
+                workerBlock.Completion.Wait();
+
+                crawl.Status = CrawlStatus.Completed;
+                crawl.Completed = DateTime.Now;
+
+                await _persister.SaveAsync(crawl);
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+            }
+            finally
+            {
+                _logger.LogInformation("Completed {0} crawling", continuePrevious ? "previous" : "new");
+            }
+        }
+
+        #region Private Members
+
+        private async Task CrawlAsync(CrawlLog crawlLog)
+        {
+            crawlLog.Status = CrawlStatus.Crawling;
+            crawlLog.Crawled = DateTime.Now;
+
+            var articles = new List<Article>();
+
+            CatalogItem[] catalogItems = null;
+            try
+            {
+                var data = await HtmlHelper.GetHtmlAsync(crawlLog.Website.Home, _httpClient);
+
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(data.Content);
+
+                catalogItems = HtmlAnalyzer.DetectCatalogItems(htmlDoc, crawlLog.Website.ListPath, crawlLog.Website.ValidateDate);
+                if (catalogItems.Length == 0)
+                {
+                    throw new AppException("Failed to locate catalog items");
+                }
+
+                if (catalogItems.All(o => o.HasDate))
+                {
+                    // sort by published, as some website might have highlights always shown on the top
+                    catalogItems = catalogItems
+                        .OrderByDescending(o => o.Published)
+                        .ToArray();
+                }
+
+                // take the first x records only as some list might contains thousands of records
+                catalogItems = catalogItems
+                    .Take(Constants.MAX_RECORDS)
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                crawlLog.Status = CrawlStatus.Failed;
+                crawlLog.Notes = ex.Message;
+
+                HandleException(ex, crawlLog.Website.Home);
+            }
+
+            if (crawlLog.Status == CrawlStatus.Crawling)
+            {
+                foreach (var item in catalogItems)
+                {
+                    if (item.Url.Equals(crawlLog.LastHandled, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        var data = await HtmlHelper.GetHtmlAsync(item.Url, _httpClient);
+                        var info = Html2Article.GetArticle(data.Content);
+
+                        articles.Add(new Article
+                        {
+                            Url = item.Url,
+                            ActualUrl = data.IsRedirected ? data.ActualUrl : null,
+                            Title = HtmlHelper.NormalizeText(info.Title),
+                            Published = info.PublishDate ?? item.Published, // use date from article details page first
+                            Content = HtmlHelper.NormalizeText(info.Content),
+                            ContentHtml = HtmlHelper.NormalizeHtml(info.ContentWithTags, true),
+                            WebsiteId = crawlLog.WebsiteId,
+                            Timestamp = DateTime.Now
+                        });
+
+                        crawlLog.Success++;
+
+                        _logger.LogTrace("Crawled article: {0}", item.Url);
+                    }
+                    catch (Exception ex)
+                    {
+                        HandleException(ex, $"Failed to get article: {item.Url}");
+
+                        crawlLog.Fail++;
+                    }
+                }
+
+                if (crawlLog.Success == 0 && crawlLog.Fail > 0)
+                {
+                    crawlLog.Status = CrawlStatus.Failed;
+                    crawlLog.Notes = "Failed as nothing succeeded";
+                }
+            }
+
+            try
+            {
+                var lastHandled = crawlLog.Status != CrawlStatus.Failed ? catalogItems[0].Url : null;
+
+                using (var persister = _serviceProvider.GetRequiredService<IDataLayer>())
+                {
+                    await persister.SaveAsync(articles, crawlLog, lastHandled);
+                }
+            }
+            catch (Exception ex)
+            {
+                crawlLog.Status = CrawlStatus.Failed;
+                crawlLog.Notes = $"Failed to save data: {(ex.InnerException ?? ex).Message}";
+
+                HandleException(ex, crawlLog.Website.Home);
+            }
+
+            if (crawlLog.Status == CrawlStatus.Completed)
+            {
+                if (articles.Count == 0)
+                {
+                    _logger.LogInformation("No updates: {0}", crawlLog.Website.Home);
+                }
+                else
+                {
+                    _logger.LogInformation("Completed website crawling: {0}", crawlLog.Website.Home);
+                }
+            }
+            else if (crawlLog.Status == CrawlStatus.Failed)
+            {
+                _logger.LogError("Failed to crawl website due to '{0}': {1}", crawlLog.Notes, crawlLog.Website.Home);
+            }
+        }
+
+        private void HandleException(Exception exception, string message = null)
+        {
+            if (!(exception is HttpRequestException
+                || exception is SocketException
+                || exception is TaskCanceledException
+                || exception is AppException))
+            {
+                _logger.LogError(exception, message);
+            }
+        }
+
+        #endregion
+    }
+}
