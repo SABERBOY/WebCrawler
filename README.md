@@ -33,6 +33,28 @@ check total length of full item text, need to POC
 	-	Publish framework-dependent
 	-	Publish self-contained
 
+-	Tutorial: Publish a .NET console application using Visual Studio
+	https://docs.microsoft.com/en-us/dotnet/core/tutorials/publishing-with-visual-studio?pivots=dotnet-6-0#inspect-the-files
+	-	Inspect the files
+
+-	Debug .NET Apps in WSL with Visual Studio
+	https://docs.microsoft.com/en-us/visualstudio/debugger/debug-dotnet-core-in-wsl-2?view=vs-2022
+
+
+-	Automatic Versions 2
+	https://marketplace.visualstudio.com/items?itemName=PrecisionInfinity.AutomaticVersions
+
+
+-	How to run a .NET Core console app as a service using Systemd on Linux (RHEL)
+	https://swimburger.net/blog/dotnet/how-to-run-a-dotnet-core-console-app-as-a-service-using-systemd-on-linux
+
+-	How to Schedule Job on Linux using Cron, Anacron and at Commands
+	https://linoxide.com/schedule-job-linux-commands/
+
+-	How to Schedule Tasks on Ubuntu 20.04 Using Crontab
+	https://vitux.com/how-to-schedule-tasks-on-ubuntu-20-04-using-crontab/
+
+
 ### Setup Linux
 
 -	https://ubuntu.com/blog/creating-cross-platform-applications-with-net-on-ubuntu-on-wsl
