@@ -1,4 +1,4 @@
-# WebCrawler Linux 环境部署文档
+# WebCrawler 部署文档
 
 ## 运行环境
 - Linux Ubuntu 20.04 LTS
