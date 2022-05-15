@@ -22,7 +22,7 @@ sudo apt-get update; \
 
 ## 部署 WebCrawler
 
-- 从 [GitHub](https://github.com/alexchx/WebCrawler/tree/master/Build) 下载最新 build，并将 Portable 目录中的文件拷贝至 Linux 环境的独立文件夹中。
+- 从 [GitHub](./) 下载最新 build，并将 Portable 目录中的文件拷贝至 Linux 环境的独立文件夹中。
   > 备注：该程序包支持跨平台运行。
   > - Windows 环境\
       运行 `WebCrawler.Console.exe`
