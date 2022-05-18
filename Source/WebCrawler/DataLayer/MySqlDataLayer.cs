@@ -315,7 +315,7 @@ namespace WebCrawler.DataLayer
 			        SELECT CL.lasthandled FROM atc_crawllogs AS CL WHERE CL.websiteid = WS.id ORDER BY id DESC LIMIT 1
 		        )
                 FROM atc_websites AS WS
-		        WHERE enabled LIMIT 5";
+		        WHERE enabled";
 
             await ExecuteSqlAsync(sql, crawl.Id);
 
