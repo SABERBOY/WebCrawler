@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -79,7 +79,7 @@ namespace WebCrawler.Analyzers
 
             // register as Transient, because efcore dbcontext isn't thread safe
             // https://docs.microsoft.com/en-us/ef/core/miscellaneous/configuring-dbcontext#avoiding-dbcontext-threading-issues
-            services.AddTransient<IDataLayer, MySqlDataLayer>();
+            services.AddTransient<IDataLayer, PostgreSQLLayer>();
             // configure db context
             services.AddDbContext<ArticleDbContext>(
                 options => options.UseNpgsql(

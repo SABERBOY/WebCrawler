@@ -13,15 +13,15 @@ namespace WebCrawler.Crawlers
     public class ArticleCrawler : ICrawler
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IDataLayer _persister;
+        private readonly IDataLayer _dataLayer;
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private readonly CrawlSettings _crawlSettings;
 
-        public ArticleCrawler(IServiceProvider serviceProvider, IDataLayer persister, ILogger<MySqlDataLayer> logger, IHttpClientFactory clientFactory, CrawlSettings crawlSettings)
+        public ArticleCrawler(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<ArticleCrawler> logger)
         {
             _serviceProvider = serviceProvider;
-            _persister = persister;
+            _dataLayer = dataLayer;
             _logger = logger;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlSettings = crawlSettings;
@@ -31,16 +31,16 @@ namespace WebCrawler.Crawlers
         {
             try
             {
-                var crawls = (await _persister.GetCrawlsAsync()).Items;
+                var crawls = (await _dataLayer.GetCrawlsAsync()).Items;
 
                 Crawl? crawl = crawls.FirstOrDefault();
                 if (continuePrevious && (crawl?.Status == CrawlStatus.Failed || crawl?.Status == CrawlStatus.Cancelled))
                 {
-                    crawl = await _persister.ContinueCrawlAsync(crawl.Id);
+                    crawl = await _dataLayer.ContinueCrawlAsync(crawl.Id);
                 }
                 else
                 {
-                    crawl = await _persister.QueueCrawlAsync();
+                    crawl = await _dataLayer.QueueCrawlAsync();
                 }
 
                 _logger.LogInformation($"Started {(continuePrevious ? "incremental" : "full")} crawling");
@@ -48,7 +48,7 @@ namespace WebCrawler.Crawlers
                 int total = 0;
                 ActionBlock<CrawlLog> workerBlock = new ActionBlock<CrawlLog>(async crawlLog =>
                 {
-                    await CrawlAsync(crawlLog);
+                    await CrawlWebsiteAsync(crawlLog);
 
                     lock (this)
                     {
@@ -71,7 +71,7 @@ namespace WebCrawler.Crawlers
                 PagedResult<CrawlLog> crawlLogsQueue = null;
                 do
                 {
-                    crawlLogsQueue = await _persister.GetCrawlingQueueAsync(crawl.Id, crawlLogsQueue?.Items.Last().Id);
+                    crawlLogsQueue = await _dataLayer.GetCrawlingQueueAsync(crawl.Id, crawlLogsQueue?.Items.Last().Id);
 
                     if (total == 0)
                     {
@@ -98,7 +98,7 @@ namespace WebCrawler.Crawlers
                 crawl.Status = CrawlStatus.Completed;
                 crawl.Completed = DateTime.Now;
 
-                await _persister.SaveAsync(crawl);
+                await _dataLayer.SaveAsync(crawl);
             }
             catch (Exception ex)
             {
@@ -112,7 +112,7 @@ namespace WebCrawler.Crawlers
 
         #region Private Members
 
-        private async Task CrawlAsync(CrawlLog crawlLog)
+        private async Task CrawlWebsiteAsync(CrawlLog crawlLog)
         {
             crawlLog.Status = CrawlStatus.Crawling;
             crawlLog.Crawled = DateTime.Now;
