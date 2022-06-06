@@ -1,10 +1,11 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Retry;
+using Serilog;
 using System.Net;
 using WebCrawler.Common;
 using WebCrawler.Crawlers;
@@ -115,24 +116,16 @@ namespace WebCrawler.Analyzers
             // configure logger
             services.AddLogging(builder =>
             {
-                builder.ClearProviders()
-                    .AddSystemdConsole()
-                    .AddConsole()
-                    .AddFilter(lvl => lvl > LogLevel.Information);
-            });
-
-            /*services.AddSingleton<Microsoft.Extensions.Logging.ILogger>(serviceProvider =>
-            {
                 Log.Logger = new LoggerConfiguration()
                     .ReadFrom.Configuration(config)
                     .CreateLogger();
 
-                return LoggerFactory.Create(builder =>
-                {
-                    builder.AddSerilog();
-                })
-                .CreateLogger<MainWindow>();
-            });*/
+                builder.ClearProviders()
+                    .AddSystemdConsole()
+                    .AddConsole()
+                    .AddSerilog()
+                    .AddFilter(lvl => lvl > LogLevel.Information);
+            });
         }
 
         private static AsyncRetryPolicy<HttpResponseMessage> HttpPolicyHandler(IServiceProvider serviceProvider, HttpRequestMessage request)

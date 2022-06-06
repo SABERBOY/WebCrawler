@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Retry;
+using Serilog;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -131,8 +132,12 @@ namespace WebCrawler.WPF
             // configure logger
             services.AddLogging(builder =>
             {
+                Log.Logger = new LoggerConfiguration()
+                   .ReadFrom.Configuration(config)
+                   .CreateLogger();
+
                 builder.ClearProviders()
-                    //.AddSystemdConsole()
+                    .AddSerilog()
                     .AddFilter(lvl => lvl > LogLevel.Information);
             });
         }
