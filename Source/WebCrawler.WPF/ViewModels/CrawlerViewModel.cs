@@ -18,6 +18,7 @@ using System.Windows.Input;
 using WebCrawler.Analyzers;
 using WebCrawler.Common;
 using WebCrawler.Crawlers;
+using WebCrawler.DataLayer;
 using WebCrawler.Models;
 using WebCrawler.WPF.Common;
 using WebCrawler.WPF.Views;
@@ -26,10 +27,14 @@ namespace WebCrawler.WPF.ViewModels
 {
     public class CrawlerViewModel : NotifyPropertyChanged
     {
-        private ICrawler _crawler;
-        private ILogger _logger;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ICrawler _crawler;
+        private readonly IDataLayer _dataLayer;
+        private HttpClient _httpClient;
+        private readonly CrawlSettings _crawlSettings;
+        private readonly ILogger _logger;
 
-        private CollectionViewSource _crawlLogsSource;
+        private readonly CollectionViewSource _crawlLogsSource;
         public ICollectionView CrawlLogsView
         {
             get
@@ -283,15 +288,18 @@ namespace WebCrawler.WPF.ViewModels
 
         #endregion
 
-        public CrawlerViewModel(ICrawler crawler, ILogger logger)
+        public CrawlerViewModel(IServiceProvider serviceProvider, ICrawler crawler, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<CrawlerViewModel> logger)
         {
             _crawler = crawler;
+            _dataLayer = dataLayer;
+            _crawlSettings = crawlSettings;
             _logger = logger;
 
             CrawlLogs = new ObservableCollection<CrawlLogView>();
             Outputs = new ObservableCollection<Output>();
 
             _crawlLogsSource = new CollectionViewSource { Source = CrawlLogs };
+            _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
         }
 
         public void LoadData()
@@ -300,7 +308,7 @@ namespace WebCrawler.WPF.ViewModels
 
             TryRunAsync(async () =>
             {
-                var crawls = await _persister.GetCrawlsAsync();
+                var crawls = await _dataLayer.GetCrawlsAsync();
 
                 Crawls = new ObservableCollection<Crawl>(crawls.Items);
 
@@ -342,7 +350,7 @@ namespace WebCrawler.WPF.ViewModels
 
         private async Task LoadCrawlLogsCoreAsync(int page = 1)
         {
-            var logs = await _persister.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
+            var logs = await _dataLayer.GetCrawlLogsAsync(SelectedCrawl.Id, null, KeywordsFilter, StatusFilter, page);
 
             App.Current.Dispatcher.Invoke(() =>
             {
@@ -368,7 +376,7 @@ namespace WebCrawler.WPF.ViewModels
 
                 if (isFull)
                 {
-                    var crawl = await _persister.QueueCrawlAsync();
+                    var crawl = await _dataLayer.QueueCrawlAsync();
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -379,7 +387,7 @@ namespace WebCrawler.WPF.ViewModels
                 else
                 {
                     var firstCrawl = Crawls.First();
-                    var crawl = await _persister.ContinueCrawlAsync(firstCrawl.Id);
+                    var crawl = await _dataLayer.ContinueCrawlAsync(firstCrawl.Id);
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -421,7 +429,7 @@ namespace WebCrawler.WPF.ViewModels
                 PagedResult<CrawlLog> crawlLogsQueue = null;
                 do
                 {
-                    crawlLogsQueue = _persister.GetCrawlingQueueAsync(SelectedCrawl.Id, crawlLogsQueue?.Items.Last().Id).Result;
+                    crawlLogsQueue = _dataLayer.GetCrawlingQueueAsync(SelectedCrawl.Id, crawlLogsQueue?.Items.Last().Id).Result;
 
                     if (total == 0)
                     {
@@ -448,7 +456,7 @@ namespace WebCrawler.WPF.ViewModels
                 SelectedCrawl.Status = CrawlStatus.Completed;
                 SelectedCrawl.Completed = DateTime.Now;
 
-                await _persister.SaveAsync(SelectedCrawl);
+                await _dataLayer.SaveAsync(SelectedCrawl);
 
                 AppendOutput($"Completed {(isFull ? "full" : "incremental")} crawl");
 
@@ -495,7 +503,7 @@ namespace WebCrawler.WPF.ViewModels
 
                 // take the first x records only as some list might contains thousands of records
                 catalogItems = catalogItems
-                    .Take(Common.Constants.MAX_RECORDS)
+                    .Take(Constants.MAX_RECORDS)
                     .ToArray();
             }
             catch (Exception ex)
@@ -561,9 +569,9 @@ namespace WebCrawler.WPF.ViewModels
             {
                 var lastHandled = crawlLogView.Status != CrawlStatus.Failed ? catalogItems[0].Url : null;
 
-                using (var persister = _serviceProvider.GetRequiredService<IPersister>())
+                using (var dataLayer = _serviceProvider.GetRequiredService<IDataLayer>())
                 {
-                    await persister.SaveAsync(articles, crawlLogView, lastHandled);
+                    await dataLayer.SaveAsync(articles, crawlLogView.ToModel(), lastHandled);
                 }
             }
             catch (Exception ex)

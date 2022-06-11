@@ -203,9 +203,9 @@ namespace WebCrawler.Crawlers
             {
                 var lastHandled = crawlLog.Status != CrawlStatus.Failed ? catalogItems[0].Url : null;
 
-                using (var persister = _serviceProvider.GetRequiredService<IDataLayer>())
+                using (var dataLayer = _serviceProvider.GetRequiredService<IDataLayer>())
                 {
-                    await persister.SaveAsync(articles, crawlLog, lastHandled);
+                    await dataLayer.SaveAsync(articles, crawlLog, lastHandled);
                 }
             }
             catch (Exception ex)

@@ -293,6 +293,27 @@ namespace WebCrawler.WPF.ViewModels
             Enabled = model.Enabled;
         }
 
+        public Website ToModel()
+        {
+            return new Website
+            {
+                Id = Id,
+                Name = Name,
+                Home = Home,
+                Status = Status,
+                Rank = Rank,
+                ListPath = ListPath,
+                UrlFormat = UrlFormat,
+                StartIndex = StartIndex,
+                ValidateDate = ValidateDate,
+                Notes = Notes,
+                SysNotes = SysNotes,
+                Registered = Registered,
+                CrawlLogs = CrawlLogs,
+                Enabled = Enabled
+            };
+        }
+
         /// <summary>
         /// Shadow copy
         /// </summary>

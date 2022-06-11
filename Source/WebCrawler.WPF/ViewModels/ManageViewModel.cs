@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using System.Windows;
 using System.Windows.Input;
-using WebCrawler;
 using WebCrawler.Analyzers;
 using WebCrawler.Common;
 using WebCrawler.Crawlers;
@@ -23,11 +22,11 @@ namespace WebCrawler.WPF.ViewModels
 {
     public class ManageViewModel : NotifyPropertyChanged
     {
-        private IServiceProvider _serviceProvider;
-        private IDataLayer _persister;
-        private ILogger _logger;
-        private HttpClient _httpClient;
-        private CrawlSettings _crawlSettings;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IDataLayer _dataLayer;
+        private readonly HttpClient _httpClient;
+        private readonly CrawlSettings _crawlSettings;
+        private readonly ILogger _logger;
 
         private SortDescription[] _websiteSorts;
         private WebsiteView[] _websiteSelections;
@@ -431,10 +430,10 @@ namespace WebCrawler.WPF.ViewModels
 
         #endregion
 
-        public ManageViewModel(IDataLayer persister, ILogger logger, IHttpClientFactory clientFactory, CrawlSettings crawlSettings)
+        public ManageViewModel(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<ManageViewModel> logger)
         {
             _serviceProvider = serviceProvider;
-            _persister = persister;
+            _dataLayer = dataLayer;
             _logger = logger;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlSettings = crawlSettings;
@@ -503,13 +502,13 @@ namespace WebCrawler.WPF.ViewModels
             PagedResult<Website> websites;
             if (websiteIds == null || websiteIds.Length == 0)
             {
-                websites = await _persister.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+                websites = await _dataLayer.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
             }
             else
             {
                 websites = new PagedResult<Website>
                 {
-                    Items = await _persister.GetWebsitesAsync(websiteIds, false),
+                    Items = await _dataLayer.GetWebsitesAsync(websiteIds, false),
                     PageInfo = null
                 };
             }
@@ -552,7 +551,7 @@ namespace WebCrawler.WPF.ViewModels
 
                 TryRunAsync(async () =>
                 {
-                    var logs = await _persister.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
+                    var logs = await _dataLayer.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
                     CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
 
                     await LoadHtmlCoreAsync();
@@ -612,11 +611,11 @@ namespace WebCrawler.WPF.ViewModels
 
                     try
                     {
-                        using (var persister = _serviceProvider.GetRequiredService<IDataLayer>())
+                        using (var dataLayer = _serviceProvider.GetRequiredService<IDataLayer>())
                         {
                             var enabled = WebsiteView.DetermineWebsiteEnabledStatus(result.Status.Value, website.Status);
 
-                            await persister.UpdateStatusAsync(website.Id, result.Status, enabled, result.Notes);
+                            await dataLayer.UpdateStatusAsync(website.Id, result.Status, enabled, result.Notes);
                         }
                     }
                     catch (Exception ex)
@@ -640,7 +639,7 @@ namespace WebCrawler.WPF.ViewModels
                 PagedResult<Website> websitesQueue = null;
                 do
                 {
-                    websitesQueue = _persister.GetWebsiteAnalysisQueueAsync(isFull, websitesQueue?.Items.Last().Id).Result;
+                    websitesQueue = _dataLayer.GetWebsiteAnalysisQueueAsync(isFull, websitesQueue?.Items.Last().Id).Result;
 
                     if (total == 0)
                     {
@@ -682,7 +681,7 @@ namespace WebCrawler.WPF.ViewModels
 
             TryRunAsync(async () =>
             {
-                await _persister.ToggleAsync(ToggleAsEnable.Value, _websiteSelections.Select(o => o.Id).ToArray());
+                await _dataLayer.ToggleAsync(ToggleAsEnable.Value, _websiteSelections.Select(o => o.Id).ToArray());
 
                 // refresh the website list, but do not sync the editor as that might not be expected
                 _websiteSelections.ForEach(o => o.Enabled = ToggleAsEnable.Value);
@@ -700,7 +699,7 @@ namespace WebCrawler.WPF.ViewModels
 
             TryRunAsync(async () =>
             {
-                await _persister.DeleteAsync(_websiteSelections.Select(o => o.Id).ToArray());
+                await _dataLayer.DeleteAsync(_websiteSelections.Select(o => o.Id).ToArray());
 
                 App.Current.Dispatcher.Invoke(() =>
                 {
@@ -737,7 +736,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 var isNew = Editor.Website.Id == 0;
 
-                await _persister.SaveAsync(Editor.Website);
+                await _dataLayer.SaveAsync(Editor.Website.ToModel());
 
                 if (isNew)
                 {
@@ -904,7 +903,7 @@ namespace WebCrawler.WPF.ViewModels
 
             TryRunAsync(async () =>
             {
-                await _persister.DeleteAsync(Editor.Website.Id);
+                await _dataLayer.DeleteAsync(Editor.Website.Id);
 
                 // the current website might not be the selected one, as it might be opened from the output list
                 var website = Websites.FirstOrDefault(o => o.Id == Editor.Website.Id);
@@ -927,7 +926,7 @@ namespace WebCrawler.WPF.ViewModels
                 SelectedWebsite = null;
                 Editor.IsEditing = true;
 
-                var website = await _persister.GetAsync<Website>(SelectedOutput.WebsiteId.Value);
+                var website = await _dataLayer.GetAsync<Website>(SelectedOutput.WebsiteId.Value);
 
                 new WebsiteView(website).CloneTo(Editor.Website);
 

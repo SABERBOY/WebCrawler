@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -92,13 +93,16 @@ namespace WebCrawler.WPF
 
             // register as Transient, because efcore dbcontext isn't thread safe
             // https://docs.microsoft.com/en-us/ef/core/miscellaneous/configuring-dbcontext#avoiding-dbcontext-threading-issues
-            services.AddTransient<IDataLayer, MySqlDataLayer>();
+            services.AddTransient<IDataLayer, PostgreSQLLayer>();
             // configure db context
             services.AddDbContext<ArticleDbContext>(
-                options => options.UseMySql(
+                options => options.UseNpgsql(
                     config["ConnectionStrings:SqlConnection"],
-                    ServerVersion.AutoDetect(config["ConnectionStrings:MySqlConnection"]),
-                    builder => builder.EnableRetryOnFailure(3, TimeSpan.FromSeconds(3), null)
+                    // TODO: https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime
+                    builder =>
+                    {
+                        builder.EnableRetryOnFailure(3, TimeSpan.FromSeconds(3), null);
+                    }
                 ),
                 ServiceLifetime.Transient,
                 ServiceLifetime.Transient);
@@ -115,13 +119,13 @@ namespace WebCrawler.WPF
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
             // https://github.com/dotnet/runtime/issues/30025
             var userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36";
-            services.AddHttpClient(Core.Constants.HTTP_CLIENT_NAME_DEFAULT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
                 })
                 .AddPolicyHandler(HttpPolicyHandler);
-            services.AddHttpClient(Core.Constants.HTTP_CLIENT_NAME_NOREDIRECT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {
                     AllowAutoRedirect = false,

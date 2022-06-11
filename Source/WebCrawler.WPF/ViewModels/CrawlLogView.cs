@@ -238,5 +238,21 @@ namespace WebCrawler.WPF.ViewModels
             CrawlId = model.CrawlId;
             Crawled = model.Crawled;
         }
+
+        public CrawlLog ToModel()
+        {
+            return new CrawlLog
+            {
+                Id = Id,
+                WebsiteId = WebsiteId,
+                LastHandled = LastHandled,
+                Success = Success,
+                Fail = Fail,
+                Status = Status,
+                Notes = Notes,
+                CrawlId = CrawlId,
+                Crawled = Crawled
+            };
+        }
     }
 }
