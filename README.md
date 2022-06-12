@@ -4,8 +4,8 @@
 
 ### Crawler
 
-
-check total length of full item text, need to POC
+1.	check total length of full item text, need to POC
+1.	disable website if it never succeeded in the last X days, and make a notes so that we can rollback if need
 
 
 ## Articles

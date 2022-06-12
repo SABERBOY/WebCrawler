@@ -6,12 +6,12 @@ using WebCrawler.Models;
 
 namespace WebCrawler.DataLayer
 {
-    public class PostgreSQLLayer : IDataLayer
+    public class PostgreSQLDataLayer : IDataLayer
     {
         private readonly ArticleDbContext _dbContext;
         private readonly ILogger _logger;
 
-        public PostgreSQLLayer(ArticleDbContext dbContext, ILogger<PostgreSQLLayer> logger)
+        public PostgreSQLDataLayer(ArticleDbContext dbContext, ILogger<PostgreSQLDataLayer> logger)
         {
             _dbContext = dbContext;
             _logger = logger;
