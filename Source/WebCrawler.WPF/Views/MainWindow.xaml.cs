@@ -19,7 +19,7 @@ namespace WebCrawler.WPF.Views
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            MainFrame.Navigate(_serviceProvider.GetRequiredService<Crawler>());
+            MainFrame.Navigate(_serviceProvider.GetRequiredService<Manage>());
         }
     }
 }
