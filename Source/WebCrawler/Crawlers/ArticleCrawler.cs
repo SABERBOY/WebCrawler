@@ -18,6 +18,11 @@ namespace WebCrawler.Crawlers
         private readonly HttpClient _httpClient;
         private readonly CrawlSettings _crawlSettings;
 
+        public event EventHandler<WebsiteCrawlingEventArgs> WebsiteCrawling;
+        public event EventHandler<CrawlCompletedEventArgs> Completed;
+        public event EventHandler<CrawlMessagingEventArgs> Messaging;
+        public event EventHandler<CrawlProgressChangedEventArgs> StatusChanged;
+
         public ArticleCrawler(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<ArticleCrawler> logger)
         {
             _serviceProvider = serviceProvider;
@@ -29,11 +34,12 @@ namespace WebCrawler.Crawlers
 
         public async Task ExecuteAsync(bool continuePrevious = false)
         {
+            Crawl crawl = null;
             try
             {
                 var crawls = (await _dataLayer.GetCrawlsAsync()).Items;
 
-                Crawl? crawl = crawls.FirstOrDefault();
+                crawl = crawls.FirstOrDefault();
                 if (continuePrevious && (crawl?.Status == CrawlStatus.Failed || crawl?.Status == CrawlStatus.Cancelled))
                 {
                     crawl = await _dataLayer.ContinueCrawlAsync(crawl.Id);
@@ -43,9 +49,8 @@ namespace WebCrawler.Crawlers
                     crawl = await _dataLayer.QueueCrawlAsync();
                 }
 
-                _logger.LogInformation($"Started {(continuePrevious ? "incremental" : "full")} crawling");
+                HandleMessaging($"Started {(continuePrevious ? "incremental" : "full")} crawling");
 
-                int total = 0;
                 ActionBlock<CrawlLog> workerBlock = new ActionBlock<CrawlLog>(async crawlLog =>
                 {
                     await CrawlWebsiteAsync(crawlLog);
@@ -62,7 +67,7 @@ namespace WebCrawler.Crawlers
                         }
                     }
 
-                    _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
+                    OnStatusChanged(new CrawlProgressChangedEventArgs(crawl.Success, crawl.Fail));
                 }, new ExecutionDataflowBlockOptions
                 {
                     MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
@@ -73,16 +78,14 @@ namespace WebCrawler.Crawlers
                 {
                     crawlLogsQueue = await _dataLayer.GetCrawlingQueueAsync(crawl.Id, crawlLogsQueue?.Items.Last().Id);
 
-                    if (total == 0)
+                    if (crawlLogsQueue.PageInfo.CurrentPage == 1)
                     {
-                        total = crawlLogsQueue.PageInfo.ItemCount;
-
-                        _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
+                        OnStatusChanged(new CrawlProgressChangedEventArgs(crawl.Success, crawl.Fail, crawlLogsQueue.PageInfo.ItemCount));
                     }
 
-                    foreach (var website in crawlLogsQueue.Items)
+                    foreach (var websiteCrawlLog in crawlLogsQueue.Items)
                     {
-                        workerBlock.Post(website);
+                        workerBlock.Post(websiteCrawlLog);
 
                         // accept queue items in the amount of batch size x 3
                         while (workerBlock.InputCount >= _crawlSettings.MaxDegreeOfParallelism * 2)
@@ -106,8 +109,32 @@ namespace WebCrawler.Crawlers
             }
             finally
             {
-                _logger.LogInformation("Completed {0} crawling", continuePrevious ? "previous" : "new");
+                HandleMessaging($"Completed {(continuePrevious ? "previous" : "new")} crawling");
             }
+
+            OnCompleted(new CrawlCompletedEventArgs(crawl));
+        }
+
+        protected virtual void OnWebsiteCrawling(WebsiteCrawlingEventArgs e)
+        {
+            WebsiteCrawling?.Invoke(this, e);
+        }
+
+        protected virtual void OnCompleted(CrawlCompletedEventArgs e)
+        {
+            Completed?.Invoke(this, e);
+        }
+
+        protected virtual void OnMessaging(CrawlMessagingEventArgs e)
+        {
+            //_logger.LogInformation(e.Message);
+
+            Messaging?.Invoke(this, e);
+        }
+
+        protected virtual void OnStatusChanged(CrawlProgressChangedEventArgs e)
+        {
+            StatusChanged?.Invoke(this, e);
         }
 
         #region Private Members
@@ -182,7 +209,7 @@ namespace WebCrawler.Crawlers
 
                         crawlLog.Success++;
 
-                        _logger.LogTrace("Crawled article: {0}", item.Url);
+                        HandleMessaging($"Crawled article: {item.Url}", LogLevel.Trace);
                     }
                     catch (Exception ex)
                     {
@@ -190,6 +217,8 @@ namespace WebCrawler.Crawlers
 
                         crawlLog.Fail++;
                     }
+
+                    OnWebsiteCrawling(new WebsiteCrawlingEventArgs(crawlLog));
                 }
 
                 if (crawlLog.Success == 0 && crawlLog.Fail > 0)
@@ -197,6 +226,8 @@ namespace WebCrawler.Crawlers
                     crawlLog.Status = CrawlStatus.Failed;
                     crawlLog.Notes = "Failed as nothing succeeded";
                 }
+
+                OnWebsiteCrawling(new WebsiteCrawlingEventArgs(crawlLog));
             }
 
             try
@@ -220,16 +251,16 @@ namespace WebCrawler.Crawlers
             {
                 if (articles.Count == 0)
                 {
-                    _logger.LogInformation("No updates: {0}", crawlLog.Website.Home);
+                    HandleMessaging($"No updates: {crawlLog.Website.Home}");
                 }
                 else
                 {
-                    _logger.LogInformation("Completed website crawling: {0}", crawlLog.Website.Home);
+                    HandleMessaging($"Completed website crawling: {crawlLog.Website.Home}");
                 }
             }
             else if (crawlLog.Status == CrawlStatus.Failed)
             {
-                _logger.LogError("Failed to crawl website due to '{0}': {1}", crawlLog.Notes, crawlLog.Website.Home);
+                HandleMessaging($"Failed to crawl website due to '{crawlLog.Notes}': {crawlLog.Website.Home}", LogLevel.Error);
             }
         }
 
@@ -241,7 +272,29 @@ namespace WebCrawler.Crawlers
                 || exception is AppException))
             {
                 _logger.LogError(exception, message);
+
+                OnMessaging(new CrawlMessagingEventArgs(string.IsNullOrEmpty(message) ? exception.Message : message));
             }
+        }
+
+        private void HandleMessaging(string message, LogLevel level = LogLevel.Information)
+        {
+            switch (level)
+            {
+                case LogLevel.Warning:
+                case LogLevel.Error:
+                case LogLevel.Critical:
+                    _logger.LogError(message);
+                    break;
+                case LogLevel.Trace:
+                    _logger.LogTrace(message);
+                    break;
+                default:
+                    _logger.LogInformation(message);
+                    break;
+            }
+
+            OnMessaging(new CrawlMessagingEventArgs(message));
         }
 
         #endregion

@@ -300,6 +300,11 @@ namespace WebCrawler.WPF.ViewModels
 
             _crawlLogsSource = new CollectionViewSource { Source = CrawlLogs };
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
+
+            _crawler.WebsiteCrawling += Crawler_WebsiteCrawling;
+            _crawler.Completed += Crawler_Completed;
+            _crawler.Messaging += Crawler_Messaging;
+            _crawler.StatusChanged += Crawler_StatusChanged;
         }
 
         public void LoadData()
@@ -317,6 +322,30 @@ namespace WebCrawler.WPF.ViewModels
                 IsInitializing = false;
             });
         }
+
+        #region
+
+        private void Crawler_WebsiteCrawling(object? sender, WebsiteCrawlingEventArgs e)
+        {
+            
+        }
+
+        private void Crawler_Completed(object? sender, CrawlCompletedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Crawler_Messaging(object? sender, CrawlMessagingEventArgs e)
+        {
+            AppendOutput(e.Message, e.Url, e.Level);
+        }
+
+        private void Crawler_StatusChanged(object? sender, CrawlProgressChangedEventArgs e)
+        {
+            CrawlingStatus = $"Success: {e.Success} Fail: {e.Fail} Total: {e.Total}";
+        }
+
+        #endregion
 
         #region Private Members
 
@@ -373,6 +402,8 @@ namespace WebCrawler.WPF.ViewModels
             TryRunAsync(async () =>
             {
                 CrawlingStatus = "Processing";
+
+                //await _crawler.ExecuteAsync(!isFull);
 
                 if (isFull)
                 {
@@ -702,7 +733,6 @@ namespace WebCrawler.WPF.ViewModels
         }
 
         #endregion
-
 
         #region Live Filtering
 
