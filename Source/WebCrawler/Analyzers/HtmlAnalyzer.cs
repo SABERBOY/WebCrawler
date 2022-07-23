@@ -1,7 +1,10 @@
 ﻿using HtmlAgilityPack;
+using Newtonsoft.Json.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using WebCrawler.Common;
+using WebCrawler.DTO;
+using WebCrawler.Models;
 
 namespace WebCrawler.Analyzers
 {
@@ -29,41 +32,67 @@ namespace WebCrawler.Analyzers
                 .ToArray();
         }
 
-        public static CatalogItem[] DetectCatalogItems(HtmlDocument htmlDoc, string listPath = null, bool validateDate = true)
+        public static CatalogItem[] DetectCatalogItems(string pageData, WebsiteRuleDTO rule = null, bool validateDate = true)
         {
-            if (string.IsNullOrEmpty(listPath)) // auto detect catalog items
-            {
-                var blocks = AutoDetectCatalogs(htmlDoc);
-                if (blocks.Length == 0)
-                {
-                    return new CatalogItem[0];
-                }
+            var contentMatchType = rule == null ? ContentMatchType.XPath : rule.ContentMatchType;
 
-                var catalogItems = new Dictionary<Block, CatalogItem[]>();
-                foreach (var block in blocks)
-                {
-                    var items = GetCatalogItems(htmlDoc, block, validateDate);
-                    if (items.Length > 0)
+            switch (contentMatchType)
+            {
+                case ContentMatchType.XPath:
+                    var htmlDoc = new HtmlDocument();
+                    htmlDoc.LoadHtml(pageData);
+
+                    if (rule == null || string.IsNullOrEmpty(rule.ContentUrlExp)) // auto detect catalog items
                     {
-                        catalogItems.Add(block, items);
+                        var blocks = AutoDetectCatalogs(htmlDoc);
+                        if (blocks.Length == 0)
+                        {
+                            return new CatalogItem[0];
+                        }
+
+                        var catalogItems = new Dictionary<Block, CatalogItem[]>();
+                        foreach (var block in blocks)
+                        {
+                            var items = GetCatalogItems(htmlDoc, block, validateDate);
+                            if (items.Length > 0)
+                            {
+                                catalogItems.Add(block, items);
+                            }
+                        }
+
+                        if (catalogItems.Count == 0)
+                        {
+                            return new CatalogItem[0];
+                        }
+
+                        return catalogItems
+                            // blocks with published date has higher priority
+                            .OrderByDescending(o => o.Value.All(l => l.HasDate))
+                            .ThenByDescending(o => o.Key.Score)
+                            .Select(o => o.Value)
+                            .First();
                     }
-                }
+                    else if (!string.IsNullOrEmpty(rule.ContentRootExp))
+                    {
+                        return GetCatalogItems(htmlDoc, rule);
+                    }
+                    else
+                    {
+                        // TODO: merge websiteRule.ContentRootExp and websiteRule.ContentUrlExp here?
+                        return GetCatalogItems(htmlDoc, new Block { LinkPath = rule.ContentUrlExp }, validateDate);
+                    }
+                case ContentMatchType.JPath:
+                    if (string.IsNullOrEmpty(pageData))
+                    {
+                        return new CatalogItem[0];
+                    }
 
-                if (catalogItems.Count == 0)
-                {
-                    return new CatalogItem[0];
-                }
-
-                return catalogItems
-                    // blocks with published date has higher priority
-                    .OrderByDescending(o => o.Value.All(l => l.HasDate))
-                    .ThenByDescending(o => o.Key.Score)
-                    .Select(o => o.Value)
-                    .First();
-            }
-            else // detect catalog items by list xpath
-            {
-                return GetCatalogItems(htmlDoc, new Block { LinkPath = listPath }, validateDate);
+                    var jsonDoc = JObject.Parse(HtmlHelper.TrimJsonP(pageData));
+                    return GetCatalogItems(jsonDoc, rule);
+                case ContentMatchType.Regex:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotSupportedException();
             }
         }
 
@@ -121,6 +150,62 @@ namespace WebCrawler.Analyzers
 #endif
 
             return block.LinkPath;
+        }
+
+        public static ArticleDetails ParseArticle(string pageData, WebsiteRuleDTO rule = null)
+        {
+            var contentMatchType = rule == null ? ContentMatchType.XPath : rule.ContentMatchType;
+
+            ArticleDetails article;
+            switch (contentMatchType)
+            {
+                case ContentMatchType.XPath:
+                    if (rule == null || string.IsNullOrEmpty(rule.ContentExp))
+                    {
+                        article = Html2Article.GetArticle(pageData);
+                    }
+                    else
+                    {
+                        var htmlDoc = new HtmlDocument();
+                        htmlDoc.LoadHtml(pageData);
+
+                        article = new ArticleDetails
+                        {
+                            Title = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentTitleExp)?.InnerText,
+                            PublishDate = Html2Article.GetPublishDate(htmlDoc.DocumentNode.SelectSingleNode(rule.ContentDateExp)?.InnerText),
+                            Content = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentExp)?.InnerText,
+                            ContentWithTags = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentExp)?.InnerHtml
+                        };
+                    }
+                    break;
+                case ContentMatchType.JPath:
+                    if (string.IsNullOrEmpty(pageData))
+                    {
+                        return null;
+                    }
+
+                    var jsonDoc = JObject.Parse(HtmlHelper.TrimJsonP(pageData));
+
+                    var content = jsonDoc.SelectToken(rule.ContentExp)?.ToString();
+                    article = new ArticleDetails
+                    {
+                        Title = jsonDoc.SelectToken(rule.ContentTitleExp)?.ToString(),
+                        PublishDate = Html2Article.GetPublishDate(jsonDoc.SelectToken(rule.ContentDateExp)?.ToString()),
+                        Content = HtmlHelper.TrimHtmlTags(content),
+                        ContentWithTags = content
+                    };
+                    break;
+                case ContentMatchType.Regex:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotSupportedException();
+            }
+
+            article.Title = HtmlHelper.NormalizeText(article.Title);
+            article.Content = HtmlHelper.NormalizeText(article.Content);
+            article.ContentWithTags = HtmlHelper.NormalizeHtml(article.ContentWithTags);
+
+            return article;
         }
 
         private static Block[] AutoDetectCatalogs(HtmlDocument htmlDoc)
@@ -500,6 +585,46 @@ namespace WebCrawler.Analyzers
             return root.Children.Count == 0
                 ? root.Path + "\t" + root.PublishedRaw + "\t" + root.Link?.Text
                 : root.Path + "\t" + root.PublishedRaw + "\r\n" + string.Join("\r\n", root.Children.Select(o => PrintLinkTree(o)));
+        }
+
+        private static CatalogItem[] GetCatalogItems(HtmlDocument htmlDoc, WebsiteRuleDTO rule)
+        {
+            var items = new List<CatalogItem>();
+
+            var blockNodes = htmlDoc.DocumentNode.SelectNodes(rule.ContentRootExp);
+            if (blockNodes == null)
+            {
+                return new CatalogItem[0];
+            }
+
+            foreach (HtmlNode blockNode in blockNodes)
+            {
+                var linkNode = blockNode.SelectSingleNode(rule.ContentUrlExp);
+                var titleNode = blockNode.SelectSingleNode(rule.ContentTitleExp);
+                var dateNode = blockNode.SelectSingleNode(rule.ContentDateExp);
+
+                items.Add(new CatalogItem
+                {
+                    XPath = linkNode?.XPath,
+                    Url = linkNode?.InnerText,
+                    Title = HtmlHelper.NormalizeText(titleNode?.InnerText),
+                    Published = Html2Article.GetPublishDate(dateNode?.InnerText)
+                });
+            }
+
+            return items.ToArray();
+        }
+
+        private static CatalogItem[] GetCatalogItems(JObject jsonDoc, WebsiteRuleDTO rule = null)
+        {
+            return jsonDoc.SelectTokens(rule.ContentRootExp)
+                .Select(item => new CatalogItem
+                {
+                    Url = string.IsNullOrEmpty(rule.ContentUrlReviseExp)
+                        ? item.SelectToken(rule.ContentUrlExp)?.ToString()
+                        : Regex.Replace(item.SelectToken(rule.ContentUrlExp)?.ToString(), rule.ContentUrlReviseExp, rule.ContentUrlReplacement, RegexOptions.IgnoreCase)
+                })
+                .ToArray();
         }
     }
 

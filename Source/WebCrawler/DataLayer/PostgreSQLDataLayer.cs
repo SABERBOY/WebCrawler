@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using WebCrawler.Common;
+using WebCrawler.DTO;
 using WebCrawler.Models;
 
 namespace WebCrawler.DataLayer
@@ -17,10 +18,11 @@ namespace WebCrawler.DataLayer
             _logger = logger;
         }
 
-        public async Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
+        public async Task<PagedResult<WebsiteDTO>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
+                .Include(o => o.Rules)
                 .Where(o => (enabled == null || o.Enabled == enabled)
                     && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords) || o.Notes.Contains(keywords) || o.SysNotes.Contains(keywords))
                     && (status == WebsiteStatus.All || o.Status == status)
@@ -56,13 +58,16 @@ namespace WebCrawler.DataLayer
                 }
             }
 
-            return await query.ToPagedResultAsync(page);
+            return await query
+                .Select(o => new WebsiteDTO(o))
+                .ToPagedResultAsync(page);
         }
 
-        public async Task<List<Website>> GetWebsitesAsync(int[] websiteIds, bool includeLogs = false)
+        public async Task<List<WebsiteDTO>> GetWebsitesAsync(int[] websiteIds, bool includeLogs = false)
         {
             var query = _dbContext.Websites
                .AsNoTracking()
+               .Include(o => o.Rules)
                .Where(o => websiteIds.Contains(o.Id));
 
             if (includeLogs)
@@ -70,18 +75,21 @@ namespace WebCrawler.DataLayer
                 query = query.Include(o => o.CrawlLogs);
             }
 
-            return await query.ToListAsync();
+            return await query
+                .Select(o => new WebsiteDTO(o))
+                .ToListAsync();
         }
 
-        public async Task<PagedResult<Crawl>> GetCrawlsAsync(int page = 1)
+        public async Task<PagedResult<CrawlDTO>> GetCrawlsAsync(int page = 1)
         {
             return await _dbContext.Crawls
                 .AsNoTracking()
                 .OrderByDescending(o => o.Id)
+                .Select(o => new CrawlDTO(o))
                 .ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1)
+        public async Task<PagedResult<CrawlLogDTO>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1)
         {
             return await _dbContext.CrawlLogs
                 .AsNoTracking()
@@ -93,32 +101,26 @@ namespace WebCrawler.DataLayer
                 )
                 .OrderByDescending(o => o.Crawled)
                 .ThenByDescending(o => o.Id)
+                .Select(o => new CrawlLogDTO(o))
                 .ToPagedResultAsync(page);
         }
 
-        public async Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null)
+        public async Task<PagedResult<WebsiteDTO>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null)
         {
             return await _dbContext.Websites
                 .AsNoTracking()
+                .Include(o => o.Rules)
                 .Where(o => (isFull || o.Enabled)
                     && (lastId == null || o.Id < lastId)
                     //&& o.Status != WebsiteStatus.ErrorBroken
                 )
                 .OrderByDescending(o => o.Id)
+                .Select(o => new WebsiteDTO(o))
                 .ToPagedResultAsync(1);
         }
 
-        public async Task<PagedResult<CrawlLog>> GetCrawlingQueueAsync(int crawlId, int? lastId = null)
+        public async Task<PagedResult<CrawlLogDTO>> GetCrawlingQueueAsync(int crawlId, int? lastId = null)
         {
-            var query = _dbContext.CrawlLogs
-                .AsNoTracking()
-                .Include(o => o.Website)
-                .Where(o => o.CrawlId == crawlId
-                    && o.Status != CrawlStatus.Completed
-                    && (lastId == null || o.Id < lastId)
-                )
-                .OrderByDescending(o => o.Id).ToQueryString();
-
             return await _dbContext.CrawlLogs
                 .AsNoTracking()
                 .Include(o => o.Website)
@@ -127,6 +129,7 @@ namespace WebCrawler.DataLayer
                     && (lastId == null || o.Id < lastId)
                 )
                 .OrderByDescending(o => o.Id)
+                .Select(o => new CrawlLogDTO(o))
                 .ToPagedResultAsync(1);
         }
 
@@ -136,7 +139,7 @@ namespace WebCrawler.DataLayer
             return await _dbContext.FindAsync<T>(id);
         }
 
-        public async Task SaveAsync(List<Article> articles, CrawlLog crawlLog, string lastHandled)
+        public async Task SaveAsync(List<Article> articles, CrawlLogDTO crawlLog, string lastHandled)
         {
             if (crawlLog.Status != CrawlStatus.Failed)
             {
@@ -188,23 +191,39 @@ namespace WebCrawler.DataLayer
             crawlLog.LastHandled = model.LastHandled;
         }
 
-        public async Task SaveAsync(Website website)
+        public async Task SaveAsync(WebsiteDTO website)
         {
             Website model;
             if (website.Id > 0)
             {
-                model = await _dbContext.Websites.FindAsync(website.Id);
+                model = await _dbContext.Websites
+                    .Include(o => o.Rules)
+                    .SingleOrDefaultAsync(o => o.Id == website.Id);
 
                 model.Name = website.Name;
                 model.Rank = website.Rank;
                 model.Home = website.Home;
                 model.UrlFormat = website.UrlFormat;
                 model.StartIndex = website.StartIndex;
-                model.ListPath = website.ListPath;
                 model.Notes = website.Notes;
                 model.SysNotes = website.SysNotes;
                 model.Enabled = website.Enabled;
                 model.Status = website.Status;
+
+                var removeRules = model.Rules.Where(o => !website.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
+                var addRules = website.Rules.Where(o => !model.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
+                var updateRules = website.Rules.Except(addRules).ToArray();
+
+                _dbContext.WebsiteRules.RemoveRange(removeRules);
+                // NOTES: entity adding in PostgreSQL via the navigation properties appears not working, we should use the dbcontext properties instead
+                //model.Rules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
+                _dbContext.WebsiteRules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
+                foreach (var rule in updateRules)
+                {
+                    var ruleModel = model.Rules.SingleOrDefault(o => o.RuleId == rule.RuleId);
+
+                    rule.CloneTo(ruleModel);
+                }
             }
             else
             {
@@ -215,12 +234,12 @@ namespace WebCrawler.DataLayer
                     Home = website.Home,
                     UrlFormat = website.UrlFormat,
                     StartIndex = website.StartIndex,
-                    ListPath = website.ListPath,
                     Rank = website.Rank,
                     Notes = website.Notes,
                     Status = website.Status,
                     SysNotes = null,
-                    Registered = DateTime.Now
+                    Registered = DateTime.Now,
+                    Rules = website.Rules.Select(o => o.CloneTo((WebsiteRule)null)).ToList()
                 };
                 _dbContext.Websites.Add(model);
             }
@@ -231,14 +250,15 @@ namespace WebCrawler.DataLayer
             website.Registered = model.Registered;
         }
 
-        public async Task<Crawl> SaveAsync(Crawl crawl = null)
+        public async Task<CrawlDTO> SaveAsync(CrawlDTO crawl = null)
         {
             Crawl model;
             if (crawl?.Id > 0)
             {
                 model = await _dbContext.Crawls.FindAsync(crawl.Id);
 
-                _dbContext.Entry(model).CurrentValues.SetValues(crawl);
+                //_dbContext.Entry(model).CurrentValues.SetValues(crawl);
+                crawl.CloneTo(model);
             }
             else
             {
@@ -247,11 +267,21 @@ namespace WebCrawler.DataLayer
                     Started = DateTime.Now
                 };
                 _dbContext.Crawls.Add(model);
-
-                await _dbContext.SaveChangesAsync();
             }
 
-            return model;
+            await _dbContext.SaveChangesAsync();
+
+            if (crawl != null)
+            {
+                crawl.Id = model.Id;
+                crawl.Started = DateTime.Now;
+            }
+            else
+            {
+                crawl = new CrawlDTO(model);
+            }
+
+            return crawl;
         }
 
         /// <summary>
@@ -291,14 +321,16 @@ namespace WebCrawler.DataLayer
 
         public async Task DeleteAsync(params int[] websiteIds)
         {
-            var models = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
+            var rules = await _dbContext.WebsiteRules.Where(o => websiteIds.Contains(o.WebsiteId)).ToArrayAsync();
+            var websites = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
 
-            _dbContext.Websites.RemoveRange(models);
+            _dbContext.WebsiteRules.RemoveRange(rules);
+            _dbContext.Websites.RemoveRange(websites);
 
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<Crawl> QueueCrawlAsync()
+        public async Task<CrawlDTO> QueueCrawlAsync()
         {
             var crawl = new Crawl
             {
@@ -319,10 +351,10 @@ namespace WebCrawler.DataLayer
 
             await ExecuteSqlAsync(sql, crawl.Id);
 
-            return crawl;
+            return new CrawlDTO(crawl);
         }
 
-        public async Task<Crawl> ContinueCrawlAsync(int crawlId)
+        public async Task<CrawlDTO> ContinueCrawlAsync(int crawlId)
         {
             // 直接在数据库中进行大批量数据操作
             var sql = @"UPDATE atc_crawllogs SET status = 'QUEUED', success = 0, fail = 0, notes = NULL WHERE crawlid = {0} AND status IN ('FAILED', 'CANCELLED')";
@@ -335,7 +367,7 @@ namespace WebCrawler.DataLayer
 
             await _dbContext.SaveChangesAsync();
 
-            return crawl;
+            return new CrawlDTO(crawl);
         }
 
         private async Task ExecuteSqlAsync(string sql, params object[] parameters)

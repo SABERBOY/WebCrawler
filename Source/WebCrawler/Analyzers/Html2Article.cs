@@ -201,6 +201,11 @@ namespace WebCrawler.Analyzers
         /// <returns></returns>
         public static DateTime? GetPublishDate(string html)
         {
+            if (string.IsNullOrEmpty(html))
+            {
+                return null;
+            }
+
             // 过滤html标签，防止标签对日期提取产生影响
             string text = Regex.Replace(html, "(?is)<.*?>", "");
             Match match = Regex.Match(

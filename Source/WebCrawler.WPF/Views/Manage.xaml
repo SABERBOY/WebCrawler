@@ -27,6 +27,17 @@
             <Setter Property="Height" Value="40" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
+        <Style x:Key="MediumButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style x:Key="SmallButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
     </Page.Resources>
 
     <Grid>
@@ -111,7 +122,6 @@
                     <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" CanUserSort="False" />
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
                     <DataGridTextColumn Header="Validate Date" Binding="{Binding ValidateDate}" />
-                    <DataGridTextColumn Header="List Path" Binding="{Binding ListPath}" Width="100" />
                     <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" Width="200" />
                     <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" Width="300" />
                     <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
@@ -164,37 +174,43 @@
                              ctls:Placeholder.PlaceholderText="Url of the first list page" />
 
                     <Line Grid.Row="2" Grid.ColumnSpan="2" />
-                    
-                    <Label Grid.Row="3" Grid.Column="0" Content="List Path" />
-                    <TextBox Grid.Row="3"
-                             Grid.Column="1"
-                             Text="{Binding Editor.Website.ListPath}"
-                             TextChanged="ListPathTextBox_TextChanged"
-                             SizeChanged="ListPathTextBox_SizeChanged"
-                             ctls:Placeholder.PlaceholderText="Leave empty to auto detect or provide keywords to search" />
-                    <Canvas Grid.Row="3"
-                            Grid.Column="1"
-                            Panel.ZIndex="2"
-                            Visibility="{Binding Editor.NodeSuggestions, Converter={StaticResource EmptyCollectionConverter}, ConverterParameter=!}">
-                        <ListBox x:Name="listBoxSuggestions"
-                                 ItemsSource="{Binding Editor.NodeSuggestions}"
-                                 SelectedItem="{Binding Editor.SelectedNode}"
-                                 HorizontalAlignment="Stretch"
-                                 HorizontalContentAlignment="Stretch"
-                                 MaxHeight="400"
-                                 Canvas.Top="30"
-                                 Canvas.Left="10">
-                            <ListBox.ItemTemplate>
+
+                    <Label Grid.Row="3" Grid.Column="0" Content="Rules" />
+                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                        <ItemsControl ItemsSource="{Binding Editor.Website.Rules}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Margin="5 3">
-                                        <TextBlock Text="{Binding Text}" />
-                                        <TextBlock Text="{Binding Url}" />
-                                        <TextBlock Text="{Binding XPath}" />
-                                    </StackPanel>
+                                    <Grid>
+                                        <Button Command="{Binding DataContext.EditRuleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding }"
+                                                Content="{Binding Type, Converter={StaticResource EnumDisplayNameConverter}}" />
+
+                                        <Canvas>
+                                            <Button Command="{Binding DataContext.RemoveRuleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding }"
+                                                    Style="{StaticResource SmallButton}"
+                                                    Canvas.Right="-8"
+                                                    Canvas.Top="-8">
+                                                <Viewbox Width="16" Height="16">
+                                                    <Path Data="{StaticResource RemoveIcon}" Fill="Red" />
+                                                </Viewbox>
+                                            </Button>
+                                        </Canvas>
+                                    </Grid>
                                 </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Canvas>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Command="{Binding AddRuleCommand}" Style="{StaticResource MediumButton}">
+                            <Viewbox Width="16" Height="16">
+                                <Path Data="{StaticResource AddIcon2}" />
+                            </Viewbox>
+                        </Button>
+                    </StackPanel>
 
                     <Line Grid.Row="4" Grid.ColumnSpan="2" />
                     

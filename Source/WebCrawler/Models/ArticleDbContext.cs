@@ -6,6 +6,7 @@ namespace WebCrawler.Models
     {
         public virtual DbSet<Article> Articles { get; set; }
         public virtual DbSet<Website> Websites { get; set; }
+        public virtual DbSet<WebsiteRule> WebsiteRules { get; set; }
         public virtual DbSet<Crawl> Crawls { get; set; }
         public virtual DbSet<CrawlLog> CrawlLogs { get; set; }
 
@@ -24,12 +25,17 @@ namespace WebCrawler.Models
                 .WithMany(o => o.CrawlLogs)
                 .HasForeignKey(o => o.WebsiteId)
                 .IsRequired();
-
             modelBuilder.Entity<CrawlLog>()
                 .HasOne(o => o.Crawl)
                 .WithMany()
                 .HasForeignKey(o => o.CrawlId)
                 .IsRequired();
+
+            modelBuilder.Entity<WebsiteRule>()
+                .HasOne(o => o.Website)
+                .WithMany(o => o.Rules)
+                .HasForeignKey(o => o.WebsiteId)
+                .IsRequired(false);
         }
     }
 }

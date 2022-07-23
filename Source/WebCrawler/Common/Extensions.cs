@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -200,6 +201,13 @@ namespace WebCrawler.Common
             }
 
             return -1;
+        }
+
+        public static T DeepCopy<T>(this T obj)
+        {
+            string data = JsonConvert.SerializeObject(obj);
+
+            return JsonConvert.DeserializeObject<T>(data);
         }
     }
 }

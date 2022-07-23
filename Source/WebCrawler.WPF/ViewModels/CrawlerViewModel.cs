@@ -19,6 +19,7 @@ using WebCrawler.Analyzers;
 using WebCrawler.Common;
 using WebCrawler.Crawlers;
 using WebCrawler.DataLayer;
+using WebCrawler.DTO;
 using WebCrawler.Models;
 using WebCrawler.WPF.Common;
 using WebCrawler.WPF.Views;
@@ -45,44 +46,26 @@ namespace WebCrawler.WPF.ViewModels
 
         #region Notify Properties
 
-        private bool _isProcessing;
         public bool IsProcessing
         {
-            get { return _isProcessing; }
-            set
-            {
-                if (_isProcessing == value) { return; }
-
-                _isProcessing = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<bool>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private bool _isInitializing;
         public bool IsInitializing
         {
-            get { return _isInitializing; }
-            set
-            {
-                if (_isInitializing == value) { return; }
-
-                _isInitializing = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<bool>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private bool _isCrawling;
         public bool IsCrawling
         {
-            get { return _isCrawling; }
+            get { return GetPropertyValue<bool>(); }
             set
             {
-                if (_isCrawling == value) { return; }
+                if (!SetPropertyValue(value)) { return; }
 
-                _isCrawling = value;
-                RaisePropertyChanged();
-
-                if (_isCrawling)
+                if (value)
                 {
                     OnCrawlingStarted();
                 }
@@ -93,128 +76,79 @@ namespace WebCrawler.WPF.ViewModels
             }
         }
 
-        private string _crawlingStatus;
         public string CrawlingStatus
         {
-            get { return _crawlingStatus; }
-            set
-            {
-                if (_crawlingStatus == value) { return; }
-
-                _crawlingStatus = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<string>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private string _keywordsFilter;
         public string KeywordsFilter
         {
-            get { return _keywordsFilter; }
+            get { return GetPropertyValue<string>(); }
             set
             {
-                if (_keywordsFilter == value) { return; }
-
-                _keywordsFilter = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 LoadCrawlLogs();
             }
         }
 
-        private CrawlStatus _statusFilter;
         public CrawlStatus StatusFilter
         {
-            get { return _statusFilter; }
+            get { return GetPropertyValue<CrawlStatus>(); }
             set
             {
-                if (_statusFilter == value) { return; }
-
-                _statusFilter = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 LoadCrawlLogs();
             }
         }
 
-        private Crawl _selectedCrawl;
-        public Crawl SelectedCrawl
+        public CrawlDTO SelectedCrawl
         {
-            get { return _selectedCrawl; }
+            get { return GetPropertyValue<CrawlDTO>(); }
             set
             {
-                if (_selectedCrawl == value) { return; }
-
-                _selectedCrawl = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 // TODO: This additional async call will cause the buttons state not refreshed
                 LoadCrawlLogs();
             }
         }
 
-        private CrawlLogView _selectedCrawlLog;
-        public CrawlLogView SelectedCrawlLog
+        private CrawlLogDTO _selectedCrawlLog;
+        public CrawlLogDTO SelectedCrawlLog
         {
-            get { return _selectedCrawlLog; }
-            set
-            {
-                if (_selectedCrawlLog == value) { return; }
-
-                _selectedCrawlLog = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<CrawlLogDTO>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<Crawl> _crawls;
-        public ObservableCollection<Crawl> Crawls
+        private ObservableCollection<CrawlDTO> _crawls;
+        public ObservableCollection<CrawlDTO> Crawls
         {
-            get { return _crawls; }
-            set
-            {
-                if (_crawls == value) { return; }
-
-                _crawls = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<CrawlDTO>>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<CrawlLogView> _crawlLogs;
-        public ObservableCollection<CrawlLogView> CrawlLogs
+        private ObservableCollection<CrawlLogDTO> _crawlLogs;
+        public ObservableCollection<CrawlLogDTO> CrawlLogs
         {
-            get { return _crawlLogs; }
-            set
-            {
-                if (_crawlLogs == value) { return; }
-
-                _crawlLogs = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<CrawlLogDTO>>(); }
+            set { SetPropertyValue(value); }
         }
 
         private PageInfo _pageInfo;
         public PageInfo PageInfo
         {
-            get { return _pageInfo; }
-            set
-            {
-                if (_pageInfo == value) { return; }
-
-                _pageInfo = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<PageInfo>(); }
+            set { SetPropertyValue(value); }
         }
 
         private ObservableCollection<Output> _outputs;
         public ObservableCollection<Output> Outputs
         {
-            get { return _outputs; }
-            set
-            {
-                if (_outputs == value) { return; }
-
-                _outputs = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<Output>>(); }
+            set { SetPropertyValue(value); }
         }
 
         #endregion
@@ -295,7 +229,7 @@ namespace WebCrawler.WPF.ViewModels
             _crawlSettings = crawlSettings;
             _logger = logger;
 
-            CrawlLogs = new ObservableCollection<CrawlLogView>();
+            CrawlLogs = new ObservableCollection<CrawlLogDTO>();
             Outputs = new ObservableCollection<Output>();
 
             _crawlLogsSource = new CollectionViewSource { Source = CrawlLogs };
@@ -310,7 +244,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 var crawls = await _dataLayer.GetCrawlsAsync();
 
-                Crawls = new ObservableCollection<Crawl>(crawls.Items);
+                Crawls = new ObservableCollection<CrawlDTO>(crawls.Items);
 
                 SelectedCrawl = Crawls.FirstOrDefault();
 
@@ -355,7 +289,7 @@ namespace WebCrawler.WPF.ViewModels
             App.Current.Dispatcher.Invoke(() =>
             {
                 CrawlLogs.Clear();
-                logs.Items.Select(o => new CrawlLogView(o)).ForEach(o => CrawlLogs.Add(o));
+                logs.Items.ForEach(o => CrawlLogs.Add(o));
                 PageInfo = logs.PageInfo;
             });
         }
@@ -402,15 +336,15 @@ namespace WebCrawler.WPF.ViewModels
                 AppendOutput($"Started {(isFull ? "full" : "incremental")} crawl");
 
                 int total = 0;
-                CrawlLogView crawlLogView;
+                CrawlLogDTO crawlLogDTO;
 
-                ActionBlock<CrawlLog> workerBlock = new ActionBlock<CrawlLog>(async crawlLog =>
+                ActionBlock<CrawlLogDTO> workerBlock = new ActionBlock<CrawlLogDTO>(async crawlLog =>
                 {
-                    crawlLogView = await CrawlAsync(crawlLog);
+                    crawlLogDTO = await CrawlAsync(crawlLog);
 
                     lock (this)
                     {
-                        if (crawlLogView.Status == CrawlStatus.Completed)
+                        if (crawlLogDTO.Status == CrawlStatus.Completed)
                         {
                             SelectedCrawl.Success++;
                         }
@@ -426,7 +360,7 @@ namespace WebCrawler.WPF.ViewModels
                     MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
                 });
 
-                PagedResult<CrawlLog> crawlLogsQueue = null;
+                PagedResult<CrawlLogDTO> crawlLogsQueue = null;
                 do
                 {
                     crawlLogsQueue = _dataLayer.GetCrawlingQueueAsync(SelectedCrawl.Id, crawlLogsQueue?.Items.Last().Id).Result;
@@ -467,27 +401,21 @@ namespace WebCrawler.WPF.ViewModels
             });
         }
 
-        private async Task<CrawlLogView> CrawlAsync(CrawlLog crawlLog)
+        private async Task<CrawlLogDTO> CrawlAsync(CrawlLogDTO crawlLog)
         {
-            var crawlLogView = new CrawlLogView(crawlLog)
-            {
-                Status = CrawlStatus.Crawling,
-                Crawled = DateTime.Now
-            };
+            crawlLog.Status = CrawlStatus.Crawling;
+            crawlLog.Crawled = DateTime.Now;
 
             var articles = new List<Article>();
 
-            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLogView));
+            App.Current.Dispatcher.Invoke(() => CrawlLogs.Insert(0, crawlLog));
 
             CatalogItem[] catalogItems = null;
             try
             {
-                var data = await HtmlHelper.GetHtmlAsync(crawlLog.Website.Home, _httpClient);
+                var data = await HtmlHelper.GetPageDataAsync(_httpClient, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
 
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(data.Content);
-
-                catalogItems = HtmlAnalyzer.DetectCatalogItems(htmlDoc, crawlLog.Website.ListPath, crawlLog.Website.ValidateDate);
+                catalogItems = HtmlAnalyzer.DetectCatalogItems(data.Content, crawlLog.Website.CatalogRule, crawlLog.Website.ValidateDate);
                 if (catalogItems.Length == 0)
                 {
                     throw new Exception("Failed to locate catalog items");
@@ -508,8 +436,8 @@ namespace WebCrawler.WPF.ViewModels
             }
             catch (Exception ex)
             {
-                crawlLogView.Status = CrawlStatus.Failed;
-                crawlLogView.Notes = ex.Message;
+                crawlLog.Status = CrawlStatus.Failed;
+                crawlLog.Notes = ex.Message;
 
                 if (!(ex is HttpRequestException))
                 {
@@ -517,7 +445,7 @@ namespace WebCrawler.WPF.ViewModels
                 }
             }
 
-            if (crawlLogView.Status == CrawlStatus.Crawling)
+            if (crawlLog.Status == CrawlStatus.Crawling)
             {
                 foreach (var item in catalogItems)
                 {
@@ -543,7 +471,7 @@ namespace WebCrawler.WPF.ViewModels
                             Timestamp = DateTime.Now
                         });
 
-                        crawlLogView.Success++;
+                        crawlLog.Success++;
                     }
                     catch (Exception ex)
                     {
@@ -554,51 +482,51 @@ namespace WebCrawler.WPF.ViewModels
                             _logger.LogError(ex, item.Url);
                         }
 
-                        crawlLogView.Fail++;
+                        crawlLog.Fail++;
                     }
                 }
 
-                if (crawlLogView.Success == 0 && crawlLogView.Fail > 0)
+                if (crawlLog.Success == 0 && crawlLog.Fail > 0)
                 {
-                    crawlLogView.Status = CrawlStatus.Failed;
-                    crawlLogView.Notes = "Failed as nothing succeeded";
+                    crawlLog.Status = CrawlStatus.Failed;
+                    crawlLog.Notes = "Failed as nothing succeeded";
                 }
             }
 
             try
             {
-                var lastHandled = crawlLogView.Status != CrawlStatus.Failed ? catalogItems[0].Url : null;
+                var lastHandled = crawlLog.Status != CrawlStatus.Failed ? catalogItems[0].Url : null;
 
                 using (var dataLayer = _serviceProvider.GetRequiredService<IDataLayer>())
                 {
-                    await dataLayer.SaveAsync(articles, crawlLogView.ToModel(), lastHandled);
+                    await dataLayer.SaveAsync(articles, crawlLog, lastHandled);
                 }
             }
             catch (Exception ex)
             {
-                crawlLogView.Status = CrawlStatus.Failed;
-                crawlLogView.Notes = $"Failed to save data: {(ex.InnerException ?? ex).Message}";
+                crawlLog.Status = CrawlStatus.Failed;
+                crawlLog.Notes = $"Failed to save data: {(ex.InnerException ?? ex).Message}";
 
                 _logger.LogError(ex, crawlLog.Website.Home);
             }
 
-            if (crawlLogView.Status == CrawlStatus.Completed)
+            if (crawlLog.Status == CrawlStatus.Completed)
             {
                 if (articles.Count == 0)
                 {
-                    AppendOutput("No updates", crawlLogView.WebsiteHome, LogLevel.Information);
+                    AppendOutput("No updates", crawlLog.WebsiteHome, LogLevel.Information);
                 }
                 else
                 {
-                    AppendOutput("Completed website crawl", crawlLogView.WebsiteHome, LogLevel.Information);
+                    AppendOutput("Completed website crawl", crawlLog.WebsiteHome, LogLevel.Information);
                 }
             }
-            else if (crawlLogView.Status == CrawlStatus.Failed)
+            else if (crawlLog.Status == CrawlStatus.Failed)
             {
-                AppendOutput($"Failed to crawl website: {crawlLogView.Notes}", crawlLogView.WebsiteHome, LogLevel.Error);
+                AppendOutput($"Failed to crawl website: {crawlLog.Notes}", crawlLog.WebsiteHome, LogLevel.Error);
             }
 
-            return crawlLogView;
+            return crawlLog;
         }
 
         private void OnCrawlingStarted()
@@ -637,7 +565,7 @@ namespace WebCrawler.WPF.ViewModels
 
         private void ManageSelected(IList crawlLogs)
         {
-            var websites = crawlLogs.Cast<CrawlLogView>().Select(o => o.WebsiteId).ToArray();
+            var websites = crawlLogs.Cast<CrawlLogDTO>().Select(o => o.WebsiteId).ToArray();
             Navigator.Navigate<Manage>(websites);
         }
 
@@ -713,7 +641,7 @@ namespace WebCrawler.WPF.ViewModels
                 _crawlLogsSource.Filter += CrawlLogsFilter;
 
                 // configure properties which might be updated after being added to the collection and might be used in filtering
-                _crawlLogsSource.LiveFilteringProperties.Add(nameof(CrawlLogView.Status));
+                _crawlLogsSource.LiveFilteringProperties.Add(nameof(CrawlLogDTO.Status));
 
                 _crawlLogsSource.IsLiveFilteringRequested = true;
             });
@@ -731,7 +659,7 @@ namespace WebCrawler.WPF.ViewModels
 
         private void CrawlLogsFilter(object sender, FilterEventArgs args)
         {
-            var crawlLog = args.Item as CrawlLogView;
+            var crawlLog = args.Item as CrawlLogDTO;
 
             if (IsCrawling)
             {

@@ -4,41 +4,19 @@
     {
         #region Notify Properties
 
-        private int _currentPage;
         public int CurrentPage
         {
-            get
-            {
-                return _currentPage;
-            }
-            set
-            {
-                if (value == _currentPage)
-                {
-                    return;
-                }
-
-                _currentPage = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<int>(); }
+            set { SetPropertyValue(value); }
         }
 
         private int _pageSize;
         public int PageSize
         {
-            get
-            {
-                return _pageSize;
-            }
+            get { return GetPropertyValue<int>(); }
             set
             {
-                if (value == _pageSize)
-                {
-                    return;
-                }
-
-                _pageSize = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 CalculatePageCount();
             }
@@ -47,19 +25,10 @@
         private int _itemCount;
         public int ItemCount
         {
-            get
-            {
-                return _itemCount;
-            }
+            get { return GetPropertyValue<int>(); }
             set
             {
-                if (value == _itemCount)
-                {
-                    return;
-                }
-
-                _itemCount = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 CalculatePageCount();
             }
@@ -68,20 +37,8 @@
         private int _pageCount;
         public int PageCount
         {
-            get
-            {
-                return _pageCount;
-            }
-            private set
-            {
-                if (value == _pageCount)
-                {
-                    return;
-                }
-
-                _pageCount = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<int>(); }
+            set { SetPropertyValue(value); }
         }
 
         private void CalculatePageCount()

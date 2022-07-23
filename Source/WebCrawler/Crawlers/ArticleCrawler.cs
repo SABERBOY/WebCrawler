@@ -6,6 +6,7 @@ using System.Threading.Tasks.Dataflow;
 using WebCrawler.Analyzers;
 using WebCrawler.Common;
 using WebCrawler.DataLayer;
+using WebCrawler.DTO;
 using WebCrawler.Models;
 
 namespace WebCrawler.Crawlers
@@ -33,7 +34,7 @@ namespace WebCrawler.Crawlers
             {
                 var crawls = (await _dataLayer.GetCrawlsAsync()).Items;
 
-                Crawl? crawl = crawls.FirstOrDefault();
+                CrawlDTO? crawl = crawls.FirstOrDefault();
                 if (continuePrevious && (crawl?.Status == CrawlStatus.Failed || crawl?.Status == CrawlStatus.Cancelled))
                 {
                     crawl = await _dataLayer.ContinueCrawlAsync(crawl.Id);
@@ -46,7 +47,7 @@ namespace WebCrawler.Crawlers
                 _logger.LogInformation($"Started {(continuePrevious ? "incremental" : "full")} crawling");
 
                 int total = 0;
-                ActionBlock<CrawlLog> workerBlock = new ActionBlock<CrawlLog>(async crawlLog =>
+                ActionBlock<CrawlLogDTO> workerBlock = new ActionBlock<CrawlLogDTO>(async crawlLog =>
                 {
                     await CrawlWebsiteAsync(crawlLog);
 
@@ -68,7 +69,7 @@ namespace WebCrawler.Crawlers
                     MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
                 });
 
-                PagedResult<CrawlLog> crawlLogsQueue = null;
+                PagedResult<CrawlLogDTO> crawlLogsQueue = null;
                 do
                 {
                     crawlLogsQueue = await _dataLayer.GetCrawlingQueueAsync(crawl.Id, crawlLogsQueue?.Items.Last().Id);
@@ -112,7 +113,7 @@ namespace WebCrawler.Crawlers
 
         #region Private Members
 
-        private async Task CrawlWebsiteAsync(CrawlLog crawlLog)
+        private async Task CrawlWebsiteAsync(CrawlLogDTO crawlLog)
         {
             crawlLog.Status = CrawlStatus.Crawling;
             crawlLog.Crawled = DateTime.Now;
@@ -122,12 +123,9 @@ namespace WebCrawler.Crawlers
             CatalogItem[] catalogItems = null;
             try
             {
-                var data = await HtmlHelper.GetHtmlAsync(crawlLog.Website.Home, _httpClient);
+                var data = await HtmlHelper.GetPageDataAsync(_httpClient, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
 
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(data.Content);
-
-                catalogItems = HtmlAnalyzer.DetectCatalogItems(htmlDoc, crawlLog.Website.ListPath, crawlLog.Website.ValidateDate);
+                catalogItems = HtmlAnalyzer.DetectCatalogItems(data.Content, crawlLog.Website.CatalogRule, crawlLog.Website.ValidateDate);
                 if (catalogItems.Length == 0)
                 {
                     throw new AppException("Failed to locate catalog items");
@@ -165,8 +163,8 @@ namespace WebCrawler.Crawlers
 
                     try
                     {
-                        var data = await HtmlHelper.GetHtmlAsync(item.Url, _httpClient);
-                        var info = Html2Article.GetArticle(data.Content);
+                        var data = await HtmlHelper.GetPageDataAsync(_httpClient, item.Url, crawlLog.Website.ArticleRule);
+                        var info = HtmlAnalyzer.ParseArticle(data.Content, crawlLog.Website.ArticleRule);
 
                         articles.Add(new Article
                         {

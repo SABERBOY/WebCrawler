@@ -2,6 +2,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using WebCrawler.DTO;
+using WebCrawler.Models;
 
 namespace WebCrawler.Common
 {
@@ -134,6 +136,59 @@ namespace WebCrawler.Common
             }
         }
 
+        public async static Task<ResponseData> GetPageDataAsync(HttpClient httpClient, string pageUrl, WebsiteRuleDTO rule = null)
+        {
+            var pageLoadOption = rule == null ? PageLoadOption.Default : rule.PageLoadOption;
+
+            switch (pageLoadOption)
+            {
+                case PageLoadOption.Default:
+                    return await GetHtmlAsync(pageUrl, httpClient);
+                case PageLoadOption.Redirection:
+                    var dataUrl = Regex.Replace(pageUrl, rule.PageUrlReviseExp, rule.PageUrlReplacement, RegexOptions.IgnoreCase);
+
+                    var httpMessage = new HttpRequestMessage
+                    {
+                        Method = HttpMethod.Get,
+                        RequestUri = new Uri(dataUrl)
+                    };
+                    httpMessage.Headers.Add("Referer", pageUrl);
+                    //httpMessage.Headers.Add("Cookie", "qgqp_b_id=45069803c0cba71d192e4a51a286490f; st_si=83006616874806; st_asi=delete; st_pvi=93353666965915; st_sp=2022-06-05%2020%3A28%3A20; st_inirUrl=https%3A%2F%2Fcaifuhao.eastmoney.com%2Fcfh%2F146462; st_sn=25; st_psi=20220619182640610-119101302131-3421560488");
+
+                    using (var response = await httpClient.SendAsync(httpMessage))
+                    {
+                        response.EnsureSuccessStatusCode();
+
+                        //Encoding encoding = DetectEncoding(response.Content.Headers.ContentType?.CharSet);
+
+                        using (var stream = await response.Content.ReadAsStreamAsync())
+                        {
+                            using (MemoryStream ms = new MemoryStream())
+                            {
+                                await stream.CopyToAsync(ms);
+
+                                ms.Seek(0, SeekOrigin.Begin);
+                                using (var reader = new StreamReader(ms))
+                                {
+                                    return new ResponseData
+                                    {
+                                        RequestUrl = pageUrl,
+                                        ActualUrl = response.RequestMessage.RequestUri.AbsoluteUri,
+                                        Content = await reader.ReadToEndAsync()
+                                    };
+                                    // TBD
+                                    //resp.SubResponse.Content = ResolveUrls(resp.SubResponse.Content, dataUrl);
+                                }
+                            }
+                        }
+                    }
+                case PageLoadOption.BrowserProxy:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         /// <summary>
         /// Trim spaces, tabs, linebreaks from the text in a HTML page.
         /// </summary>
@@ -179,6 +234,18 @@ namespace WebCrawler.Common
             return html;
         }
 
+        public static string TrimHtmlTags(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+            {
+                return html;
+            }
+
+            var text = Regex.Replace(html, @"<[^<>]+>", "", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            return NormalizeText(text);
+        }
+
         public static void HandleParseErrorsIfAny(HtmlDocument htmlDoc, Action<string> action)
         {
             var parseErrors = string.Join(" ", htmlDoc.ParseErrors.Select(o => $"Line {o.Line} column {o.LinePosition}: {o.Reason}."));
@@ -189,6 +256,13 @@ namespace WebCrawler.Common
 
                 action?.Invoke(parseErrors);
             }
+        }
+
+        public static string TrimJsonP(string content)
+        {
+            var match = Regex.Match(content, @"^[\w_]+\((.+)\);?$");
+
+            return match.Success ? match.Groups[1].Value : content;
         }
 
         #region Private Members

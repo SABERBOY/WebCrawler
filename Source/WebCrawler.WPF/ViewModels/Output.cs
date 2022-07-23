@@ -9,96 +9,36 @@ namespace WebCrawler.WPF.ViewModels
         private DateTime _timestamp;
         public DateTime Timestamp
         {
-            get
-            {
-                return _timestamp;
-            }
-            set
-            {
-                if (value == _timestamp)
-                {
-                    return;
-                }
-
-                _timestamp = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<DateTime>(); }
+            set { SetPropertyValue(value); }
         }
 
         private string _message;
         public string Message
         {
-            get
-            {
-                return _message;
-            }
-            set
-            {
-                if (value == _message)
-                {
-                    return;
-                }
-
-                _message = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<string>(); }
+            set { SetPropertyValue(value); }
         }
 
         private LogLevel _level;
         public LogLevel Level
         {
-            get
-            {
-                return _level;
-            }
-            set
-            {
-                if (value == _level)
-                {
-                    return;
-                }
-
-                _level = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<LogLevel>(); }
+            set { SetPropertyValue(value); }
         }
 
         private string _url;
         public string URL
         {
-            get
-            {
-                return _url;
-            }
-            set
-            {
-                if (value == _url)
-                {
-                    return;
-                }
-
-                _url = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<string>(); }
+            set { SetPropertyValue(value); }
         }
 
         private int? _websiteId;
         public int? WebsiteId
         {
-            get
-            {
-                return _websiteId;
-            }
-            set
-            {
-                if (value == _websiteId)
-                {
-                    return;
-                }
-
-                _websiteId = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<int?>(); }
+            set { SetPropertyValue(value); }
         }
     }
 }

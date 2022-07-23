@@ -1,24 +1,25 @@
 ﻿using WebCrawler.Common;
+using WebCrawler.DTO;
 using WebCrawler.Models;
 
 namespace WebCrawler.DataLayer
 {
     public interface IDataLayer : IDisposable
     {
-        Task<PagedResult<Website>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false);
-        Task<List<Website>> GetWebsitesAsync(int[] websiteIds, bool includeLogs = false);
-        Task<PagedResult<Crawl>> GetCrawlsAsync(int page = 1);
-        Task<PagedResult<CrawlLog>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1);
-        Task<PagedResult<Website>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null);
-        Task<PagedResult<CrawlLog>> GetCrawlingQueueAsync(int crawlId, int? lastId = null);
+        Task<PagedResult<WebsiteDTO>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false);
+        Task<List<WebsiteDTO>> GetWebsitesAsync(int[] websiteIds, bool includeLogs = false);
+        Task<PagedResult<CrawlDTO>> GetCrawlsAsync(int page = 1);
+        Task<PagedResult<CrawlLogDTO>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1);
+        Task<PagedResult<WebsiteDTO>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null);
+        Task<PagedResult<CrawlLogDTO>> GetCrawlingQueueAsync(int crawlId, int? lastId = null);
         Task<T> GetAsync<T>(int id) where T : class;
-        Task SaveAsync(List<Article> articles, CrawlLog crawlLog, string lastHandled);
-        Task SaveAsync(Website editor);
-        Task<Crawl> SaveAsync(Crawl crawl = null);
+        Task SaveAsync(List<Article> articles, CrawlLogDTO crawlLog, string lastHandled);
+        Task SaveAsync(WebsiteDTO editor);
+        Task<CrawlDTO> SaveAsync(CrawlDTO crawl = null);
         Task UpdateStatusAsync(int websiteId, WebsiteStatus? status = null, bool? enabled = null, string notes = null);
         Task ToggleAsync(bool enabled, params int[] websiteIds);
         Task DeleteAsync(params int[] websiteIds);
-        Task<Crawl> QueueCrawlAsync();
-        Task<Crawl> ContinueCrawlAsync(int crawlId);
+        Task<CrawlDTO> QueueCrawlAsync();
+        Task<CrawlDTO> ContinueCrawlAsync(int crawlId);
     }
 }

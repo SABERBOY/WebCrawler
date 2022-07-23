@@ -1,5 +1,4 @@
 ﻿using GalaSoft.MvvmLight.Command;
-using HtmlAgilityPack;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -16,7 +15,9 @@ using WebCrawler.Analyzers;
 using WebCrawler.Common;
 using WebCrawler.Crawlers;
 using WebCrawler.DataLayer;
+using WebCrawler.DTO;
 using WebCrawler.Models;
+using WebCrawler.WPF.Dialogs;
 
 namespace WebCrawler.WPF.ViewModels
 {
@@ -29,243 +30,143 @@ namespace WebCrawler.WPF.ViewModels
         private readonly ILogger _logger;
 
         private SortDescription[] _websiteSorts;
-        private WebsiteView[] _websiteSelections;
+        private WebsiteDTO[] _websiteSelections;
 
         #region Notify Properties
 
-        private bool _isProcessing;
         public bool IsProcessing
         {
-            get { return _isProcessing; }
-            set
-            {
-                if (_isProcessing == value) { return; }
-
-                _isProcessing = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<bool>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private string _processingStatus;
         public string ProcessingStatus
         {
-            get { return _processingStatus; }
-            set
-            {
-                if (_processingStatus == value) { return; }
-
-                _processingStatus = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<string>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private string _keywordsFilter;
         public string KeywordsFilter
         {
-            get { return _keywordsFilter; }
+            get { return GetPropertyValue<string>(); }
             set
             {
-                if (_keywordsFilter == value) { return; }
-
-                _keywordsFilter = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 LoadData();
             }
         }
 
-        private WebsiteStatus _statusFilter;
         public WebsiteStatus StatusFilter
         {
-            get { return _statusFilter; }
+            get { return GetPropertyValue<WebsiteStatus>(); }
             set
             {
-                if (_statusFilter == value) { return; }
-
-                _statusFilter = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 LoadData();
             }
         }
 
-        private bool? _enabledFilter;
         public bool? EnabledFilter
         {
-            get { return _enabledFilter; }
+            get { return GetPropertyValue<bool?>(); }
             set
             {
-                if (_enabledFilter == value) { return; }
-
-                _enabledFilter = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 LoadData();
             }
         }
 
-        private WebsiteView _selectedWebsite;
-        public WebsiteView SelectedWebsite
+        public WebsiteDTO SelectedWebsite
         {
-            get { return _selectedWebsite; }
+            get { return GetPropertyValue<WebsiteDTO>(); }
             set
             {
-                if (_selectedWebsite == value) { return; }
-
-                _selectedWebsite = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 // TODO: This additional async call will cause the buttons state not refreshed
                 OnSelectedWebsiteChanged();
             }
         }
 
-        private WebsiteEditor _editor;
         public WebsiteEditor Editor
         {
-            get { return _editor; }
-            set
-            {
-                if (_editor == value) { return; }
-
-                _editor = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<WebsiteEditor>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private Output _selectedOutput;
         public Output SelectedOutput
         {
-            get { return _selectedOutput; }
-            set
-            {
-                if (_selectedOutput == value) { return; }
-
-                _selectedOutput = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<Output>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private int _selectedViewIndex;
         public int SelectedViewIndex
         {
-            get { return _selectedViewIndex; }
-            set
-            {
-                if (_selectedViewIndex == value) { return; }
-
-                _selectedViewIndex = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<int>(); }
+            set { SetPropertyValue(value); }
         }
-        
-        private CatalogItem _selectedCatalogItem;
+
         public CatalogItem SelectedCatalogItem
         {
-            get { return _selectedCatalogItem; }
+            get { return GetPropertyValue<CatalogItem>(); }
             set
             {
-                if (_selectedCatalogItem == value) { return; }
-
-                _selectedCatalogItem = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 OnSelectedCatalogItemChanged();
             }
         }
 
-        private Article _article;
         public Article Article
         {
-            get { return _article; }
-            set
-            {
-                if (_article == value) { return; }
-
-                _article = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<Article>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private bool? _toggleAsEnabled;
         public bool? ToggleAsEnable
         {
-            get { return _toggleAsEnabled; }
-            set
-            {
-                if (_toggleAsEnabled == value) { return; }
-
-                _toggleAsEnabled = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<bool?>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<WebsiteView> _websites;
         /// <summary>
         /// Couldn't always create new Websites instance (which don't require Dispatcher Invoke) here as we want to persist the sort arrows in the data grid
         /// </summary>
-        public ObservableCollection<WebsiteView> Websites
+        public ObservableCollection<WebsiteDTO> Websites
         {
-            get { return _websites; }
-            set
-            {
-                if (_websites == value) { return; }
-
-                _websites = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<WebsiteDTO>>(); }
+            set { SetPropertyValue(value); }
         }
 
         private PageInfo _pageInfo;
         public PageInfo PageInfo
         {
-            get { return _pageInfo; }
-            set
-            {
-                if (_pageInfo == value) { return; }
-
-                _pageInfo = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<PageInfo>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<CrawlLog> _crawlLogs;
-        public ObservableCollection<CrawlLog> CrawlLogs
+        private ObservableCollection<CrawlLogDTO> _crawlLogs;
+        public ObservableCollection<CrawlLogDTO> CrawlLogs
         {
-            get { return _crawlLogs; }
-            set
-            {
-                if (_crawlLogs == value) { return; }
-
-                _crawlLogs = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<CrawlLogDTO>>(); }
+            set { SetPropertyValue(value); }
         }
 
         private ObservableCollection<CatalogItem> _catalogItems;
         public ObservableCollection<CatalogItem> CatalogItems
         {
-            get { return _catalogItems; }
-            set
-            {
-                if (_catalogItems == value) { return; }
-
-                _catalogItems = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<CatalogItem>>(); }
+            set { SetPropertyValue(value); }
         }
 
         private ObservableCollection<Output> _outputs;
         public ObservableCollection<Output> Outputs
         {
-            get { return _outputs; }
-            set
-            {
-                if (_outputs == value) { return; }
-
-                _outputs = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<ObservableCollection<Output>>(); }
+            set { SetPropertyValue(value); }
         }
 
         #endregion
@@ -428,6 +329,54 @@ namespace WebCrawler.WPF.ViewModels
             }
         }
 
+        private RelayCommand _addRuleCommand;
+        public ICommand AddRuleCommand
+        {
+            get
+            {
+                if (_addRuleCommand == null)
+                {
+                    _addRuleCommand = new RelayCommand(
+                        () => ShowRuleEditor(),
+                        () => !IsProcessing
+                    );
+                }
+                return _addRuleCommand;
+            }
+        }
+
+        private RelayCommand<WebsiteRuleDTO> _editRuleCommand;
+        public ICommand EditRuleCommand
+        {
+            get
+            {
+                if (_editRuleCommand == null)
+                {
+                    _editRuleCommand = new RelayCommand<WebsiteRuleDTO>(
+                        (WebsiteRuleDTO rule) => ShowRuleEditor(rule),
+                        (WebsiteRuleDTO rule) => !IsProcessing
+                    );
+                }
+                return _editRuleCommand;
+            }
+        }
+
+        private RelayCommand<WebsiteRuleDTO> _removeRuleCommand;
+        public ICommand RemoveRuleCommand
+        {
+            get
+            {
+                if (_removeRuleCommand == null)
+                {
+                    _removeRuleCommand = new RelayCommand<WebsiteRuleDTO>(
+                        (WebsiteRuleDTO rule) => RemoveRule(rule),
+                        (WebsiteRuleDTO rule) => !IsProcessing
+                    );
+                }
+                return _removeRuleCommand;
+            }
+        }
+
         #endregion
 
         public ManageViewModel(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<ManageViewModel> logger)
@@ -438,13 +387,12 @@ namespace WebCrawler.WPF.ViewModels
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlSettings = crawlSettings;
 
-            Websites = new ObservableCollection<WebsiteView>();
+            Websites = new ObservableCollection<WebsiteDTO>();
             Outputs = new ObservableCollection<Output>();
             Editor = new WebsiteEditor
             {
-                Website = new WebsiteView()
+                Website = new WebsiteDTO()
             };
-            Editor.PropertyChanged += Editor_PropertyChanged;
             Editor.Website.PropertyChanged += Website_PropertyChanged;
         }
 
@@ -464,28 +412,11 @@ namespace WebCrawler.WPF.ViewModels
             });
         }
 
-        public void AcceptSelectedItems(WebsiteView[] websites)
+        public void AcceptSelectedItems(WebsiteDTO[] websites)
         {
             _websiteSelections = websites;
 
             RefreshToggleState();
-        }
-
-        public void SearchHtmlNodes(string keywords)
-        {
-            Link[] links;
-            if (string.IsNullOrEmpty(keywords) || Editor.HtmlDoc == null)
-            {
-                links = new Link[0];
-            }
-            else
-            {
-                links = HtmlAnalyzer.GetValidLinks(Editor.HtmlDoc)
-                    .Where(o => o.Text.Contains(keywords))
-                    .ToArray();
-            }
-
-            Editor.NodeSuggestions = new ObservableCollection<Link>(links);
         }
 
         #region Private Members
@@ -499,14 +430,14 @@ namespace WebCrawler.WPF.ViewModels
 
             var sort = _websiteSorts?.FirstOrDefault();
 
-            PagedResult<Website> websites;
+            PagedResult<WebsiteDTO> websites;
             if (websiteIds == null || websiteIds.Length == 0)
             {
                 websites = await _dataLayer.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
             }
             else
             {
-                websites = new PagedResult<Website>
+                websites = new PagedResult<WebsiteDTO>
                 {
                     Items = await _dataLayer.GetWebsitesAsync(websiteIds, false),
                     PageInfo = null
@@ -519,7 +450,7 @@ namespace WebCrawler.WPF.ViewModels
                 Websites.Clear();
                 foreach (var web in websites.Items)
                 {
-                    Websites.Add(new WebsiteView(web));
+                    Websites.Add(web);
                 }
 
                 PageInfo = websites.PageInfo;
@@ -552,7 +483,7 @@ namespace WebCrawler.WPF.ViewModels
                 TryRunAsync(async () =>
                 {
                     var logs = await _dataLayer.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
-                    CrawlLogs = new ObservableCollection<CrawlLog>(logs.Items);
+                    CrawlLogs = new ObservableCollection<CrawlLogDTO>(logs.Items);
 
                     await LoadHtmlCoreAsync();
                 });
@@ -565,7 +496,7 @@ namespace WebCrawler.WPF.ViewModels
 
             if (!string.IsNullOrEmpty(Editor.Website.Home))
             {
-                Editor.Response = await HtmlHelper.GetHtmlAsync(Editor.Website.Home, _httpClient);
+                Editor.Response = await HtmlHelper.GetPageDataAsync(_httpClient, Editor.Website.Home, Editor.Website.CatalogRule);
 
                 HtmlHelper.HandleParseErrorsIfAny(Editor.HtmlDoc, (errors) => AppendOutput(errors, Editor.Website.Home, Editor.Website.Id, LogLevel.Warning));
 
@@ -604,16 +535,16 @@ namespace WebCrawler.WPF.ViewModels
                 int processed = 0;
                 int total = 0;
 
-                ActionBlock<Website> workerBlock = null;
-                workerBlock = new ActionBlock<Website>(async website =>
+                ActionBlock<WebsiteDTO> workerBlock = null;
+                workerBlock = new ActionBlock<WebsiteDTO>(async website =>
                 {
-                    var result = await TestAsync(website.Id, website.Home, website.ListPath, website.ValidateDate, website.Status, website.SysNotes);
+                    var result = await TestAsync(website);
 
                     try
                     {
                         using (var dataLayer = _serviceProvider.GetRequiredService<IDataLayer>())
                         {
-                            var enabled = WebsiteView.DetermineWebsiteEnabledStatus(result.Status.Value, website.Status);
+                            var enabled = WebsiteDTO.DetermineWebsiteEnabledStatus(result.Status.Value, website.Status);
 
                             await dataLayer.UpdateStatusAsync(website.Id, result.Status, enabled, result.Notes);
                         }
@@ -636,7 +567,7 @@ namespace WebCrawler.WPF.ViewModels
                     MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
                 });
 
-                PagedResult<Website> websitesQueue = null;
+                PagedResult<WebsiteDTO> websitesQueue = null;
                 do
                 {
                     websitesQueue = _dataLayer.GetWebsiteAnalysisQueueAsync(isFull, websitesQueue?.Items.Last().Id).Result;
@@ -713,7 +644,7 @@ namespace WebCrawler.WPF.ViewModels
             SelectedWebsite = null;
             Editor.IsEditing = true;
 
-            new WebsiteView
+            new WebsiteDTO
             {
                 Rank = 1,
                 Enabled = true,
@@ -736,7 +667,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 var isNew = Editor.Website.Id == 0;
 
-                await _dataLayer.SaveAsync(Editor.Website.ToModel());
+                await _dataLayer.SaveAsync(Editor.Website);
 
                 if (isNew)
                 {
@@ -768,7 +699,7 @@ namespace WebCrawler.WPF.ViewModels
             TryRunAsync(async () =>
             {
                 // test catalogs
-                var result = await TestAsync(Editor.Website.Id, Editor.Website.Home, Editor.Website.ListPath, Editor.Website.ValidateDate, Editor.Website.Status, Editor.Website.SysNotes, Editor.Response);
+                var result = await TestAsync(Editor.Website, Editor.Response);
                 if (result.Catalogs != null)
                 {
                     CatalogItems = new ObservableCollection<CatalogItem>(result.Catalogs);
@@ -787,7 +718,7 @@ namespace WebCrawler.WPF.ViewModels
             });
         }
 
-        private async Task<TestResult> TestAsync(int websiteId, string url, string listPath, bool validateDate, WebsiteStatus? previousStatus = null, string previousSysNotes = null, ResponseData response = null)
+        private async Task<TestResult> TestAsync(WebsiteDTO website, ResponseData response = null)
         {
             var result = new TestResult { Status = WebsiteStatus.Normal };
 
@@ -795,15 +726,12 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (response == null)
                 {
-                    result.CatalogsResponse = await HtmlHelper.GetHtmlAsync(url, _httpClient);
+                    result.CatalogsResponse = await HtmlHelper.GetPageDataAsync(_httpClient, website.Home, website.CatalogRule);
                 }
                 else
                 {
                     result.CatalogsResponse = response;
                 }
-
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(result.CatalogsResponse.Content);
 
                 // suppress HTML parsing error in TestAsync as there're too many warnings, such error will still be handled in single website mode
                 //if (response == null)
@@ -812,7 +740,7 @@ namespace WebCrawler.WPF.ViewModels
                 //    htmlDoc.HandleParseErrorsIfAny((errors) => AppendOutput(errors, url, LogLevel.Warning));
                 //}
 
-                result.Catalogs = HtmlAnalyzer.DetectCatalogItems(htmlDoc, listPath, validateDate);
+                result.Catalogs = HtmlAnalyzer.DetectCatalogItems(result.CatalogsResponse.Content, website.CatalogRule, website.ValidateDate);
 
                 if (result.CatalogsResponse.IsRedirectedExcludeHttps)
                 {
@@ -824,7 +752,7 @@ namespace WebCrawler.WPF.ViewModels
                     result.Status = WebsiteStatus.ErrorCatalogMissing;
                     result.Notes = "No catalogs detected";
                 }
-                else if (validateDate)
+                else if (website.ValidateDate)
                 {
                     if (result.Catalogs.Any(o => !o.HasDate))
                     {
@@ -855,7 +783,7 @@ namespace WebCrawler.WPF.ViewModels
                 result.Status = null;
                 result.Notes = ex.Message;
 
-                _logger.LogError(ex, url);
+                _logger.LogError(ex, website.Home);
             }
 
             // output for changes only
@@ -863,15 +791,15 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (!string.IsNullOrEmpty(result.Notes))
                 {
-                    AppendOutput(result.Notes, url, websiteId, LogLevel.Warning);
+                    AppendOutput(result.Notes, website.Home, website.Id, LogLevel.Warning);
                 }
             }
-            else if (result.Status != previousStatus || result.Notes != previousSysNotes)
+            else if (result.Status != website.Status || result.Notes != website.SysNotes)
             {
                 var message = string.IsNullOrWhiteSpace(result.Notes) ? $"{result.Status}" : $"{result.Status} | {result.Notes}";
                 var level = result.Status == WebsiteStatus.Normal ? LogLevel.Information : LogLevel.Warning;
 
-                AppendOutput(message, url, websiteId, level);
+                AppendOutput(message, website.Home, website.Id, level);
             }
 
             return result;
@@ -928,7 +856,7 @@ namespace WebCrawler.WPF.ViewModels
 
                 var website = await _dataLayer.GetAsync<Website>(SelectedOutput.WebsiteId.Value);
 
-                new WebsiteView(website).CloneTo(Editor.Website);
+                new WebsiteDTO(website).CloneTo(Editor.Website);
 
                 // trigger html loading manually as that wouldn't be auto-triggered inside the TryRunAsync context (IsProcessing = true)
                 await LoadHtmlCoreAsync();
@@ -946,9 +874,9 @@ namespace WebCrawler.WPF.ViewModels
 
             TryRunAsync(async () =>
             {
-                var data = await HtmlHelper.GetHtmlAsync(SelectedCatalogItem.Url, _httpClient);
+                var data = await HtmlHelper.GetPageDataAsync(_httpClient, SelectedCatalogItem.Url, Editor.Website.ArticleRule);
 
-                var article = Html2Article.GetArticle(data.Content);
+                var article = HtmlAnalyzer.ParseArticle(data.Content, Editor.Website.ArticleRule);
 
                 Article = new Article
                 {
@@ -976,17 +904,9 @@ namespace WebCrawler.WPF.ViewModels
             }
         }
 
-        private void Editor_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(WebsiteEditor.SelectedNode) && Editor.SelectedNode != null)
-            {
-                Editor.Website.ListPath = HtmlAnalyzer.DetectListPath(Editor.HtmlDoc, Editor.SelectedNode.XPath);
-            }
-        }
-
         private void Website_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(WebsiteView.Home))
+            if (e.PropertyName == nameof(WebsiteDTO.Home))
             {
                 LoadHtml();
             }
@@ -1051,6 +971,31 @@ namespace WebCrawler.WPF.ViewModels
                     }
                 });
             }
+        }
+
+        private void ShowRuleEditor(WebsiteRuleDTO rule = null)
+        {
+            var previous = rule?.Type != WebsiteRuleType.Catalog ? null : rule.DeepCopy();
+
+            var dialog = new RuleEditor(Editor.Website, Editor.HtmlDoc, rule);
+            dialog.ShowDialog();
+
+            if (dialog.Rule.Type == WebsiteRuleType.Catalog)
+            {
+                if (previous == null
+                    || dialog.Rule.PageLoadOption != previous.PageLoadOption
+                    || dialog.Rule.PageUrlReviseExp != previous.PageUrlReviseExp
+                    || dialog.Rule.PageUrlReplacement != previous.PageUrlReplacement)
+                {
+                    // reset response as the page load behavior is changed
+                    Editor.Response = null;
+                }
+            }
+        }
+
+        private void RemoveRule(WebsiteRuleDTO rule)
+        {
+            Editor.Website.Rules.Remove(rule);
         }
 
         #endregion

@@ -1,0 +1,160 @@
+﻿<Window x:Class="WebCrawler.WPF.Dialogs.RuleEditor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:m="clr-namespace:WebCrawler.Models;assembly=WebCrawler"
+        xmlns:ctls="clr-namespace:WebCrawler.WPF.Controls"
+        xmlns:me="clr-namespace:WebCrawler.WPF.MarkupExtensions"
+        mc:Ignorable="d"
+        Title="Rule Editor"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        Width="630">
+
+    <Window.Resources>
+        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Padding" Value="0 8 13 8" />
+        </Style>
+        <Style TargetType="TextBox" x:Key="LargeTextBoxStyle" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="480" />
+        </Style>
+        <Style TargetType="TextBox" x:Key="MediumTextBoxStyle" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="180" />
+        </Style>
+        <Style TargetType="TextBox" x:Key="SmallTextBoxStyle" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="80" />
+        </Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Width" Value="480" />
+        </Style>
+        <Style TargetType="Line">
+            <Setter Property="Stroke" Value="White" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Stretch" Value="Fill" />
+            <Setter Property="X1" Value="0" />
+            <Setter Property="X2" Value="1" />
+            <Setter Property="Y1" Value="0" />
+            <Setter Property="Y2" Value="0" />
+            <Setter Property="Margin" Value="0 5" />
+        </Style>
+    </Window.Resources>
+    
+    <Grid Background="{StaticResource BackgroundLight}">
+        <StackPanel Margin="15">
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Rule Type" />
+                <ComboBox Grid.Row="0"
+                          Grid.Column="1"
+                          ItemsSource="{me:EnumValues {x:Type m:WebsiteRuleType}}"
+                          ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                          SelectedValue="{Binding Rule.Type}"
+                          BorderThickness="1"
+                          IsEnabled="{Binding IsNew}"/>
+            </StackPanel>
+
+            <Line />
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Load Option" />
+                <ComboBox ItemsSource="{me:EnumValues {x:Type m:PageLoadOption}}"
+                          ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                          SelectedValue="{Binding Rule.PageLoadOption}"
+                          BorderThickness="1" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Rule.PageLoadOption, Converter={StaticResource MatchEnumConverter}, ConverterParameter=Redirection}">
+                <TextBlock Text="Url Revise Exp"/>
+                <TextBox Text="{Binding Rule.PageUrlReviseExp}"
+                         Style="{StaticResource MediumTextBoxStyle}"/>
+
+                <TextBlock Text="Url Replacement"/>
+                <TextBox Text="{Binding Rule.PageUrlReplacement}"
+                         Style="{StaticResource MediumTextBoxStyle}"/>
+            </StackPanel>
+
+            <Line />
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Match Type" />
+                <ComboBox ItemsSource="{me:EnumValues {x:Type m:ContentMatchType}}"
+                          ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                          SelectedValue="{Binding Rule.ContentMatchType}"
+                          BorderThickness="1"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Rule.Type, Converter={StaticResource MatchEnumConverter}, ConverterParameter=Catalog}">
+                <TextBlock Text="Root Exp" />
+                <TextBox Text="{Binding Rule.ContentRootExp}"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Rule.Type, Converter={StaticResource MatchEnumConverter}, ConverterParameter=Catalog}">
+                <TextBlock Text="Url Exp" />
+                <TextBox Text="{Binding Rule.ContentUrlExp}"
+                         TextChanged="ListPathTextBox_TextChanged"
+                         SizeChanged="ListPathTextBox_SizeChanged"
+                         ctls:Placeholder.PlaceholderText="Leave empty to auto detect or provide keywords to search; Format: [row path];[param path 1],[param path 2];[article url format]"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+                <Canvas Panel.ZIndex="2"
+                        Visibility="{Binding Editor.NodeSuggestions, Converter={StaticResource EmptyCollectionConverter}, ConverterParameter=!}">
+                    <ListBox x:Name="listBoxSuggestions"
+                             ItemsSource="{Binding Editor.NodeSuggestions}"
+                             HorizontalAlignment="Stretch"
+                             HorizontalContentAlignment="Stretch"
+                             SelectionChanged="listBoxSuggestions_SelectionChanged"
+                             MaxHeight="400"
+                             Canvas.Top="30"
+                             Canvas.Left="10">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5 3">
+                                    <TextBlock Text="{Binding Text}" />
+                                    <TextBlock Text="{Binding Url}" />
+                                    <TextBlock Text="{Binding XPath}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Canvas>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Rule.Type, Converter={StaticResource MatchEnumConverter}, ConverterParameter=Catalog}">
+                <TextBlock Text="Url Revise Exp" />
+                <TextBox Text="{Binding Rule.ContentUrlReviseExp}"
+                         Style="{StaticResource MediumTextBoxStyle}"/>
+
+                <TextBlock Text="Url Replacement" />
+                <TextBox Text="{Binding Rule.ContentUrlReplacement}"
+                         Style="{StaticResource MediumTextBoxStyle}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Title Exp" />
+                <TextBox Text="{Binding Rule.ContentTitleExp}"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Date Exp" />
+                <TextBox Text="{Binding Rule.ContentDateExp}"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Rule.Type, Converter={StaticResource MatchEnumConverter}, ConverterParameter=Article}">
+                <TextBlock Text="Content Exp" />
+                <TextBox Text="{Binding Rule.ContentExp}"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+            </StackPanel>
+
+        </StackPanel>
+    </Grid>
+</Window>

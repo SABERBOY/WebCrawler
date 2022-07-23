@@ -1,7 +1,6 @@
 ﻿using HtmlAgilityPack;
-using System.Collections.ObjectModel;
-using WebCrawler.Analyzers;
 using WebCrawler.Common;
+using WebCrawler.DTO;
 
 namespace WebCrawler.WPF.ViewModels
 {
@@ -9,91 +8,31 @@ namespace WebCrawler.WPF.ViewModels
     {
         #region Notify Properties
 
-        private bool _isEditing;
         public bool IsEditing
         {
-            get
-            {
-                return _isEditing;
-            }
-            set
-            {
-                if (value == _isEditing)
-                {
-                    return;
-                }
-
-                _isEditing = value;
-                RaisePropertyChanged();
-            }
+            get { return GetPropertyValue<bool>(); }
+            set { SetPropertyValue(value); }
         }
 
-        private WebsiteView _website;
-        public WebsiteView Website
+        public WebsiteDTO Website
         {
-            get
-            {
-                return _website;
-            }
+            get { return GetPropertyValue<WebsiteDTO>(); }
             set
             {
-                if (value == _website)
-                {
-                    return;
-                }
-
-                _website = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 Response = null;
-                NodeSuggestions = null;
             }
         }
 
-        private ResponseData _response;
         public ResponseData Response
         {
-            get
-            {
-                return _response;
-            }
+            get { return GetPropertyValue<ResponseData>(); }
             set
             {
-                if (value == _response)
-                {
-                    return;
-                }
-
-                _response = value;
-                RaisePropertyChanged();
+                if (!SetPropertyValue(value)) { return; }
 
                 _htmlDoc = null;
-            }
-        }
-
-        private ObservableCollection<Link> _htmlNodes;
-        public ObservableCollection<Link> NodeSuggestions
-        {
-            get { return _htmlNodes; }
-            set
-            {
-                if (_htmlNodes == value) { return; }
-
-                _htmlNodes = value;
-                RaisePropertyChanged();
-            }
-        }
-
-        private Link _selectedNode;
-        public Link SelectedNode
-        {
-            get { return _selectedNode; }
-            set
-            {
-                if (_selectedNode == value) { return; }
-
-                _selectedNode = value;
-                RaisePropertyChanged();
             }
         }
 

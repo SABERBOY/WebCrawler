@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using WebCrawler.DTO;
 using WebCrawler.WPF.Common;
 using WebCrawler.WPF.ViewModels;
 
@@ -89,7 +90,7 @@ namespace WebCrawler.WPF.Views
 
             var grid = sender as DataGrid;
 
-            vm.AcceptSelectedItems(grid.SelectedItems.Cast<WebsiteView>().ToArray());
+            vm.AcceptSelectedItems(grid.SelectedItems.Cast<WebsiteDTO>().ToArray());
         }
 
         private void Spinner_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -97,20 +98,6 @@ namespace WebCrawler.WPF.Views
             var processing = Convert.ToBoolean(e.NewValue);
 
             webBrowser.Visibility = processing ? Visibility.Hidden : Visibility.Visible;
-        }
-
-        private void ListPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            var keywords = (sender as TextBox).Text;
-
-            var vm = DataContext as ManageViewModel;
-
-            vm.SearchHtmlNodes(keywords.Trim());
-        }
-
-        private void ListPathTextBox_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            listBoxSuggestions.Width = (sender as TextBox).ActualWidth;
         }
 
         private void webBrowser_Navigating(object sender, NavigatingCancelEventArgs e)
