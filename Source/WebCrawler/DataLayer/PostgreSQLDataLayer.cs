@@ -330,6 +330,50 @@ namespace WebCrawler.DataLayer
             await _dbContext.SaveChangesAsync();
         }
 
+        public async Task<WebsiteDTO[]> DuplicateAsync(params int[] websiteIds)
+        {
+            var models = await _dbContext.Websites
+                .Include(o => o.Rules)
+                .Where(o => websiteIds.Contains(o.Id))
+                .ToArrayAsync();
+
+            var duplicates = models.Select(o => new Website
+            {
+                Name = o.Name,
+                // disable the new websites by default
+                Enabled = false,
+                Home = o.Home,
+                UrlFormat = o.UrlFormat,
+                StartIndex = o.StartIndex,
+                Rank = o.Rank,
+                Notes = o.Notes,
+                Registered = DateTime.Now,
+                Rules = o.Rules.Select(r => new WebsiteRule
+                {
+                    RuleId = Guid.NewGuid(),
+                    Type = r.Type,
+                    PageLoadOption = r.PageLoadOption,
+                    PageUrlReviseExp = r.PageUrlReviseExp,
+                    PageUrlReplacement = r.PageUrlReplacement,
+                    ContentMatchType = r.ContentMatchType,
+                    ContentRootExp = r.ContentRootExp,
+                    ContentUrlExp = r.ContentUrlExp,
+                    ContentUrlReviseExp = r.ContentUrlReviseExp,
+                    ContentUrlReplacement = r.ContentUrlReplacement,
+                    ContentTitleExp = r.ContentTitleExp,
+                    ContentDateExp = r.ContentDateExp,
+                    ContentExp = r.ContentExp
+                })
+                .ToList()
+            });
+
+            _dbContext.Websites.AddRange(duplicates);
+
+            await _dbContext.SaveChangesAsync();
+
+            return duplicates.Select(o => new WebsiteDTO(o)).ToArray();
+        }
+
         public async Task<CrawlDTO> QueueCrawlAsync()
         {
             var crawl = new Crawl

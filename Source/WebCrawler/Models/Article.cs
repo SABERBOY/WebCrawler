@@ -27,5 +27,7 @@ namespace WebCrawler.Models
         public DateTime? Published { get; set; }
         [Column("timestamp")]
         public DateTime Timestamp { get; set; }
+        [Column("author")]
+        public string? Author { get; set; }
     }
 }

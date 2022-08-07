@@ -21,6 +21,7 @@ using WebCrawler.Crawlers;
 using WebCrawler.DataLayer;
 using WebCrawler.DTO;
 using WebCrawler.Models;
+using WebCrawler.Queue;
 using WebCrawler.WPF.Common;
 using WebCrawler.WPF.Views;
 
@@ -31,6 +32,7 @@ namespace WebCrawler.WPF.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly ICrawler _crawler;
         private readonly IDataLayer _dataLayer;
+        private readonly IProxyDispatcher _proxyDispatcher;
         private HttpClient _httpClient;
         private readonly CrawlSettings _crawlSettings;
         private readonly ILogger _logger;
@@ -222,10 +224,11 @@ namespace WebCrawler.WPF.ViewModels
 
         #endregion
 
-        public CrawlerViewModel(IServiceProvider serviceProvider, ICrawler crawler, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<CrawlerViewModel> logger)
+        public CrawlerViewModel(IServiceProvider serviceProvider, ICrawler crawler, IDataLayer dataLayer, IHttpClientFactory clientFactory, IProxyDispatcher proxyDispatcher, CrawlSettings crawlSettings, ILogger<CrawlerViewModel> logger)
         {
             _crawler = crawler;
             _dataLayer = dataLayer;
+            _proxyDispatcher = proxyDispatcher;
             _crawlSettings = crawlSettings;
             _logger = logger;
 
@@ -413,7 +416,7 @@ namespace WebCrawler.WPF.ViewModels
             CatalogItem[] catalogItems = null;
             try
             {
-                var data = await HtmlHelper.GetPageDataAsync(_httpClient, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
+                var data = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
 
                 catalogItems = HtmlAnalyzer.DetectCatalogItems(data.Content, crawlLog.Website.CatalogRule, crawlLog.Website.ValidateDate);
                 if (catalogItems.Length == 0)

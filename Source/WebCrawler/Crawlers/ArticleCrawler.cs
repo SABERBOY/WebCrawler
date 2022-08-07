@@ -1,5 +1,4 @@
-﻿using HtmlAgilityPack;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
 using System.Threading.Tasks.Dataflow;
@@ -8,6 +7,7 @@ using WebCrawler.Common;
 using WebCrawler.DataLayer;
 using WebCrawler.DTO;
 using WebCrawler.Models;
+using WebCrawler.Queue;
 
 namespace WebCrawler.Crawlers
 {
@@ -15,14 +15,16 @@ namespace WebCrawler.Crawlers
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IDataLayer _dataLayer;
+        private readonly IProxyDispatcher _proxyDispatcher;
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private readonly CrawlSettings _crawlSettings;
 
-        public ArticleCrawler(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<ArticleCrawler> logger)
+        public ArticleCrawler(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, IProxyDispatcher proxyDispatcher, CrawlSettings crawlSettings, ILogger<ArticleCrawler> logger)
         {
             _serviceProvider = serviceProvider;
             _dataLayer = dataLayer;
+            _proxyDispatcher = proxyDispatcher;
             _logger = logger;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlSettings = crawlSettings;
@@ -123,7 +125,7 @@ namespace WebCrawler.Crawlers
             CatalogItem[] catalogItems = null;
             try
             {
-                var data = await HtmlHelper.GetPageDataAsync(_httpClient, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
+                var data = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
 
                 catalogItems = HtmlAnalyzer.DetectCatalogItems(data.Content, crawlLog.Website.CatalogRule, crawlLog.Website.ValidateDate);
                 if (catalogItems.Length == 0)
@@ -163,7 +165,7 @@ namespace WebCrawler.Crawlers
 
                     try
                     {
-                        var data = await HtmlHelper.GetPageDataAsync(_httpClient, item.Url, crawlLog.Website.ArticleRule);
+                        var data = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, item.Url, crawlLog.Website.ArticleRule);
                         var info = HtmlAnalyzer.ParseArticle(data.Content, crawlLog.Website.ArticleRule);
 
                         articles.Add(new Article

@@ -4,11 +4,14 @@ using System.Text.RegularExpressions;
 using System.Web;
 using WebCrawler.DTO;
 using WebCrawler.Models;
+using WebCrawler.Queue;
 
 namespace WebCrawler.Common
 {
     public static class HtmlHelper
     {
+        private static int PROXY_TIMEOUT_SECONDS = 10;
+
         #region URL
 
         public static string GetRootSiteUrl(string url)
@@ -93,6 +96,7 @@ namespace WebCrawler.Common
                 response.EnsureSuccessStatusCode();
 
                 data.ActualUrl = response.RequestMessage.RequestUri.AbsoluteUri;
+                data.IsRedirected = !data.RequestUrl.Equals(data.ActualUrl, StringComparison.CurrentCultureIgnoreCase);
 
                 Encoding encoding = DetectEncoding(response.Content.Headers.ContentType?.CharSet);
 
@@ -136,7 +140,7 @@ namespace WebCrawler.Common
             }
         }
 
-        public async static Task<ResponseData> GetPageDataAsync(HttpClient httpClient, string pageUrl, WebsiteRuleDTO rule = null)
+        public async static Task<ResponseData> GetPageDataAsync(HttpClient httpClient, IProxyDispatcher proxyDispatcher, string pageUrl, WebsiteRuleDTO rule = null)
         {
             var pageLoadOption = rule == null ? PageLoadOption.Default : rule.PageLoadOption;
 
@@ -174,6 +178,8 @@ namespace WebCrawler.Common
                                     {
                                         RequestUrl = pageUrl,
                                         ActualUrl = response.RequestMessage.RequestUri.AbsoluteUri,
+                                        // Notes: ajax requests aren't considered as redirection
+                                        IsRedirected = false,
                                         Content = await reader.ReadToEndAsync()
                                     };
                                     // TBD
@@ -183,7 +189,27 @@ namespace WebCrawler.Common
                         }
                     }
                 case PageLoadOption.BrowserProxy:
-                    throw new NotImplementedException();
+                    proxyDispatcher.Send(ProxyDispatcher.QUEUE_REQUESTS, new AjaxProxyRequest
+                    {
+                        PageUrl = pageUrl,
+                        AjaxUrlExp = rule.PageUrlReviseExp,
+                        TimeoutSeconds = PROXY_TIMEOUT_SECONDS
+                    });
+
+                    var downloadResult = await proxyDispatcher.ReceiveAsync<DownloadResult>(pageUrl, PROXY_TIMEOUT_SECONDS);
+                    if (downloadResult == null)
+                    {
+                        throw new Exception("Timeout to receive response from proxy");
+                    }
+
+                    return new ResponseData
+                    {
+                        RequestUrl = pageUrl,
+                        ActualUrl = downloadResult.ResponseUri,
+                        // Notes: ajax requests aren't considered as redirection
+                        IsRedirected = false,
+                        Content = downloadResult.Content
+                    };
                 default:
                     throw new NotSupportedException();
             }
@@ -201,11 +227,11 @@ namespace WebCrawler.Common
                 return string.Empty;
             }
 
-            // trim start/end chars
-            text = text.Trim('\r', '\n', '\t', ' ');
-
             // trim mid chars to single space
             text = Regex.Replace(text, @"[\r\n\t ]+", " ");
+
+            // trim start/end chars
+            text = text.Trim('\r', '\n', '\t', ' ', ' ');
 
             // resolve code like &lt;
             text = HttpUtility.HtmlDecode(text);
@@ -311,24 +337,6 @@ namespace WebCrawler.Common
         public string RequestUrl { get; set; }
         public string ActualUrl { get; set; }
         public string Content { get; set; }
-
-        public bool IsRedirected
-        {
-            get
-            {
-                return !RequestUrl.Equals(ActualUrl, StringComparison.CurrentCultureIgnoreCase);
-            }
-        }
-
-        public bool IsRedirectedExcludeHttps
-        {
-            get
-            {
-                var regex = new Regex("https?://", RegexOptions.IgnoreCase);
-
-                return !regex.Replace(RequestUrl, "")
-                    .Equals(regex.Replace(ActualUrl, ""), StringComparison.CurrentCultureIgnoreCase);
-            }
-        }
+        public bool IsRedirected { get; set; }
     }
 }

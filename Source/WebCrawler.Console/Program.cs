@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Cloudtoid.Interprocess;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ using WebCrawler.Common;
 using WebCrawler.Crawlers;
 using WebCrawler.DataLayer;
 using WebCrawler.Models;
+using WebCrawler.Queue;
 
 /* 
  * TODO References:
@@ -69,7 +71,6 @@ namespace WebCrawler.Analyzers
                 .Build();
 
             services.AddSingleton<IConfiguration>(config);
-
             services.AddSingleton<CrawlSettings>((serviceProvider) =>
             {
                 var crawlSettings = new CrawlSettings();
@@ -77,6 +78,15 @@ namespace WebCrawler.Analyzers
 
                 return crawlSettings;
             });
+            services.AddSingleton<ProxySettings>((serviceProvider) =>
+            {
+                var proxySettings = new ProxySettings();
+                config.Bind("Proxy", proxySettings);
+
+                return proxySettings;
+            });
+
+            services.AddSingleton<IProxyDispatcher, ProxyDispatcher>();
 
             // register as Transient, because efcore dbcontext isn't thread safe
             // https://docs.microsoft.com/en-us/ef/core/miscellaneous/configuring-dbcontext#avoiding-dbcontext-threading-issues
@@ -112,6 +122,9 @@ namespace WebCrawler.Analyzers
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
                 })
                 .AddPolicyHandler(HttpPolicyHandler);
+
+            // enable cross-platform shared memory queue for fast communication between processes
+            services.AddInterprocessQueue();
 
             // configure logger
             services.AddLogging(builder =>

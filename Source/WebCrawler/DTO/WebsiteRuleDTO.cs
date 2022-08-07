@@ -91,6 +91,12 @@ namespace WebCrawler.DTO
             set { SetPropertyValue(value); }
         }
 
+        public string? ContentAuthorExp
+        {
+            get { return GetPropertyValue<string?>(); }
+            set { SetPropertyValue(value); }
+        }
+        
         public string? ContentExp
         {
             get { return GetPropertyValue<string?>(); }
@@ -121,6 +127,7 @@ namespace WebCrawler.DTO
             ContentUrlReplacement = model.ContentUrlReplacement;
             ContentTitleExp = model.ContentTitleExp;
             ContentDateExp = model.ContentDateExp;
+            ContentAuthorExp = model.ContentAuthorExp;
             ContentExp = model.ContentExp;
         }
 
@@ -148,6 +155,7 @@ namespace WebCrawler.DTO
             target.ContentUrlReplacement = ContentUrlReplacement;
             target.ContentTitleExp = ContentTitleExp;
             target.ContentDateExp = ContentDateExp;
+            target.ContentAuthorExp = ContentAuthorExp;
             target.ContentExp = ContentExp;
 
             return target;
@@ -173,6 +181,7 @@ namespace WebCrawler.DTO
             target.ContentUrlReviseExp = ContentUrlReviseExp;
             target.ContentUrlReplacement = ContentUrlReplacement;
             target.ContentDateExp = ContentDateExp;
+            target.ContentAuthorExp = ContentAuthorExp;
             target.ContentExp = ContentExp;
 
             return target;

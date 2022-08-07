@@ -154,54 +154,82 @@ namespace WebCrawler.Analyzers
 
         public static ArticleDetails ParseArticle(string pageData, WebsiteRuleDTO rule = null)
         {
-            var contentMatchType = rule == null ? ContentMatchType.XPath : rule.ContentMatchType;
+            ArticleDetails article = Html2Article.GetArticle(pageData);
 
-            ArticleDetails article;
-            switch (contentMatchType)
+            // 使用规则覆盖自动捕获的数据
+            if (rule != null)
             {
-                case ContentMatchType.XPath:
-                    if (rule == null || string.IsNullOrEmpty(rule.ContentExp))
-                    {
-                        article = Html2Article.GetArticle(pageData);
-                    }
-                    else
-                    {
+                switch (rule.ContentMatchType)
+                {
+                    case ContentMatchType.XPath:
                         var htmlDoc = new HtmlDocument();
                         htmlDoc.LoadHtml(pageData);
 
+                        if (!string.IsNullOrEmpty(rule.ContentTitleExp))
+                        {
+                            article.Title = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentTitleExp)?.InnerText;
+                        }
+                        if (!string.IsNullOrEmpty(rule.ContentDateExp))
+                        {
+                            article.PublishDate = Html2Article.GetPublishDate(htmlDoc.DocumentNode.SelectSingleNode(rule.ContentDateExp)?.InnerText);
+                        }
+                        if (!string.IsNullOrEmpty(rule.ContentAuthorExp))
+                        {
+                            article.Author = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentAuthorExp)?.InnerText;
+                        }
+                        if (!string.IsNullOrEmpty(rule.ContentExp))
+                        {
+                            article.Content = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentExp)?.InnerText;
+                            article.ContentWithTags = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentExp)?.InnerHtml;
+                        }
+
+                        break;
+                    case ContentMatchType.JPath:
+                        if (string.IsNullOrEmpty(pageData))
+                        {
+                            return null;
+                        }
+
+                        var jsonDoc = JObject.Parse(HtmlHelper.TrimJsonP(pageData));
+
+                        var content = jsonDoc.SelectToken(rule.ContentExp)?.ToString();
                         article = new ArticleDetails
                         {
-                            Title = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentTitleExp)?.InnerText,
-                            PublishDate = Html2Article.GetPublishDate(htmlDoc.DocumentNode.SelectSingleNode(rule.ContentDateExp)?.InnerText),
-                            Content = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentExp)?.InnerText,
-                            ContentWithTags = htmlDoc.DocumentNode.SelectSingleNode(rule.ContentExp)?.InnerHtml
+                            Title = jsonDoc.SelectToken(rule.ContentTitleExp)?.ToString(),
+                            PublishDate = Html2Article.GetPublishDate(jsonDoc.SelectToken(rule.ContentDateExp)?.ToString()),
+                            Author = jsonDoc.SelectToken(rule.ContentAuthorExp)?.ToString(),
+                            Content = HtmlHelper.TrimHtmlTags(content),
+                            ContentWithTags = content
                         };
-                    }
-                    break;
-                case ContentMatchType.JPath:
-                    if (string.IsNullOrEmpty(pageData))
-                    {
-                        return null;
-                    }
-
-                    var jsonDoc = JObject.Parse(HtmlHelper.TrimJsonP(pageData));
-
-                    var content = jsonDoc.SelectToken(rule.ContentExp)?.ToString();
-                    article = new ArticleDetails
-                    {
-                        Title = jsonDoc.SelectToken(rule.ContentTitleExp)?.ToString(),
-                        PublishDate = Html2Article.GetPublishDate(jsonDoc.SelectToken(rule.ContentDateExp)?.ToString()),
-                        Content = HtmlHelper.TrimHtmlTags(content),
-                        ContentWithTags = content
-                    };
-                    break;
-                case ContentMatchType.Regex:
-                    throw new NotImplementedException();
-                default:
-                    throw new NotSupportedException();
+                        break;
+                    case ContentMatchType.Regex:
+                        if (!string.IsNullOrEmpty(rule.ContentDateExp))
+                        {
+                            var match = Regex.Match(pageData, rule.ContentDateExp, RegexOptions.IgnoreCase);
+                            if (match.Success)
+                            {
+                                if (DateTime.TryParse(match.Value, out var dateTime))
+                                {
+                                    article.PublishDate = dateTime;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(rule.ContentAuthorExp))
+                        {
+                            var match = Regex.Match(pageData, rule.ContentAuthorExp, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                            if (match.Success)
+                            {
+                                article.Author = Html2Article.GetAuthor(match.Value) ?? HtmlHelper.TrimHtmlTags(match.Value);
+                            }
+                        }
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
             }
 
             article.Title = HtmlHelper.NormalizeText(article.Title);
+            article.Author = HtmlHelper.NormalizeText(article.Author);
             article.Content = HtmlHelper.NormalizeText(article.Content);
             article.ContentWithTags = HtmlHelper.NormalizeHtml(article.ContentWithTags);
 

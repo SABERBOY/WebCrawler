@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Cloudtoid.Interprocess;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using Polly.Extensions.Http;
 using Polly.Retry;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -16,17 +18,28 @@ using WebCrawler.Common;
 using WebCrawler.Crawlers;
 using WebCrawler.DataLayer;
 using WebCrawler.Models;
+using WebCrawler.Queue;
 using WebCrawler.WPF.Common;
 using WebCrawler.WPF.ViewModels;
 using WebCrawler.WPF.Views;
 
 namespace WebCrawler.WPF
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
+        private Mutex _mutex;
+
+        public App()
+        {
+            // signle instance application
+            _mutex = new Mutex(true, "WebCrawler.WPF", out bool isNew);
+
+            if (!isNew)
+            {
+                Environment.Exit(0);
+            }
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -34,6 +47,8 @@ namespace WebCrawler.WPF
             DispatcherUnhandledException += Application_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
+            Exit += Application_Exit;
 
             AppTools.ConfigureEnvironment();
 
@@ -72,6 +87,15 @@ namespace WebCrawler.WPF
             HandleException(e.Exception);
         }
 
+        private void Application_Exit(object sender, ExitEventArgs e)
+        {
+            var processes = Process.GetProcessesByName("WebCrawler.Proxy");
+            if (processes.Length > 0)
+            {
+                processes.ForEach(o => o.Kill());
+            }
+        }
+
         #endregion
 
         #region Private Members
@@ -82,13 +106,19 @@ namespace WebCrawler.WPF
                 .Build();
 
             services.AddSingleton<IConfiguration>(config);
-
             services.AddSingleton<CrawlSettings>((serviceProvider) =>
             {
                 var crawlSettings = new CrawlSettings();
                 config.Bind("Crawling", crawlSettings);
 
                 return crawlSettings;
+            });
+            services.AddSingleton<ProxySettings>((serviceProvider) =>
+            {
+                var proxySettings = new ProxySettings();
+                config.Bind("Proxy", proxySettings);
+
+                return proxySettings;
             });
 
             // register as Transient, because efcore dbcontext isn't thread safe
@@ -112,6 +142,7 @@ namespace WebCrawler.WPF
             services.AddSingleton<Crawler>();
             services.AddSingleton<Manage>();
             services.AddSingleton<Settings>();
+            services.AddSingleton<IProxyDispatcher, ProxyDispatcher>();
 
             services.AddSingleton<CrawlerViewModel>();
             services.AddSingleton<ManageViewModel>();
@@ -132,6 +163,9 @@ namespace WebCrawler.WPF
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
                 })
                 .AddPolicyHandler(HttpPolicyHandler);
+
+            // enable cross-platform shared memory queue for fast communication between processes
+            services.AddInterprocessQueue();
 
             // configure logger
             services.AddLogging(builder =>

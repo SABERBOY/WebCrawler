@@ -77,6 +77,13 @@
                          Style="{StaticResource MediumTextBoxStyle}"/>
             </StackPanel>
 
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding Rule.PageLoadOption, Converter={StaticResource MatchEnumConverter}, ConverterParameter=BrowserProxy}">
+                <TextBlock Text="Url Match Exp"/>
+                <TextBox Text="{Binding Rule.PageUrlReviseExp}"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+            </StackPanel>
+
             <Line />
 
             <StackPanel Orientation="Horizontal">
@@ -145,6 +152,12 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Date Exp" />
                 <TextBox Text="{Binding Rule.ContentDateExp}"
+                         Style="{StaticResource LargeTextBoxStyle}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Author Exp" />
+                <TextBox Text="{Binding Rule.ContentAuthorExp}"
                          Style="{StaticResource LargeTextBoxStyle}"/>
             </StackPanel>
 

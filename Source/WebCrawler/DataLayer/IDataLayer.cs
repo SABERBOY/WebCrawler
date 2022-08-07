@@ -19,6 +19,7 @@ namespace WebCrawler.DataLayer
         Task UpdateStatusAsync(int websiteId, WebsiteStatus? status = null, bool? enabled = null, string notes = null);
         Task ToggleAsync(bool enabled, params int[] websiteIds);
         Task DeleteAsync(params int[] websiteIds);
+        Task<WebsiteDTO[]> DuplicateAsync(params int[] websiteIds);
         Task<CrawlDTO> QueueCrawlAsync();
         Task<CrawlDTO> ContinueCrawlAsync(int crawlId);
     }

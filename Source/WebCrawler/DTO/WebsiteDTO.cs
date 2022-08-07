@@ -130,7 +130,7 @@ namespace WebCrawler.DTO
         {
             CrawlLogs = new ObservableCollection<CrawlLogDTO>(model.CrawlLogs?.Select(o => new CrawlLogDTO(o)) ?? new CrawlLogDTO[0]);
             // NOTES: populate the rules first to avoid dependencies triggered by the updates on the "Home" property in ManageViewModel.Website_PropertyChanged
-            Rules = new ObservableCollection<WebsiteRuleDTO>(model.Rules?.Select(o => new WebsiteRuleDTO(o)) ?? new WebsiteRuleDTO[0]);
+            Rules = new ObservableCollection<WebsiteRuleDTO>(model.Rules?.OrderBy(o => o.Type).Select(o => new WebsiteRuleDTO(o)) ?? new WebsiteRuleDTO[0]);
  
             Id = model.Id;
             Name = model.Name;

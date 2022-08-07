@@ -29,6 +29,10 @@ namespace WebCrawler.Analyzers
         /// 文章发布时间
         /// </summary>
         public DateTime? PublishDate { get; set; }
+        /// <summary>
+        /// 作者
+        /// </summary>
+        public string Author { get; set; }
     }
 
     /// <summary>
@@ -136,6 +140,7 @@ namespace WebCrawler.Analyzers
             {
                 Title = GetTitle(html),
                 PublishDate = GetPublishDate(body),
+                Author = GetAuthor(body),
                 Content = content,
                 ContentWithTags = contentWithTags
             };
@@ -240,6 +245,36 @@ namespace WebCrawler.Analyzers
                 .OrderByDescending(o => o.Value.Split(separators, StringSplitOptions.RemoveEmptyEntries).Length)
                 .FirstOrDefault()
                 ?.Value;
+        }
+
+        public static string GetAuthor(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+            {
+                return null;
+            }
+
+            // 过滤html标签，防止标签对日期提取产生影响
+            string text = Regex.Replace(html, "(?is)<.*?>", "");
+
+            // 优先匹配
+            var match = Regex.Match(text, @"(?<=作者：|文/)[\w]+");
+            if (match.Success)
+            {
+                return match.Value;
+            }
+
+            // 其次匹配
+            match = Regex.Match(text, @"(?<=来源：|出处：)[\w]+");
+            if (match.Success)
+            {
+                return match.Value;
+            }
+
+            // 最后匹配
+            match = Regex.Match(text, @"(?<=编辑：)[\w]+");
+
+            return match.Success ? match.Value : null;
         }
 
         /// <summary>

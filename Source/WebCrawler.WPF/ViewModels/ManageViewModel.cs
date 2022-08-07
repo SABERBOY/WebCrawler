@@ -17,6 +17,7 @@ using WebCrawler.Crawlers;
 using WebCrawler.DataLayer;
 using WebCrawler.DTO;
 using WebCrawler.Models;
+using WebCrawler.Queue;
 using WebCrawler.WPF.Dialogs;
 
 namespace WebCrawler.WPF.ViewModels
@@ -25,6 +26,7 @@ namespace WebCrawler.WPF.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IDataLayer _dataLayer;
+        private readonly IProxyDispatcher _proxyDispatcher;
         private readonly HttpClient _httpClient;
         private readonly CrawlSettings _crawlSettings;
         private readonly ILogger _logger;
@@ -251,6 +253,19 @@ namespace WebCrawler.WPF.ViewModels
             }
         }
 
+        private RelayCommand _duplicateSelectedCommand;
+        public ICommand DuplicateSelectedCommand
+        {
+            get
+            {
+                if (_duplicateSelectedCommand == null)
+                {
+                    _duplicateSelectedCommand = new RelayCommand(DuplicateSelected, () => !IsProcessing);
+                }
+                return _duplicateSelectedCommand;
+            }
+        }
+
         private RelayCommand _addCommand;
         public ICommand AddCommand
         {
@@ -379,10 +394,11 @@ namespace WebCrawler.WPF.ViewModels
 
         #endregion
 
-        public ManageViewModel(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, CrawlSettings crawlSettings, ILogger<ManageViewModel> logger)
+        public ManageViewModel(IServiceProvider serviceProvider, IDataLayer dataLayer, IHttpClientFactory clientFactory, IProxyDispatcher proxyDispatcher, CrawlSettings crawlSettings, ILogger<ManageViewModel> logger)
         {
             _serviceProvider = serviceProvider;
             _dataLayer = dataLayer;
+            _proxyDispatcher = proxyDispatcher;
             _logger = logger;
             _httpClient = clientFactory.CreateClient(Constants.HTTP_CLIENT_NAME_DEFAULT);
             _crawlSettings = crawlSettings;
@@ -496,7 +512,7 @@ namespace WebCrawler.WPF.ViewModels
 
             if (!string.IsNullOrEmpty(Editor.Website.Home))
             {
-                Editor.Response = await HtmlHelper.GetPageDataAsync(_httpClient, Editor.Website.Home, Editor.Website.CatalogRule);
+                Editor.Response = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, Editor.Website.Home, Editor.Website.CatalogRule);
 
                 HtmlHelper.HandleParseErrorsIfAny(Editor.HtmlDoc, (errors) => AppendOutput(errors, Editor.Website.Home, Editor.Website.Id, LogLevel.Warning));
 
@@ -639,6 +655,24 @@ namespace WebCrawler.WPF.ViewModels
             });
         }
 
+        private void DuplicateSelected()
+        {
+            TryRunAsync(async () =>
+            {
+                var duplicates = await _dataLayer.DuplicateAsync(_websiteSelections.Select(o => o.Id).ToArray());
+
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var duplicate in duplicates)
+                    {
+                        Websites.Insert(0, duplicate);
+                    }
+
+                    SelectedWebsite = duplicates[duplicates.Length - 1];
+                });
+            });
+        }
+
         private void Add()
         {
             SelectedWebsite = null;
@@ -726,7 +760,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (response == null)
                 {
-                    result.CatalogsResponse = await HtmlHelper.GetPageDataAsync(_httpClient, website.Home, website.CatalogRule);
+                    result.CatalogsResponse = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, website.Home, website.CatalogRule);
                 }
                 else
                 {
@@ -742,7 +776,7 @@ namespace WebCrawler.WPF.ViewModels
 
                 result.Catalogs = HtmlAnalyzer.DetectCatalogItems(result.CatalogsResponse.Content, website.CatalogRule, website.ValidateDate);
 
-                if (result.CatalogsResponse.IsRedirectedExcludeHttps)
+                if (result.CatalogsResponse.IsRedirected)
                 {
                     result.Status = WebsiteStatus.WarningRedirected;
                     result.Notes = "URL redirected to: " + result.CatalogsResponse.ActualUrl;
@@ -874,7 +908,7 @@ namespace WebCrawler.WPF.ViewModels
 
             TryRunAsync(async () =>
             {
-                var data = await HtmlHelper.GetPageDataAsync(_httpClient, SelectedCatalogItem.Url, Editor.Website.ArticleRule);
+                var data = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, SelectedCatalogItem.Url, Editor.Website.ArticleRule);
 
                 var article = HtmlAnalyzer.ParseArticle(data.Content, Editor.Website.ArticleRule);
 
@@ -883,7 +917,8 @@ namespace WebCrawler.WPF.ViewModels
                     Url = SelectedCatalogItem.Url,
                     Title = article.Title,
                     Content = article.Content,
-                    Published = article.PublishDate
+                    Published = article.PublishDate,
+                    Author = article.Author
                 };
             });
         }

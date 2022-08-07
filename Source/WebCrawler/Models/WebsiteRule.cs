@@ -53,6 +53,9 @@ namespace WebCrawler.Models
         [Column("cnt_exp_date")]
         public string? ContentDateExp { get; set; }
 
+        [Column("cnt_exp_author")]
+        public string? ContentAuthorExp { get; set; }
+
         [Column("cnt_exp_content")]
         public string? ContentExp { get; set; }
 
