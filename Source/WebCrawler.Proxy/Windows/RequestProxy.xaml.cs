@@ -1,4 +1,5 @@
-﻿using Microsoft.Web.WebView2.Core;
+﻿using Hardcodet.Wpf.TaskbarNotification;
+using Microsoft.Web.WebView2.Core;
 using System;
 using System.IO;
 using System.Net;
@@ -19,6 +20,7 @@ namespace WebCrawler.Proxy.Windows
         private readonly DispatcherTimer _timer;
 
         private readonly IProxyDispatcher _proxyDispatcher;
+        private readonly TaskbarIcon _taskbarIcon;
 
         private AjaxProxyRequest _request;
         private int _countdown;
@@ -27,11 +29,12 @@ namespace WebCrawler.Proxy.Windows
 
         public bool EnableRequestProxyViewSource { get; set; }
 
-        public RequestProxy(IProxyDispatcher proxyDispatcher, bool enableRequestProxyViewSource = false)
+        public RequestProxy(IProxyDispatcher proxyDispatcher, TaskbarIcon taskbarIcon, bool enableRequestProxyViewSource = false)
         {
             InitializeComponent();
 
             _proxyDispatcher = proxyDispatcher;
+            _taskbarIcon = taskbarIcon;
             EnableRequestProxyViewSource = enableRequestProxyViewSource;
 
             // https://referencesource.microsoft.com/#PresentationFramework/src/Framework/MS/Internal/Controls/WebBrowserEvent.cs,284
@@ -59,6 +62,7 @@ namespace WebCrawler.Proxy.Windows
             Loaded += RequestProxy_Loaded;
 
             Console.WriteLine(Constants.ProxyReadyMessage);
+            _taskbarIcon.ShowBalloonTip(null, Constants.ProxyReadyMessage, BalloonIcon.Info);
         }
 
         private void RequestProxy_Loaded(object sender, RoutedEventArgs e)

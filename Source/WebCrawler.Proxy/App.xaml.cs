@@ -17,7 +17,6 @@ namespace WebCrawler.Proxy
     public partial class App : Application
     {
         private Mutex _mutex;
-        private TaskbarIcon? _notifyIcon;
 
         public App()
         {
@@ -49,18 +48,9 @@ namespace WebCrawler.Proxy
             // https://github.com/aspnet/DependencyInjection/issues/440#issuecomment-236862811
             var serviceProvider = services.BuildServiceProvider();
 
-            _notifyIcon = (TaskbarIcon)FindResource("NotifyIcon");
-
             var window = serviceProvider.GetService<RequestProxy>();
 
             window.Show();
-        }
-
-        protected override void OnExit(ExitEventArgs e)
-        {
-            _notifyIcon?.Dispose();
-
-            base.OnExit(e);
         }
 
         #region Events
@@ -99,6 +89,7 @@ namespace WebCrawler.Proxy
 
                 return proxySettings;
             });
+            services.AddSingleton<TaskbarIcon>((TaskbarIcon)FindResource("NotifyIcon"));
 
             services.AddSingleton<MainWindow>();
             services.AddSingleton<RequestProxy>();

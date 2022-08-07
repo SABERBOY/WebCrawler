@@ -17,7 +17,7 @@
     <!-- the application's NotifyIcon - started from App.xaml.cs. Declares its own view model. -->
     <tb:TaskbarIcon x:Key="NotifyIcon"
                     IconSource="/icon.ico"
-                    ToolTipText="WebCrawler Proxy (Double-click for window, right-click for menu)"
+                    ToolTipText="Web Crawler Proxy (Double-click for window, right-click for menu)"
                     DoubleClickCommand="{Binding ShowWindowCommand}"
                     ContextMenu="{StaticResource SysTrayMenu}">
         <!-- self-assign a data context (could also be done programmatically) -->

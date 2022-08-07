@@ -2,6 +2,6 @@
 {
     public class Constants
     {
-        public const string ProxyReadyMessage = "Proxy is ready";
+        public const string ProxyReadyMessage = "Web crawler proxy is ready";
     }
 }
