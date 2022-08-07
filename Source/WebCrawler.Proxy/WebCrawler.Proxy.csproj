@@ -9,11 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="icon.ico" />
+    <Compile Include="..\WebCrawler.WPF\ViewModels\RelayCommand.cs" Link="RelayCommand.cs" />
+    <Compile Include="..\WebCrawler\Common\NotifyPropertyChanged.cs" Link="NotifyPropertyChanged.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Cloudtoid.Interprocess" Version="1.0.169" />
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />

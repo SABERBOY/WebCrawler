@@ -48,8 +48,6 @@ namespace WebCrawler.WPF
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
 
-            Exit += Application_Exit;
-
             AppTools.ConfigureEnvironment();
 
             BrowserEmulation.EnableBrowserEmulation();
@@ -66,6 +64,17 @@ namespace WebCrawler.WPF
             Navigator.Initialize(serviceProvider, window.MainFrame.NavigationService);
 
             window.Show();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            var processes = Process.GetProcessesByName("WebCrawler.Proxy");
+            if (processes.Length > 0)
+            {
+                processes.ForEach(o => o.Kill());
+            }
+
+            base.OnExit(e);
         }
 
         #region Events
@@ -85,15 +94,6 @@ namespace WebCrawler.WPF
         private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
             HandleException(e.Exception);
-        }
-
-        private void Application_Exit(object sender, ExitEventArgs e)
-        {
-            var processes = Process.GetProcessesByName("WebCrawler.Proxy");
-            if (processes.Length > 0)
-            {
-                processes.ForEach(o => o.Kill());
-            }
         }
 
         #endregion

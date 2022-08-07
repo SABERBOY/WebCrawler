@@ -43,7 +43,7 @@ namespace WebCrawler.Proxy.Windows
             {
                 Interval = TimeSpan.FromMilliseconds(1000)
             };
-            _timer.Tick += Timer_Tick; ;
+            _timer.Tick += Timer_Tick;
 
             AutoPosition();
 
@@ -56,7 +56,15 @@ namespace WebCrawler.Proxy.Windows
                 _proxyDispatcher.Send(request.PageUrl, result);
             }, default);
 
+            Loaded += RequestProxy_Loaded;
+
             Console.WriteLine(Constants.ProxyReadyMessage);
+        }
+
+        private void RequestProxy_Loaded(object sender, RoutedEventArgs e)
+        {
+            // hide the window once loaded
+            this.Hide();
         }
 
         private async void WebView_Loaded(object sender, RoutedEventArgs e)
