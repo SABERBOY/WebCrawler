@@ -93,7 +93,7 @@ namespace WebCrawler.DataLayer
         {
             return await _dbContext.CrawlLogs
                 .AsNoTracking()
-                .Include(o => o.Website)
+                .Include(o => o.Website.Rules)
                 .Where(o => (crawlId == null || o.CrawlId == crawlId)
                     && (websiteId == null || o.WebsiteId == websiteId)
                     && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
@@ -123,7 +123,7 @@ namespace WebCrawler.DataLayer
         {
             return await _dbContext.CrawlLogs
                 .AsNoTracking()
-                .Include(o => o.Website)
+                .Include(o => o.Website.Rules)
                 .Where(o => o.CrawlId == crawlId
                     && o.Status != CrawlStatus.Completed
                     && (lastId == null || o.Id < lastId)

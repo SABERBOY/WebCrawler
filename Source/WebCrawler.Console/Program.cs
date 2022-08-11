@@ -134,10 +134,10 @@ namespace WebCrawler.Analyzers
                     .CreateLogger();
 
                 builder.ClearProviders()
-                    .AddSystemdConsole()
-                    .AddConsole()
-                    .AddSerilog()
-                    .AddFilter(lvl => lvl > LogLevel.Information);
+                    //.AddSystemdConsole()
+                    //.AddConsole()
+                    .AddSerilog()/*
+                    .AddFilter(lvl => lvl > LogLevel.Information)*/;
             });
         }
 

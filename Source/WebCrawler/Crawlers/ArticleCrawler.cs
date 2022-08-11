@@ -83,9 +83,9 @@ namespace WebCrawler.Crawlers
                         _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
                     }
 
-                    foreach (var website in crawlLogsQueue.Items)
+                    foreach (var crawlLog in crawlLogsQueue.Items)
                     {
-                        workerBlock.Post(website);
+                        workerBlock.Post(crawlLog);
 
                         // accept queue items in the amount of batch size x 3
                         while (workerBlock.InputCount >= _crawlSettings.MaxDegreeOfParallelism * 2)

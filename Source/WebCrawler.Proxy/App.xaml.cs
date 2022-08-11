@@ -106,8 +106,8 @@ namespace WebCrawler.Proxy
                    .CreateLogger();
 
                 builder.ClearProviders()
-                    .AddSerilog()
-                    .AddFilter(lvl => lvl > LogLevel.Information);
+                    .AddSerilog()/*
+                    .AddFilter(lvl => lvl > LogLevel.Information)*/;
             });
         }
 
