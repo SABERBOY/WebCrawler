@@ -147,7 +147,7 @@ namespace WebCrawler.DataLayer
 
                 foreach (var article in articles)
                 {
-                    // Escape the URL as it will be stored in ASCII as Unique doesn't accept text longer than 255 chars in UTF8.
+                    // Escape the URL as it will be stored in ASCII as Unique (in MySQL) doesn't accept text longer than 255 chars in UTF8.
                     article.Url = Uri.EscapeUriString(article.Url);
 
                     _dbContext.Articles.Add(article);
