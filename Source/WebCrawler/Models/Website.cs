@@ -26,18 +26,6 @@ namespace WebCrawler.Models
         [Column("startindex")]
         public int? StartIndex { get; set; }
 
-        [Obsolete]
-        [Column("listpath")]
-        public string? ListPath { get; set; }
-
-        [Obsolete]
-        [Column("dataurl")]
-        public string? DataUrl { get; set; }
-
-        [Obsolete]
-        [Column("listmatchtype", TypeName = "varchar")]
-        public ContentMatchType ListMatchType { get; set; }
-
         [Column("notes")]
         public string? Notes { get; set; }
 
