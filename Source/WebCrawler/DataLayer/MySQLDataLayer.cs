@@ -321,10 +321,10 @@ namespace WebCrawler.DataLayer
 
         public async Task DeleteAsync(params int[] websiteIds)
         {
-            var rules = await _dbContext.WebsiteRules.Where(o => websiteIds.Contains(o.WebsiteId)).ToArrayAsync();
+            //var rules = await _dbContext.WebsiteRules.Where(o => websiteIds.Contains(o.WebsiteId)).ToArrayAsync();
             var websites = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
 
-            _dbContext.WebsiteRules.RemoveRange(rules);
+            //_dbContext.WebsiteRules.RemoveRange(rules);
             _dbContext.Websites.RemoveRange(websites);
 
             await _dbContext.SaveChangesAsync();

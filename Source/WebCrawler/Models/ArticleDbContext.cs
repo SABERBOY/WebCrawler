@@ -24,18 +24,21 @@ namespace WebCrawler.Models
                 .HasOne(o => o.Website)
                 .WithMany(o => o.CrawlLogs)
                 .HasForeignKey(o => o.WebsiteId)
-                .IsRequired();
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<CrawlLog>()
                 .HasOne(o => o.Crawl)
                 .WithMany()
                 .HasForeignKey(o => o.CrawlId)
-                .IsRequired();
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<WebsiteRule>()
                 .HasOne(o => o.Website)
                 .WithMany(o => o.Rules)
                 .HasForeignKey(o => o.WebsiteId)
-                .IsRequired(false);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
