@@ -161,9 +161,9 @@ namespace WebCrawler.DataLayer
                     }
                     catch (DbUpdateException ex)
                     {
-                        if (Regex.IsMatch((ex.InnerException ?? ex).Message, "Duplicate entry '.+' for key 'url_UNIQUE'"))
+                        if (Regex.IsMatch(ex.GetBaseException().Message, @"Duplicate entry .+ for key .+\Wurl_UNIQUE"))
                         {
-                            // skip silently as article already exists
+                            // skip silently as article already exists, this might happen if multiple website instances contain the same article
                             _dbContext.Entry(article).State = EntityState.Detached;
                             continue;
                         }
