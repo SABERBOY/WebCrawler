@@ -13,7 +13,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.DataMigrator", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.Proxy", "WebCrawler.Proxy\WebCrawler.Proxy.csproj", "{B3695B8F-B32B-499A-93A6-460F267CCFAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCrawler.Queue", "WebCrawler.Queue\WebCrawler.Queue.csproj", "{F507D258-DA66-4BAC-A763-39379FE3867C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebCrawler.Queue", "WebCrawler.Queue\WebCrawler.Queue.csproj", "{F507D258-DA66-4BAC-A763-39379FE3867C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{35633CF6-8655-4FEB-AA18-B37EC1992DCD}"
+	ProjectSection(SolutionItems) = preProject
+		MySQLSchema.sql = MySQLSchema.sql
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -64,11 +64,20 @@ namespace WebCrawler.DataMigrator
 
             // register as Transient, because efcore dbcontext isn't thread safe
             // https://docs.microsoft.com/en-us/ef/core/miscellaneous/configuring-dbcontext#avoiding-dbcontext-threading-issues
-            services.AddTransient<IDataLayer, PostgreSQLDataLayer>();
+            services.AddTransient<IDataLayer, MySQLDataLayer>();
             // configure db context
             services.AddDbContext<ArticleDbContext>(
+                options => options.UseMySql(
+                    config["ConnectionStrings:MySQLConnection"],
+                    ServerVersion.AutoDetect(config["ConnectionStrings:MySQLConnection"]),
+                    builder => builder.EnableRetryOnFailure(3)
+                ),
+                ServiceLifetime.Transient,
+                ServiceLifetime.Transient);
+
+            services.AddDbContext<ArticleDbContextPG>(
                 options => options.UseNpgsql(
-                    config["ConnectionStrings:SqlConnection"],
+                    config["ConnectionStrings:PostgreSQLConnection"],
                     // TODO: https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime
                     builder =>
                     {

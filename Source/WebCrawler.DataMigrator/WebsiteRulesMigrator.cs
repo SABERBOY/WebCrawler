@@ -7,32 +7,33 @@ namespace WebCrawler.DataMigrator
     public class WebsiteRulesMigrator
     {
         private readonly ArticleDbContext _dbContext;
+        private readonly ArticleDbContextPG _dbContextPG;
         private readonly ILogger _logger;
 
-        public WebsiteRulesMigrator(ArticleDbContext dbContext, ILogger<WebsiteRulesMigrator> logger)
+        public WebsiteRulesMigrator(ArticleDbContext dbContext, ArticleDbContextPG dbContextPG, ILogger<WebsiteRulesMigrator> logger)
         {
             _dbContext = dbContext;
+            _dbContextPG = dbContextPG;
             _logger = logger;
         }
 
         public async Task ExecuteAsync()
         {
-            var websites = await _dbContext.Websites
-                .Where(o => !string.IsNullOrEmpty(o.ListPath))
+            var websitePGs = await _dbContextPG.Websites
+                .Include(o => o.Rules)
+                .OrderBy(o => o.Id)
                 .ToListAsync();
 
-            foreach (var website in websites)
+            foreach (var wpg in websitePGs)
             {
-                _dbContext.WebsiteRules.Add(new WebsiteRule
+                wpg.Id = 0;
+                wpg?.Rules.ForEach(o =>
                 {
-                    RuleId = Guid.NewGuid(),
-                    Type = WebsiteRuleType.Catalog,
-                    WebsiteId = website.Id,
-                    PageLoadOption = PageLoadOption.Default,
-                    PageUrlReplacement = website.DataUrl,
-                    ContentMatchType = website.ListMatchType,
-                    ContentUrlExp = website.ListPath
+                    o.WebsiteId = 0;
+                    o.Website = null;
                 });
+
+                _dbContext.Websites.Add(wpg);
             }
 
             await _dbContext.SaveChangesAsync();
