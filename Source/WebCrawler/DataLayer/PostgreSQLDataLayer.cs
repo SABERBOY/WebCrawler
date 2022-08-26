@@ -117,8 +117,7 @@ namespace WebCrawler.DataLayer
                     && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
                     && (status == CrawlStatus.All || o.Status == status)
                 )
-                .OrderByDescending(o => o.Crawled)
-                .ThenByDescending(o => o.Id)
+                .OrderByDescending(o => o.Id)
                 .Select(o => new CrawlLogDTO(o))
                 .ToPagedResultAsync(page);
         }
@@ -179,7 +178,7 @@ namespace WebCrawler.DataLayer
                     }
                     catch (DbUpdateException ex)
                     {
-                        if (Regex.IsMatch((ex.InnerException ?? ex).Message, SystemErrorMessages.UNIQUE_KEY_VIOLATION))
+                        if (Regex.IsMatch(ex.GetBaseException().Message, SystemErrorMessages.UNIQUE_KEY_VIOLATION))
                         {
                             // skip silently as article already exists
                             _dbContext.Entry(article).State = EntityState.Detached;
@@ -236,19 +235,22 @@ namespace WebCrawler.DataLayer
                 model.Enabled = website.Enabled;
                 model.Status = website.Status;
 
-                var removeRules = model.Rules.Where(o => !website.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
-                var addRules = website.Rules.Where(o => !model.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
-                var updateRules = website.Rules.Except(addRules).ToArray();
-
-                _dbContext.WebsiteRules.RemoveRange(removeRules);
-                // NOTES: entity adding in PostgreSQL via the navigation properties appears not working, we should use the dbcontext properties instead
-                //model.Rules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
-                _dbContext.WebsiteRules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
-                foreach (var rule in updateRules)
+                if (website.Rules != null)
                 {
-                    var ruleModel = model.Rules.SingleOrDefault(o => o.RuleId == rule.RuleId);
+                    var removeRules = model.Rules.Where(o => !website.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
+                    var addRules = website.Rules.Where(o => !model.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
+                    var updateRules = website.Rules.Except(addRules).ToArray();
 
-                    rule.CloneTo(ruleModel);
+                    _dbContext.WebsiteRules.RemoveRange(removeRules);
+                    // NOTES: entity adding in PostgreSQL via the navigation properties appears not working, we should use the dbcontext properties instead
+                    //model.Rules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
+                    _dbContext.WebsiteRules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
+                    foreach (var rule in updateRules)
+                    {
+                        var ruleModel = model.Rules.SingleOrDefault(o => o.RuleId == rule.RuleId);
+
+                        rule.CloneTo(ruleModel);
+                    }
                 }
             }
             else
@@ -265,7 +267,7 @@ namespace WebCrawler.DataLayer
                     Status = website.Status,
                     SysNotes = null,
                     Registered = DateTime.Now,
-                    Rules = website.Rules.Select(o => o.CloneTo((WebsiteRule)null)).ToList()
+                    Rules = website.Rules?.Select(o => o.CloneTo((WebsiteRule)null)).ToList()
                 };
                 _dbContext.Websites.Add(model);
             }
@@ -347,10 +349,10 @@ namespace WebCrawler.DataLayer
 
         public async Task DeleteAsync(params int[] websiteIds)
         {
-            var rules = await _dbContext.WebsiteRules.Where(o => websiteIds.Contains(o.WebsiteId)).ToArrayAsync();
+            //var rules = await _dbContext.WebsiteRules.Where(o => websiteIds.Contains(o.WebsiteId)).ToArrayAsync();
             var websites = await _dbContext.Websites.Where(o => websiteIds.Contains(o.Id)).ToArrayAsync();
 
-            _dbContext.WebsiteRules.RemoveRange(rules);
+            //_dbContext.WebsiteRules.RemoveRange(rules);
             _dbContext.Websites.RemoveRange(websites);
 
             await _dbContext.SaveChangesAsync();

@@ -235,19 +235,22 @@ namespace WebCrawler.DataLayer
                 model.Enabled = website.Enabled;
                 model.Status = website.Status;
 
-                var removeRules = model.Rules.Where(o => !website.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
-                var addRules = website.Rules.Where(o => !model.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
-                var updateRules = website.Rules.Except(addRules).ToArray();
-
-                _dbContext.WebsiteRules.RemoveRange(removeRules);
-                // NOTES: entity adding in PostgreSQL via the navigation properties appears not working, we should use the dbcontext properties instead
-                //model.Rules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
-                _dbContext.WebsiteRules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
-                foreach (var rule in updateRules)
+                if (website.Rules != null)
                 {
-                    var ruleModel = model.Rules.SingleOrDefault(o => o.RuleId == rule.RuleId);
+                    var removeRules = model.Rules.Where(o => !website.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
+                    var addRules = website.Rules.Where(o => !model.Rules.Any(r => r.RuleId == o.RuleId)).ToArray();
+                    var updateRules = website.Rules.Except(addRules).ToArray();
 
-                    rule.CloneTo(ruleModel);
+                    _dbContext.WebsiteRules.RemoveRange(removeRules);
+                    // NOTES: entity adding in PostgreSQL via the navigation properties appears not working, we should use the dbcontext properties instead
+                    //model.Rules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
+                    _dbContext.WebsiteRules.AddRange(addRules.Select(o => o.CloneTo((WebsiteRule)null)));
+                    foreach (var rule in updateRules)
+                    {
+                        var ruleModel = model.Rules.SingleOrDefault(o => o.RuleId == rule.RuleId);
+
+                        rule.CloneTo(ruleModel);
+                    }
                 }
             }
             else
@@ -264,7 +267,7 @@ namespace WebCrawler.DataLayer
                     Status = website.Status,
                     SysNotes = null,
                     Registered = DateTime.Now,
-                    Rules = website.Rules.Select(o => o.CloneTo((WebsiteRule)null)).ToList()
+                    Rules = website.Rules?.Select(o => o.CloneTo((WebsiteRule)null)).ToList()
                 };
                 _dbContext.Websites.Add(model);
             }
@@ -412,7 +415,7 @@ namespace WebCrawler.DataLayer
 
             // 直接在数据库中进行大批量数据操作
             var sql = @"INSERT INTO atc_crawllogs (websiteid, crawlid, status, success, fail, lasthandled)
-	            SELECT WS.id, {0}, 'Queued', 0, 0, (
+	            SELECT WS.id, {0}, '" + CrawlStatus.Queued + @"', 0, 0, (
 			        SELECT CL.lasthandled FROM atc_crawllogs AS CL WHERE CL.websiteid = WS.id ORDER BY id DESC LIMIT 1
 		        )
                 FROM atc_websites AS WS
@@ -426,7 +429,7 @@ namespace WebCrawler.DataLayer
         public async Task<CrawlDTO> ContinueCrawlAsync(int crawlId)
         {
             // 直接在数据库中进行大批量数据操作
-            var sql = @"UPDATE atc_crawllogs SET status = 'Queued', success = 0, fail = 0, notes = NULL WHERE crawlid = {0} AND status IN ('FAILED', 'CANCELLED')";
+            var sql = @"UPDATE atc_crawllogs SET status = '" + CrawlStatus.Queued + @"', success = 0, fail = 0, notes = NULL WHERE crawlid = {0} AND status IN ('FAILED', 'CANCELLED')";
 
             await ExecuteSqlAsync(sql, crawlId);
 
