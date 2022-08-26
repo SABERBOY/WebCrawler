@@ -65,7 +65,7 @@ namespace WebCrawler.Crawlers
                         }
                     }
 
-                    _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
+                    _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Remaining: {total - crawl.Success - crawl.Fail} Total: {total}");
                 }, new ExecutionDataflowBlockOptions
                 {
                     MaxDegreeOfParallelism = _crawlSettings.MaxDegreeOfParallelism
@@ -80,7 +80,7 @@ namespace WebCrawler.Crawlers
                     {
                         total = crawlLogsQueue.PageInfo.ItemCount;
 
-                        _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Total: {total}");
+                        _logger.LogInformation($"Success: {crawl.Success} Fail: {crawl.Fail} Remaining: {total - crawl.Success - crawl.Fail} Total: {total}");
                     }
 
                     foreach (var crawlLog in crawlLogsQueue.Items)
