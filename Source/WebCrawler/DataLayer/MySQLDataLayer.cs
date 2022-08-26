@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using WebCrawler.Common;
@@ -395,7 +395,7 @@ namespace WebCrawler.DataLayer
 
             // 直接在数据库中进行大批量数据操作
             var sql = @"INSERT INTO atc_crawllogs (websiteid, crawlid, status, success, fail, lasthandled)
-	            SELECT WS.id, {0}, 'QUEUED', 0, 0, (
+	            SELECT WS.id, {0}, 'Queued', 0, 0, (
 			        SELECT CL.lasthandled FROM atc_crawllogs AS CL WHERE CL.websiteid = WS.id ORDER BY id DESC LIMIT 1
 		        )
                 FROM atc_websites AS WS
@@ -409,7 +409,7 @@ namespace WebCrawler.DataLayer
         public async Task<CrawlDTO> ContinueCrawlAsync(int crawlId)
         {
             // 直接在数据库中进行大批量数据操作
-            var sql = @"UPDATE atc_crawllogs SET status = 'QUEUED', success = 0, fail = 0, notes = NULL WHERE crawlid = {0} AND status IN ('FAILED', 'CANCELLED')";
+            var sql = @"UPDATE atc_crawllogs SET status = 'Queued', success = 0, fail = 0, notes = NULL WHERE crawlid = {0} AND status IN ('FAILED', 'CANCELLED')";
 
             await ExecuteSqlAsync(sql, crawlId);
 
