@@ -1,4 +1,4 @@
-using GalaSoft.MvvmLight.Command;
+﻿using GalaSoft.MvvmLight.Command;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -407,7 +408,7 @@ namespace WebCrawler.WPF.ViewModels
             };
             Editor.Website.PropertyChanged += Website_PropertyChanged;
 
-            EnabledFilter = true;
+            //EnabledFilter = true;
         }
 
         public bool Sort(params SortDescription[] sorts)
@@ -498,9 +499,7 @@ namespace WebCrawler.WPF.ViewModels
                 {
                     var logs = await _dataLayer.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
                     CrawlLogs = new ObservableCollection<CrawlLogDTO>(logs.Items);
-
-                    await LoadHtmlCoreAsync();
-                });
+                }, false);
             }
         }
 
@@ -806,17 +805,17 @@ namespace WebCrawler.WPF.ViewModels
             {
                 // treat unavailable websites as broken
                 if (ex.DetermineWebsiteBroken())
-            {
-                var baseEx = ex.GetBaseException();
+                {
+                    var baseEx = ex.GetBaseException();
 
-                result.Status = WebsiteStatus.ErrorBroken;
-                result.Notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
-            }
+                    result.Status = WebsiteStatus.ErrorBroken;
+                    result.Notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
+                }
                 else
-            {
+                {
                     // keep previous status as it might not be a website issue as usual, e.g. TaskCanceledException
-                result.Status = null;
-                result.Notes = ex.Message;
+                    result.Status = null;
+                    result.Notes = ex.Message;
                 }
 
                 _logger.LogError(ex, website.Home);
@@ -954,16 +953,21 @@ namespace WebCrawler.WPF.ViewModels
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        private bool TryRunAsync(Func<Task> action)
+        private bool TryRunAsync(Func<Task> action, bool exclusively = true, [CallerMemberName] string callerMemberName = null)
         {
-            lock (this)
+            if (exclusively)
             {
-                if (IsProcessing)
+                lock (this)
                 {
-                    return false;
-                }
+                    if (IsProcessing)
+                    {
+                        AppendOutput($"The app is busy, please try it later: {callerMemberName}", SelectedWebsite?.Home, SelectedWebsite?.Id, LogLevel.Warning);
 
-                IsProcessing = true;
+                        return false;
+                    }
+
+                    IsProcessing = true;
+                }
             }
 
             Task.Run(async () =>
@@ -980,7 +984,10 @@ namespace WebCrawler.WPF.ViewModels
                 }
                 finally
                 {
-                    IsProcessing = false;
+                    if (exclusively)
+                    {
+                        IsProcessing = false;
+                    }
                 }
             });
 
