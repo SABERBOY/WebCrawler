@@ -91,6 +91,12 @@ namespace WebCrawler.DTO
             set { SetPropertyValue(value); }
         }
 
+        public DateTime? BrokenSince
+        {
+            get { return GetPropertyValue<DateTime?>(); }
+            set { SetPropertyValue(value); }
+        }
+
         public ObservableCollection<WebsiteRuleDTO> Rules
         {
             get { return GetPropertyValue<ObservableCollection<WebsiteRuleDTO>>(); }
@@ -143,6 +149,7 @@ namespace WebCrawler.DTO
             Notes = model.Notes;
             SysNotes = model.SysNotes;
             Registered = model.Registered;
+            BrokenSince = model.BrokenSince;
 
             // The following should be assigned after Status, otherwise it might be overwritten
             Enabled = model.Enabled;
@@ -173,6 +180,7 @@ namespace WebCrawler.DTO
             target.Notes = Notes;
             target.SysNotes = SysNotes;
             target.Registered = Registered;
+            target.BrokenSince = BrokenSince;
             //target.CrawlLogs = CrawlLogs;
 
             // The following should be assigned after Status, otherwise it might be overwritten

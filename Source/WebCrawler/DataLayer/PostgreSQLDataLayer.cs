@@ -185,6 +185,13 @@ namespace WebCrawler.DataLayer
                 model.LastHandled = lastHandled;
             }
 
+            // track/untrack broken websites
+            var website = await _dbContext.Websites.FindAsync(crawlLog.WebsiteId);
+            website.Enabled = crawlLog.Website.Enabled;
+            website.Status = crawlLog.Website.Status;
+            website.BrokenSince = crawlLog.Website.BrokenSince;
+            website.SysNotes = crawlLog.Website.SysNotes;
+
             await _dbContext.SaveChangesAsync();
 
             crawlLog.Status = model.Status;
@@ -207,6 +214,7 @@ namespace WebCrawler.DataLayer
                 model.StartIndex = website.StartIndex;
                 model.Notes = website.Notes;
                 model.SysNotes = website.SysNotes;
+                model.BrokenSince = website.BrokenSince;
                 model.Enabled = website.Enabled;
                 model.Status = website.Status;
 

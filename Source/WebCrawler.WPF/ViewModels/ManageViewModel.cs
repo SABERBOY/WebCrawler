@@ -510,7 +510,7 @@ namespace WebCrawler.WPF.ViewModels
         {
             Editor.Response = null;
 
-            if (!string.IsNullOrEmpty(Editor.Website.Home))
+            if (!string.IsNullOrEmpty(Editor.Website.Home) && Editor.Website.Status != WebsiteStatus.ErrorBroken)
             {
                 Editor.Response = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, Editor.Website.Home, Editor.Website.CatalogRule);
 

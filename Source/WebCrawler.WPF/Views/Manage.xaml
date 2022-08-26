@@ -130,6 +130,7 @@
                     <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" Width="200" />
                     <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" Width="300" />
                     <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
+                    <DataGridTextColumn Header="Broken Since" Binding="{Binding BrokenSince}" />
                 </DataGrid.Columns>
             </DataGrid>
 

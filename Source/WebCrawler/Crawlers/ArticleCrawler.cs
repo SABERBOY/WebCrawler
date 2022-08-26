@@ -123,6 +123,7 @@ namespace WebCrawler.Crawlers
             var articles = new List<Article>();
 
             CatalogItem[] catalogItems = null;
+            bool isWebsiteBroken = false;
             try
             {
                 var data = await HtmlHelper.GetPageDataAsync(_httpClient, _proxyDispatcher, crawlLog.Website.Home, crawlLog.Website.CatalogRule);
@@ -148,6 +149,12 @@ namespace WebCrawler.Crawlers
             }
             catch (Exception ex)
             {
+                // treat unavailable websites as broken
+                if (ex is HttpRequestException hrex && !ex.Message.Contains("301 (Moved Permanently)"))
+                {
+                    isWebsiteBroken = true;
+                }
+
                 crawlLog.Status = CrawlStatus.Failed;
                 crawlLog.Notes = ex.Message;
 
@@ -202,6 +209,30 @@ namespace WebCrawler.Crawlers
             try
             {
                 var lastHandled = crawlLog.Status != CrawlStatus.Failed ? catalogItems[0].Url : null;
+
+                if (isWebsiteBroken) // track broken websites
+                {
+                    if (crawlLog.Website.BrokenSince == null)
+                    {
+                        crawlLog.Website.BrokenSince = DateTime.Now;
+                    }
+                    else if (crawlLog.Website.BrokenSince.Value.AddDays(_crawlSettings.MaxAcceptedBrokenDays) < DateTime.Now)
+                    {
+                        crawlLog.Website.Enabled = false;
+                        crawlLog.Website.Status = WebsiteStatus.ErrorBroken;
+                        crawlLog.Website.SysNotes = $"Disabled as broken for {_crawlSettings.MaxAcceptedBrokenDays} days: {crawlLog.Notes}";
+
+                        _logger.LogInformation("Disabled website as broken for {0} days: {1}", _crawlSettings.MaxAcceptedBrokenDays, crawlLog.Website.Home);
+                    }
+                }
+                else // untrack
+                {
+                    if (crawlLog.Website.BrokenSince != null)
+                    {
+                        crawlLog.Website.BrokenSince = null;
+                        crawlLog.Website.SysNotes = null;
+                    }
+                }
 
                 using (var dataLayer = _serviceProvider.GetRequiredService<IDataLayer>())
                 {

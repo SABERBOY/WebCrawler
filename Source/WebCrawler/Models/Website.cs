@@ -48,6 +48,12 @@ namespace WebCrawler.Models
         [Column("sysnotes")]
         public string? SysNotes { get; set; }
 
+        /// <summary>
+        /// Broken for crawling since date/time
+        /// </summary>
+        [Column("brokensince")]
+        public DateTime? BrokenSince { get; set; }
+
         public List<WebsiteRule>? Rules { get; set; }
 
         public List<CrawlLog>? CrawlLogs { get; set; }
