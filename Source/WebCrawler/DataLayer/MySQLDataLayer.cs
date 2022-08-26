@@ -117,8 +117,7 @@ namespace WebCrawler.DataLayer
                     && (string.IsNullOrEmpty(keywords) || o.Website.Name.Contains(keywords) || o.Website.Home.Contains(keywords))
                     && (status == CrawlStatus.All || o.Status == status)
                 )
-                .OrderByDescending(o => o.Crawled)
-                .ThenByDescending(o => o.Id)
+                .OrderByDescending(o => o.Id)
                 .Select(o => new CrawlLogDTO(o))
                 .ToPagedResultAsync(page);
         }
