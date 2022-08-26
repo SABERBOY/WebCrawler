@@ -309,7 +309,7 @@
                     Margin="0 0 10 10"
                     Padding="0"
                     BorderThickness="0">
-            <TabItem Header="TEST VIEW">
+            <TabItem Header="DETECTION">
 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -369,14 +369,14 @@
                 </Grid>
 
             </TabItem>
-            <TabItem Header="BROWSER VIEW">
+            <TabItem Header="BROWSER">
 
                 <WebBrowser x:Name="webBrowser"
                             Navigating="webBrowser_Navigating"
                             ctls:WebBrowserBehavior.Html="{Binding Editor.Response.Content}" />
 
             </TabItem>
-            <TabItem Header="CODE VIEW">
+            <TabItem Header="SOURCE">
 
                 <TextBox Text="{Binding Editor.Response.Content}"
                          TextWrapping="Wrap"
