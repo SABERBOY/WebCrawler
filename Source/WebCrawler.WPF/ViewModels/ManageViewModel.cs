@@ -410,7 +410,7 @@ namespace WebCrawler.WPF.ViewModels
             };
             Editor.Website.PropertyChanged += Website_PropertyChanged;
 
-            //EnabledFilter = true;
+            SetPropertyValue(true, nameof(EnabledFilter));
         }
 
         public bool Sort(params SortDescription[] sorts)
