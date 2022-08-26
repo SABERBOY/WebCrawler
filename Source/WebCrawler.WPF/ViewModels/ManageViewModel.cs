@@ -143,28 +143,24 @@ namespace WebCrawler.WPF.ViewModels
             set { SetPropertyValue(value); }
         }
 
-        private PageInfo _pageInfo;
         public PageInfo PageInfo
         {
             get { return GetPropertyValue<PageInfo>(); }
             set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<CrawlLogDTO> _crawlLogs;
         public ObservableCollection<CrawlLogDTO> CrawlLogs
         {
             get { return GetPropertyValue<ObservableCollection<CrawlLogDTO>>(); }
             set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<CatalogItem> _catalogItems;
         public ObservableCollection<CatalogItem> CatalogItems
         {
             get { return GetPropertyValue<ObservableCollection<CatalogItem>>(); }
             set { SetPropertyValue(value); }
         }
 
-        private ObservableCollection<Output> _outputs;
         public ObservableCollection<Output> Outputs
         {
             get { return GetPropertyValue<ObservableCollection<Output>>(); }
@@ -1008,7 +1004,7 @@ namespace WebCrawler.WPF.ViewModels
 
                     while (Outputs.Count > Common.Constants.OUTPUTS_MAX)
                     {
-                        Outputs.RemoveAt(_outputs.Count - 1);
+                        Outputs.RemoveAt(Outputs.Count - 1);
                     }
                 });
             }
