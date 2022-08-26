@@ -192,7 +192,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_refreshCommand == null)
                 {
-                    _refreshCommand = new RelayCommand(() => LoadData(), () => !IsProcessing);
+                    _refreshCommand = new RelayCommand(() => LoadData());
                 }
                 return _refreshCommand;
             }
@@ -205,7 +205,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_analyzeCommand == null)
                 {
-                    _analyzeCommand = new RelayCommand(Analyze, () => !IsProcessing);
+                    _analyzeCommand = new RelayCommand(Analyze);
                 }
                 return _analyzeCommand;
             }
@@ -218,7 +218,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_navigateCommand == null)
                 {
-                    _navigateCommand = new RelayCommand(Navigate, () => !IsProcessing);
+                    _navigateCommand = new RelayCommand(Navigate);
                 }
                 return _navigateCommand;
             }
@@ -231,7 +231,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_toggleSelectedCommand == null)
                 {
-                    _toggleSelectedCommand = new RelayCommand(ToggleSelected, () => SelectedWebsite != null && !IsProcessing);
+                    _toggleSelectedCommand = new RelayCommand(ToggleSelected, () => SelectedWebsite != null);
                 }
                 return _toggleSelectedCommand;
             }
@@ -244,7 +244,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_deleteSelectedCommand == null)
                 {
-                    _deleteSelectedCommand = new RelayCommand(DeleteSelected, () => SelectedWebsite != null && !IsProcessing);
+                    _deleteSelectedCommand = new RelayCommand(DeleteSelected, () => SelectedWebsite != null);
                 }
                 return _deleteSelectedCommand;
             }
@@ -257,7 +257,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_duplicateSelectedCommand == null)
                 {
-                    _duplicateSelectedCommand = new RelayCommand(DuplicateSelected, () => !IsProcessing);
+                    _duplicateSelectedCommand = new RelayCommand(DuplicateSelected);
                 }
                 return _duplicateSelectedCommand;
             }
@@ -270,7 +270,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_addCommand == null)
                 {
-                    _addCommand = new RelayCommand(Add, () => !IsProcessing);
+                    _addCommand = new RelayCommand(Add);
                 }
                 return _addCommand;
             }
@@ -283,7 +283,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_saveCurrentCommand == null)
                 {
-                    _saveCurrentCommand = new RelayCommand(Save, () => !IsProcessing);
+                    _saveCurrentCommand = new RelayCommand(Save);
                 }
                 return _saveCurrentCommand;
             }
@@ -296,7 +296,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_testCurrentCommand == null)
                 {
-                    _testCurrentCommand = new RelayCommand(RunTest, () => !IsProcessing);
+                    _testCurrentCommand = new RelayCommand(RunTest);
                 }
                 return _testCurrentCommand;
             }
@@ -309,7 +309,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_resetCurrentCommand == null)
                 {
-                    _resetCurrentCommand = new RelayCommand(Reset, () => !IsProcessing);
+                    _resetCurrentCommand = new RelayCommand(Reset);
                 }
                 return _resetCurrentCommand;
             }
@@ -322,7 +322,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_deleteCurrentCommand == null)
                 {
-                    _deleteCurrentCommand = new RelayCommand(Delete, () => Editor.Website.Id > 0 && !IsProcessing);
+                    _deleteCurrentCommand = new RelayCommand(Delete, () => Editor.Website.Id > 0);
                 }
                 return _deleteCurrentCommand;
             }
@@ -335,7 +335,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_viewOutputWebsiteCommand == null)
                 {
-                    _viewOutputWebsiteCommand = new RelayCommand(ViewOutputWebsite, () => SelectedOutput?.WebsiteId != null && !IsProcessing);
+                    _viewOutputWebsiteCommand = new RelayCommand(ViewOutputWebsite, () => SelectedOutput?.WebsiteId != null);
                 }
                 return _viewOutputWebsiteCommand;
             }
@@ -348,10 +348,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_addRuleCommand == null)
                 {
-                    _addRuleCommand = new RelayCommand(
-                        () => ShowRuleEditor(),
-                        () => !IsProcessing
-                    );
+                    _addRuleCommand = new RelayCommand(() => ShowRuleEditor());
                 }
                 return _addRuleCommand;
             }
@@ -364,10 +361,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_editRuleCommand == null)
                 {
-                    _editRuleCommand = new RelayCommand<WebsiteRuleDTO>(
-                        (WebsiteRuleDTO rule) => ShowRuleEditor(rule),
-                        (WebsiteRuleDTO rule) => !IsProcessing
-                    );
+                    _editRuleCommand = new RelayCommand<WebsiteRuleDTO>((WebsiteRuleDTO rule) => ShowRuleEditor(rule));
                 }
                 return _editRuleCommand;
             }
@@ -380,10 +374,7 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (_removeRuleCommand == null)
                 {
-                    _removeRuleCommand = new RelayCommand<WebsiteRuleDTO>(
-                        (WebsiteRuleDTO rule) => RemoveRule(rule),
-                        (WebsiteRuleDTO rule) => !IsProcessing
-                    );
+                    _removeRuleCommand = new RelayCommand<WebsiteRuleDTO>((WebsiteRuleDTO rule) => RemoveRule(rule));
                 }
                 return _removeRuleCommand;
             }
