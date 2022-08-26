@@ -139,11 +139,11 @@
                     <DataGridTextColumn Header="Home" Binding="{Binding Home}" Width="200" />
                     <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" CanUserSort="False" />
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
-                    <DataGridTextColumn Header="Validate Date" Binding="{Binding ValidateDate}" />
-                    <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" Width="200" />
-                    <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" Width="300" />
+                    <!--<DataGridTextColumn Header="Validate Date" Binding="{Binding ValidateDate}" />-->
                     <DataGridTextColumn Header="Registered" Binding="{Binding Registered}" />
                     <DataGridTextColumn Header="Broken Since" Binding="{Binding BrokenSince}" />
+                    <DataGridTextColumn Header="User Notes" Binding="{Binding Notes}" Width="200" />
+                    <DataGridTextColumn Header="Sys Notes" Binding="{Binding SysNotes}" Width="300" />
                 </DataGrid.Columns>
             </DataGrid>
 
