@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WebCrawler.WPF"
         mc:Ignorable="d"
         WindowState="Maximized"
-        Title="Web Crawler" Height="768" Width="1024">
+        Title="Web Crawler" Height="800" Width="1200">
     <Grid>
         <Frame Name="MainFrame" NavigationUIVisibility="Hidden" />
     </Grid>

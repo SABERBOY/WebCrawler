@@ -54,47 +54,60 @@
         <!-- menu bar -->
         <Grid Grid.Row="0" Grid.ColumnSpan="3">
             <StackPanel Orientation="Horizontal">
-                <TextBox Text="{Binding KeywordsFilter}" ctls:Placeholder.PlaceholderText="Filter websites" BorderThickness="1" Width="200" />
-                <ComboBox Width="180"
-                          ItemsSource="{me:EnumValues {x:Type m:WebsiteStatus}}"
-                          ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
-                          SelectedValue="{Binding StatusFilter}"
-                          BorderThickness="1"
-                          VerticalAlignment="Center" />
-                <CheckBox IsChecked="{Binding EnabledFilter}" IsThreeState="True" Content="Enabled" BorderThickness="1" VerticalAlignment="Center" />
-                <Button Command="{Binding RefreshCommand}" Style="{StaticResource LargeButton}" ToolTip="Refresh">
-                    <Viewbox>
-                        <Path Data="{StaticResource RefreshIcon}" />
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding AnalyzeCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze">
-                    <Viewbox>
-                        <Path Data="{StaticResource AnalysisIcon}" />
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding AddCommand}" Style="{StaticResource LargeButton}" ToolTip="Add">
-                    <Viewbox>
-                        <Path Data="{StaticResource AddIcon}" />
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding DuplicateSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Duplicate Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
-                    <Viewbox>
-                        <Path Data="{StaticResource DuplicateIcon}" />
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding ToggleSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Toggle Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
-                    <Viewbox>
-                        <Grid>
-                            <Path Data="{StaticResource EnableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}}" />
-                            <Path Data="{StaticResource DisableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
-                        </Grid>
-                    </Viewbox>
-                </Button>
-                <Button Command="{Binding DeleteSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Delete Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
-                    <Viewbox>
-                        <Path Data="{StaticResource DeleteIcon}" />
-                    </Viewbox>
-                </Button>
+                <!-- Filters -->
+                <StackPanel Orientation="Horizontal">
+                    <ComboBox Width="180"
+                              ItemsSource="{me:EnumValues {x:Type m:WebsiteView}}"
+                              ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                              SelectedValue="{Binding WebsiteView}"
+                              BorderThickness="1"
+                              VerticalAlignment="Center" />
+                    <ComboBox Width="180"
+                              ItemsSource="{me:EnumValues {x:Type m:WebsiteStatus}}"
+                              ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
+                              SelectedValue="{Binding StatusFilter}"
+                              BorderThickness="1"
+                              VerticalAlignment="Center" />
+                    <CheckBox IsChecked="{Binding EnabledFilter}" IsThreeState="True" Content="Enabled" BorderThickness="1" VerticalAlignment="Center" />
+                    <TextBox Text="{Binding KeywordsFilter}" ctls:Placeholder.PlaceholderText="Filter Websites" BorderThickness="1" Width="300" />
+                </StackPanel>
+                <!-- Commands -->
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource LargeButton}" ToolTip="Refresh">
+                        <Viewbox>
+                            <Path Data="{StaticResource RefreshIcon}" />
+                        </Viewbox>
+                    </Button>
+                    <Button Command="{Binding AnalyzeCommand}" Style="{StaticResource LargeButton}" ToolTip="Analyze">
+                        <Viewbox>
+                            <Path Data="{StaticResource AnalysisIcon}" />
+                        </Viewbox>
+                    </Button>
+                    <Button Command="{Binding AddCommand}" Style="{StaticResource LargeButton}" ToolTip="Add">
+                        <Viewbox>
+                            <Path Data="{StaticResource AddIcon}" />
+                        </Viewbox>
+                    </Button>
+                    <Button Command="{Binding DuplicateSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Duplicate Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                        <Viewbox>
+                            <Path Data="{StaticResource DuplicateIcon}" />
+                        </Viewbox>
+                    </Button>
+                    <Button Command="{Binding ToggleSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Toggle Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                        <Viewbox>
+                            <Grid>
+                                <Path Data="{StaticResource EnableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}}" />
+                                <Path Data="{StaticResource DisableIcon}" Visibility="{Binding ToggleAsEnable, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
+                            </Grid>
+                        </Viewbox>
+                    </Button>
+                    <Button Command="{Binding DeleteSelectedCommand}" Style="{StaticResource LargeButton}" ToolTip="Delete Selected" Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                        <Viewbox>
+                            <Path Data="{StaticResource DeleteIcon}" />
+                        </Viewbox>
+                    </Button>
+                </StackPanel>
+
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

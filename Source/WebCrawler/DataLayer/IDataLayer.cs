@@ -6,7 +6,7 @@ namespace WebCrawler.DataLayer
 {
     public interface IDataLayer : IDisposable
     {
-        Task<PagedResult<WebsiteDTO>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false);
+        Task<PagedResult<WebsiteDTO>> GetWebsitesAsync(WebsiteView view, string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false);
         Task<List<WebsiteDTO>> GetWebsitesAsync(int[] websiteIds, bool includeLogs = false);
         Task<PagedResult<CrawlDTO>> GetCrawlsAsync(int page = 1);
         Task<PagedResult<CrawlLogDTO>> GetCrawlLogsAsync(int? crawlId = null, int? websiteId = null, string keywords = null, CrawlStatus status = CrawlStatus.All, int page = 1);

@@ -18,7 +18,7 @@ namespace WebCrawler.DataLayer
             _logger = logger;
         }
 
-        public async Task<PagedResult<WebsiteDTO>> GetWebsitesAsync(string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
+        public async Task<PagedResult<WebsiteDTO>> GetWebsitesAsync(WebsiteView view, string keywords = null, WebsiteStatus status = WebsiteStatus.All, bool? enabled = true, bool includeLogs = false, int page = 1, string sortBy = null, bool descending = false)
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
@@ -27,6 +27,24 @@ namespace WebCrawler.DataLayer
                     && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords) || o.Notes.Contains(keywords) || o.SysNotes.Contains(keywords))
                     && (status == WebsiteStatus.All || o.Status == status)
                 );
+
+            switch (view)
+            {
+                case WebsiteView.Default:
+                    break;
+                case WebsiteView.Pending:
+                    var latestCrawl = await _dbContext.Crawls
+                        .OrderByDescending(o => o.Id)
+                        .FirstOrDefaultAsync();
+
+                    query = query
+                        .Where(o => latestCrawl != null
+                            && o.CrawlLogs.Any(cl => cl.CrawlId == latestCrawl.Id && cl.Status == CrawlStatus.Failed && cl.Success == 0)
+                        );
+                    break;
+                default:
+                    break;
+            }
 
             if (includeLogs)
             {

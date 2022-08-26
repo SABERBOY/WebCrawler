@@ -82,6 +82,17 @@ namespace WebCrawler.WPF.ViewModels
             }
         }
 
+        public WebsiteView WebsiteView
+        {
+            get { return GetPropertyValue<WebsiteView>(); }
+            set
+            {
+                if (!SetPropertyValue(value)) { return; }
+
+                LoadData();
+            }
+        }
+
         public WebsiteDTO SelectedWebsite
         {
             get { return GetPropertyValue<WebsiteDTO>(); }
@@ -439,7 +450,7 @@ namespace WebCrawler.WPF.ViewModels
             PagedResult<WebsiteDTO> websites;
             if (websiteIds == null || websiteIds.Length == 0)
             {
-                websites = await _dataLayer.GetWebsitesAsync(KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
+                websites = await _dataLayer.GetWebsitesAsync(WebsiteView, KeywordsFilter, StatusFilter, EnabledFilter, false, page, sort?.PropertyName, sort?.Direction == ListSortDirection.Descending);
             }
             else
             {
