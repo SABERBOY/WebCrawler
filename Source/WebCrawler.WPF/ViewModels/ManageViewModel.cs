@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight.Command;
+using GalaSoft.MvvmLight.Command;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -806,18 +806,22 @@ namespace WebCrawler.WPF.ViewModels
                     }
                 }
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
+            {
+                // treat unavailable websites as broken
+                if (ex.DetermineWebsiteBroken())
             {
                 var baseEx = ex.GetBaseException();
 
                 result.Status = WebsiteStatus.ErrorBroken;
                 result.Notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
             }
-            catch (Exception ex)
+                else
             {
-                // keep previous stats as it might not be a website issue as usual, e.g. TaskCanceledException
+                    // keep previous status as it might not be a website issue as usual, e.g. TaskCanceledException
                 result.Status = null;
                 result.Notes = ex.Message;
+                }
 
                 _logger.LogError(ex, website.Home);
             }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using WebCrawler.Common;
@@ -161,7 +161,7 @@ namespace WebCrawler.DataLayer
                     }
                     catch (DbUpdateException ex)
                     {
-                        if (Regex.IsMatch(ex.GetBaseException().Message, @"Duplicate entry .+ for key .+\Wurl_UNIQUE"))
+                        if (Regex.IsMatch(ex.GetBaseException().Message, SystemErrorMessages.UNIQUE_KEY_VIOLATION))
                         {
                             // skip silently as article already exists, this might happen if multiple website instances contain the same article
                             _dbContext.Entry(article).State = EntityState.Detached;

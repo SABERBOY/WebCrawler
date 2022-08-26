@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Xml.XPath;
 
 namespace WebCrawler.Common
@@ -208,6 +209,22 @@ namespace WebCrawler.Common
             string data = JsonConvert.SerializeObject(obj);
 
             return JsonConvert.DeserializeObject<T>(data);
+        }
+
+        public static bool DetermineWebsiteBroken(this Exception ex)
+        {
+            if (ex is TaskCanceledException)
+            {
+                // connection timeout is considered as broken
+                return Regex.IsMatch(ex.Message, SystemErrorMessages.HTTP_TIMEOUT);
+            }
+            else if (ex is HttpRequestException)
+            {
+                // redirections are not considered as broken
+                return !Regex.IsMatch(ex.Message, SystemErrorMessages.HTTP_3XX);
+            }
+
+            return false;
         }
     }
 }

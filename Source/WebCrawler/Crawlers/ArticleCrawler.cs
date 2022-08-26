@@ -150,10 +150,7 @@ namespace WebCrawler.Crawlers
             catch (Exception ex)
             {
                 // treat unavailable websites as broken
-                if (ex is HttpRequestException hrex && !ex.Message.Contains("301 (Moved Permanently)"))
-                {
-                    isWebsiteBroken = true;
-                }
+                isWebsiteBroken = ex.DetermineWebsiteBroken();
 
                 crawlLog.Status = CrawlStatus.Failed;
                 crawlLog.Notes = ex.Message;
