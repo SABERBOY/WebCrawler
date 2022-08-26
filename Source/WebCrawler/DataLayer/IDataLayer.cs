@@ -13,6 +13,7 @@ namespace WebCrawler.DataLayer
         Task<PagedResult<WebsiteDTO>> GetWebsiteAnalysisQueueAsync(bool isFull = false, int? lastId = null);
         Task<PagedResult<CrawlLogDTO>> GetCrawlingQueueAsync(int crawlId, int? lastId = null);
         Task<T> GetAsync<T>(int id) where T : class;
+        Task<WebsiteDTO> GetWebsiteAsync(int websiteId);
         Task SaveAsync(List<Article> articles, CrawlLogDTO crawlLog, string lastHandled);
         Task SaveAsync(WebsiteDTO editor);
         Task<CrawlDTO> SaveAsync(CrawlDTO crawl = null);

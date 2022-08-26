@@ -278,7 +278,7 @@
             </Grid>
 
             <DataGrid Grid.Row="1"
-                      ItemsSource="{Binding CrawlLogs}"
+                      ItemsSource="{Binding Editor.Website.CrawlLogs}"
                       AutoGenerateColumns="False"
                       Margin="0 0 10 10"
                       IsReadOnly="True"

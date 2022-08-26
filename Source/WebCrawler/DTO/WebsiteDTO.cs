@@ -103,11 +103,11 @@ namespace WebCrawler.DTO
             set { SetPropertyValue(value); }
         }
 
-        //public ObservableCollection<CrawlLogDTO> CrawlLogs
-        //{
-        //    get { return GetPropertyValue<ObservableCollection<CrawlLogDTO>>(); }
-        //    set { SetPropertyValue(value); }
-        //}
+        public ObservableCollection<CrawlLogDTO> CrawlLogs
+        {
+            get { return GetPropertyValue<ObservableCollection<CrawlLogDTO>>(); }
+            set { SetPropertyValue(value); }
+        }
 
         #endregion
 
@@ -134,7 +134,7 @@ namespace WebCrawler.DTO
 
         public WebsiteDTO(Website model)
         {
-            //CrawlLogs = new ObservableCollection<CrawlLogDTO>(model.CrawlLogs?.Select(o => new CrawlLogDTO(o)) ?? new CrawlLogDTO[0]);
+            CrawlLogs = new ObservableCollection<CrawlLogDTO>(model.CrawlLogs?.OrderByDescending(o => o.Id).Select(o => new CrawlLogDTO(o, true)) ?? new CrawlLogDTO[0]);
             // NOTES: populate the rules first to avoid dependencies triggered by the updates on the "Home" property in ManageViewModel.Website_PropertyChanged
             Rules = new ObservableCollection<WebsiteRuleDTO>(model.Rules?.OrderBy(o => o.Type).Select(o => new WebsiteRuleDTO(o)) ?? new WebsiteRuleDTO[0]);
  
@@ -181,7 +181,7 @@ namespace WebCrawler.DTO
             target.SysNotes = SysNotes;
             target.Registered = Registered;
             target.BrokenSince = BrokenSince;
-            //target.CrawlLogs = CrawlLogs;
+            target.CrawlLogs = CrawlLogs;
 
             // The following should be assigned after Status, otherwise it might be overwritten
             target.Enabled = Enabled;

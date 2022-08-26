@@ -87,6 +87,12 @@ namespace WebCrawler.DTO
         }
 
         public CrawlLogDTO(CrawlLog model)
+            : this(model, false)
+        {
+
+        }
+
+        public CrawlLogDTO(CrawlLog model, bool ignoreWebsite)
         {
             Id = model.Id;
             WebsiteId = model.WebsiteId;
@@ -100,7 +106,10 @@ namespace WebCrawler.DTO
             CrawlId = model.CrawlId;
             Crawled = model.Crawled;
 
-            Website = new WebsiteDTO(model.Website);
+            if (!ignoreWebsite)
+            {
+                Website = new WebsiteDTO(model.Website);
+            }
         }
     }
 }

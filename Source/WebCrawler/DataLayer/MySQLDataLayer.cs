@@ -22,7 +22,7 @@ namespace WebCrawler.DataLayer
         {
             var query = _dbContext.Websites
                 .AsNoTracking()
-                .Include(o => o.Rules)
+                //.Include(o => o.Rules)
                 .Where(o => (enabled == null || o.Enabled == enabled)
                     && (string.IsNullOrEmpty(keywords) || o.Name.Contains(keywords) || o.Home.Contains(keywords) || o.Notes.Contains(keywords) || o.SysNotes.Contains(keywords))
                     && (status == WebsiteStatus.All || o.Status == status)
@@ -85,7 +85,7 @@ namespace WebCrawler.DataLayer
         {
             var query = _dbContext.Websites
                .AsNoTracking()
-               .Include(o => o.Rules)
+               //.Include(o => o.Rules)
                .Where(o => websiteIds.Contains(o.Id));
 
             if (includeLogs)
@@ -154,6 +154,17 @@ namespace WebCrawler.DataLayer
             where T : class
         {
             return await _dbContext.FindAsync<T>(id);
+        }
+
+        public async Task<WebsiteDTO> GetWebsiteAsync(int websiteId)
+        {
+            return await _dbContext.Websites
+               .AsNoTracking()
+               .Include(o => o.Rules)
+               .Include(o => o.CrawlLogs)
+               .Where(o => o.Id == websiteId)
+               .Select(o => new WebsiteDTO(o))
+               .SingleOrDefaultAsync();
         }
 
         public async Task SaveAsync(List<Article> articles, CrawlLogDTO crawlLog, string lastHandled)

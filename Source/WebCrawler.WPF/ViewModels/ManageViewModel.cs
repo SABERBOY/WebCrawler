@@ -476,6 +476,12 @@ namespace WebCrawler.WPF.ViewModels
 
         private void LoadHtml()
         {
+            // skip while OnSelectedWebsiteChanged is being executed
+            if (IsProcessing)
+            {
+                return;
+            }
+
             TryRunAsync(async () =>
             {
                 await LoadHtmlCoreAsync();
@@ -484,7 +490,6 @@ namespace WebCrawler.WPF.ViewModels
 
         private void OnSelectedWebsiteChanged()
         {
-            CrawlLogs = null;
             CatalogItems = null;
 
             if (SelectedWebsite == null)
@@ -495,13 +500,14 @@ namespace WebCrawler.WPF.ViewModels
             {
                 Editor.IsEditing = true;
 
-                SelectedWebsite.CloneTo(Editor.Website);
-
                 TryRunAsync(async () =>
                 {
-                    var logs = await _dataLayer.GetCrawlLogsAsync(websiteId: SelectedWebsite.Id);
-                    CrawlLogs = new ObservableCollection<CrawlLogDTO>(logs.Items);
-                }, false);
+                    var website = await _dataLayer.GetWebsiteAsync(SelectedWebsite.Id);
+
+                    website.CloneTo(Editor.Website);
+
+                    await LoadHtmlCoreAsync();
+                });
             }
         }
 
@@ -891,9 +897,9 @@ namespace WebCrawler.WPF.ViewModels
                 SelectedWebsite = null;
                 Editor.IsEditing = true;
 
-                var website = await _dataLayer.GetAsync<Website>(SelectedOutput.WebsiteId.Value);
+                var website = await _dataLayer.GetWebsiteAsync(SelectedOutput.WebsiteId.Value);
 
-                new WebsiteDTO(website).CloneTo(Editor.Website);
+                website.CloneTo(Editor.Website);
 
                 // trigger html loading manually as that wouldn't be auto-triggered inside the TryRunAsync context (IsProcessing = true)
                 await LoadHtmlCoreAsync();
