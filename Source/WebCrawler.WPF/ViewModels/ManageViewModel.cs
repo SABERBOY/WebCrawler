@@ -754,7 +754,7 @@ namespace WebCrawler.WPF.ViewModels
 
                 // TODO: test pagination
 
-                SelectedViewIndex = 0;
+                SelectedViewIndex = 2;
             });
         }
 

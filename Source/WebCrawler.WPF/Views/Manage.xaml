@@ -323,6 +323,33 @@
                     Margin="0 0 10 10"
                     Padding="0"
                     BorderThickness="0">
+            <TabItem Header="SOURCE">
+
+                <TextBox Text="{Binding Editor.Response.Content}"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         IsReadOnly="True"
+                         BorderThickness="1"
+                         VerticalAlignment="Stretch"
+                         Margin="0 10 0 0" />
+
+            </TabItem>
+            <TabItem Header="BROWSER">
+
+                <!--
+                <WebBrowser x:Name="webBrowser"
+                            Navigating="webBrowser_Navigating"
+                            ctls:WebBrowserBehavior.Html="{Binding Editor.Response.Content}" />
+                -->
+
+                <Border BorderThickness="1" BorderBrush="#C0C0C0" Margin="0 10 0 0">
+                    <wv2:WebView2 x:Name="webView"
+                                  ctls:WebView2Behavior.Html="{Binding Editor.Response.Content}"
+                                  Visibility="{Binding IsProcessing, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
+                </Border>
+
+            </TabItem>
             <TabItem Header="DETECTION">
 
                 <Grid>
@@ -381,33 +408,6 @@
                         </Grid>
                     </Grid>
                 </Grid>
-
-            </TabItem>
-            <TabItem Header="BROWSER">
-
-                <!--
-                <WebBrowser x:Name="webBrowser"
-                            Navigating="webBrowser_Navigating"
-                            ctls:WebBrowserBehavior.Html="{Binding Editor.Response.Content}" />
-                -->
-
-                <Border BorderThickness="1" BorderBrush="#C0C0C0" Margin="0 10 0 0">
-                    <wv2:WebView2 x:Name="webView"
-                                  ctls:WebView2Behavior.Html="{Binding Editor.Response.Content}"
-                                  Visibility="{Binding IsProcessing, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
-                </Border>
-
-            </TabItem>
-            <TabItem Header="SOURCE">
-
-                <TextBox Text="{Binding Editor.Response.Content}"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         IsReadOnly="True"
-                         BorderThickness="1"
-                         VerticalAlignment="Stretch"
-                         Margin="0 10 0 0" />
 
             </TabItem>
 
