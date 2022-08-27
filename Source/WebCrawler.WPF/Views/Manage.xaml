@@ -6,9 +6,10 @@
       xmlns:ctls="clr-namespace:WebCrawler.WPF.Controls"
       xmlns:me="clr-namespace:WebCrawler.WPF.MarkupExtensions"
       xmlns:m="clr-namespace:WebCrawler.Models;assembly=WebCrawler"
+      xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
       mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="SiteConfig">
+      Title="Manage">
 
     <Page.Resources>
         <Style TargetType="Line">
@@ -284,7 +285,7 @@
                       IsReadOnly="True"
                       CanUserSortColumns="False"
                       MinHeight="100"
-                      Visibility="{Binding SelectedWebsite, Converter={StaticResource EmptyObjectConverter}, ConverterParameter=!}">
+                      Visibility="{Binding Editor.IsEditing, Converter={StaticResource BinaryConverter}}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Crawled" Binding="{Binding Crawled}" />
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
@@ -384,9 +385,17 @@
             </TabItem>
             <TabItem Header="BROWSER">
 
+                <!--
                 <WebBrowser x:Name="webBrowser"
                             Navigating="webBrowser_Navigating"
                             ctls:WebBrowserBehavior.Html="{Binding Editor.Response.Content}" />
+                -->
+
+                <Border BorderThickness="1" BorderBrush="#C0C0C0" Margin="0 10 0 0">
+                    <wv2:WebView2 x:Name="webView"
+                                  ctls:WebView2Behavior.Html="{Binding Editor.Response.Content}"
+                                  Visibility="{Binding IsProcessing, Converter={StaticResource BinaryConverter}, ConverterParameter=!}" />
+                </Border>
 
             </TabItem>
             <TabItem Header="SOURCE">
@@ -435,7 +444,7 @@
 
         </TabControl>
 
-        <ctls:Spinner Grid.RowSpan="2" Grid.ColumnSpan="3" IsEnabled="{Binding IsProcessing}" Message="{Binding ProcessingStatus}" IsVisibleChanged="Spinner_IsVisibleChanged" />
+        <ctls:Spinner Grid.RowSpan="2" Grid.ColumnSpan="3" IsEnabled="{Binding IsProcessing}" Message="{Binding ProcessingStatus}" />
 
     </Grid>
 </Page>

@@ -10,7 +10,7 @@
       xmlns:m="clr-namespace:WebCrawler.Models;assembly=WebCrawler"
       mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="SiteConfig">
+      Title="Crawler">
 
     <Page.Resources>
         <Style x:Key="LargeButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
