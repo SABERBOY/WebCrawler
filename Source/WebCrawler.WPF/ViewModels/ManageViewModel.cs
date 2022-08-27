@@ -100,7 +100,6 @@ namespace WebCrawler.WPF.ViewModels
             {
                 if (!SetPropertyValue(value)) { return; }
 
-                // TODO: This additional async call will cause the buttons state not refreshed
                 OnSelectedWebsiteChanged();
             }
         }

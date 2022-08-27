@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         SizeToContent="Height"
-        Width="630">
+        Width="635">
 
     <Window.Resources>
         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
