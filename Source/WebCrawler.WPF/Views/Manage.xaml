@@ -57,13 +57,13 @@
             <StackPanel Orientation="Horizontal">
                 <!-- Filters -->
                 <StackPanel Orientation="Horizontal">
-                    <ComboBox Width="180"
+                    <ComboBox Width="150"
                               ItemsSource="{me:EnumValues {x:Type m:WebsiteView}}"
                               ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
                               SelectedValue="{Binding WebsiteView}"
                               BorderThickness="1"
                               VerticalAlignment="Center" />
-                    <ComboBox Width="180"
+                    <ComboBox Width="150"
                               ItemsSource="{me:EnumValues {x:Type m:WebsiteStatus}}"
                               ItemTemplate="{StaticResource EnumDisplayNameComboBoxItem}"
                               SelectedValue="{Binding StatusFilter}"
@@ -272,7 +272,7 @@
                         <Button Grid.Column="0" Content="DELETE" Command="{Binding DeleteCurrentCommand}" Height="30" />
                         <Button Grid.Column="1" Content="RESET" Command="{Binding ResetCurrentCommand}" Height="30" />
                         <Button Grid.Column="2" Content="SAVE" Command="{Binding SaveCurrentCommand}" Height="30" />
-                        <Button Grid.Column="3" Content="TEST" Command="{Binding TestCurrentCommand}" Height="30" />
+                        <Button Grid.Column="3" Content="DETECT" Command="{Binding TestCurrentCommand}" Height="30" />
                     </Grid>
 
                 </Grid>

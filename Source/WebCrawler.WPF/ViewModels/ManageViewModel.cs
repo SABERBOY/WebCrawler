@@ -411,6 +411,7 @@ namespace WebCrawler.WPF.ViewModels
             Editor.Website.PropertyChanged += Website_PropertyChanged;
 
             SetPropertyValue(true, nameof(EnabledFilter));
+            SelectedViewIndex = 1;
         }
 
         public bool Sort(params SortDescription[] sorts)
