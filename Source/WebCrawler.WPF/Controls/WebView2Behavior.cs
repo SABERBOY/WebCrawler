@@ -1,15 +1,16 @@
-﻿using System.Text.RegularExpressions;
+﻿using Microsoft.Web.WebView2.Wpf;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace WebCrawler.WPF.Controls
 {
-    public class WebBrowserBehavior
+    public class WebView2Behavior
     {
         public static readonly DependencyProperty HtmlProperty = DependencyProperty.RegisterAttached(
             "Html",
             typeof(string),
-            typeof(WebBrowserBehavior),
+            typeof(WebView2Behavior),
             new FrameworkPropertyMetadata(OnHtmlChanged));
 
         [AttachedPropertyBrowsableForType(typeof(WebBrowser))]
@@ -25,18 +26,18 @@ namespace WebCrawler.WPF.Controls
 
         static void OnHtmlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            WebBrowser browser = d as WebBrowser;
-            if (browser != null)
+            WebView2 webView = d as WebView2;
+            if (webView?.CoreWebView2 != null)
             {
-                if (browser.Document != null)
+                if (webView.CoreWebView2.DocumentTitle != "about:blank")
                 {
-                    browser.Navigate("about:blank");
+                    webView.CoreWebView2.Navigate("about:blank");
                 }
 
                 var revisedHtml = WrapHtml(e.NewValue as string);
                 if (!string.IsNullOrEmpty(revisedHtml))
                 {
-                    browser.NavigateToString(revisedHtml);
+                    webView.NavigateToString(revisedHtml);
                 }
             }
         }
@@ -49,6 +50,10 @@ namespace WebCrawler.WPF.Controls
         /// <returns></returns>
         static string WrapHtml(string html)
         {
+            return html;
+
+            // TODO: TBD
+
             if (string.IsNullOrEmpty(html))
             {
                 return html;

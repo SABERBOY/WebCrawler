@@ -1,9 +1,13 @@
-﻿using System;
+﻿using Microsoft.Web.WebView2.Core;
+using Serilog;
+using System;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using WebCrawler.Common;
 using WebCrawler.DTO;
 using WebCrawler.WPF.Common;
 using WebCrawler.WPF.ViewModels;
@@ -21,6 +25,27 @@ namespace WebCrawler.WPF.Views
             DataContext = manageViewModel;
 
             Navigator.NavigationService.LoadCompleted += NavigationService_LoadCompleted;
+
+            Loaded += Manage_Loaded;
+        }
+
+        private async void Manage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // WebView2 controls that share the same user data folder must use the same options, otherwise, the WebView2 creation will fail with 0x8007139F HRESULT_FROM_WIN32(ERROR_INVALID_STATE).
+            // https://docs.microsoft.com/en-us/microsoft-edge/webview2/concepts/userdatafolder#share-user-data-folders
+            var userDataFolder = Path.Combine(WCUtility.GetAppTempFolder(), nameof(Manage));
+
+            // Create the environment manually
+            var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+
+            await webView.EnsureCoreWebView2Async(env);
+
+            webView.CoreWebView2.ProcessFailed += CoreWebView2_ProcessFailed; ;
+        }
+
+        private void CoreWebView2_ProcessFailed(object? sender, CoreWebView2ProcessFailedEventArgs e)
+        {
+            Log.Logger.Error($"WebView2 crashed as {e.Reason}");
         }
 
         private void NavigationService_LoadCompleted(object sender, NavigationEventArgs e)
@@ -91,18 +116,6 @@ namespace WebCrawler.WPF.Views
             var grid = sender as DataGrid;
 
             vm.AcceptSelectedItems(grid.SelectedItems.Cast<WebsiteDTO>().ToArray());
-        }
-
-        private void Spinner_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            var processing = Convert.ToBoolean(e.NewValue);
-
-            webBrowser.Visibility = processing ? Visibility.Hidden : Visibility.Visible;
-        }
-
-        private void webBrowser_Navigating(object sender, NavigatingCancelEventArgs e)
-        {
-            webBrowser.SuppressScriptErrors();
         }
     }
 }
