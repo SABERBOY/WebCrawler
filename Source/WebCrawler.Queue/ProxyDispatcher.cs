@@ -10,7 +10,7 @@ namespace WebCrawler.Queue
     {
         public const string QUEUE_REQUESTS = "requests";
         public const long QUEUES_CAPACITY_BYTES = 10L * 1024 * 1024;
-        private const int PROXY_START_TIMEOUT_SECONDS = 10;
+        private const int PROXY_START_TIMEOUT_SECONDS = 30;
 
         private readonly ProxySettings _proxySettings;
         private readonly IQueueFactory _queueFactory;

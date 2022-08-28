@@ -122,13 +122,37 @@ namespace WebCrawler.Analyzers
             // configure Worker, HttpClient Factory, and retry policy for HTTP request failures
             // https://github.com/dotnet/runtime/issues/30025
             var userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36";
-            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_DEFAULT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
+            services.AddHttpClient(
+                    Constants.HTTP_CLIENT_NAME_DEFAULT,
+                    (httpClient) =>
+                    {
+                        httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+
+                        var crawlSettings = services.BuildServiceProvider().GetService<CrawlSettings>();
+                        if (crawlSettings.HttpClientTimeout > 0)
+                        {
+                            httpClient.Timeout = TimeSpan.FromSeconds(crawlSettings.HttpClientTimeout);
+                        }
+                    }
+                )
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
                 })
                 .AddPolicyHandler(HttpPolicyHandler);
-            services.AddHttpClient(Constants.HTTP_CLIENT_NAME_NOREDIRECT, (httpClient) => httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent))
+            services.AddHttpClient(
+                    Constants.HTTP_CLIENT_NAME_NOREDIRECT,
+                    (httpClient) =>
+                    {
+                        httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+
+                        var crawlSettings = services.BuildServiceProvider().GetService<CrawlSettings>();
+                        if (crawlSettings.HttpClientTimeout > 0)
+                        {
+                            httpClient.Timeout = TimeSpan.FromSeconds(crawlSettings.HttpClientTimeout);
+                        }
+                    }
+                )
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {
                     AllowAutoRedirect = false,

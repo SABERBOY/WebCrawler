@@ -6,5 +6,6 @@
         public int FeedMaxPagesLimit { get; set; }
         public int OutdateDaysAgo { get; set; }
         public int MaxAcceptedBrokenDays { get; set; }
+        public int HttpClientTimeout { get; set; }
     }
 }
