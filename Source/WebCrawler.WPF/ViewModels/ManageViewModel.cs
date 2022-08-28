@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight.Command;
+using GalaSoft.MvvmLight.Command;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -814,10 +814,8 @@ namespace WebCrawler.WPF.ViewModels
                 // treat unavailable websites as broken
                 if (ex.DetermineWebsiteBroken())
                 {
-                    var baseEx = ex.GetBaseException();
-
                     result.Status = WebsiteStatus.ErrorBroken;
-                    result.Notes = $"{baseEx.GetType().Name}: {baseEx.Message}";
+                    result.Notes = ex.Message;
                 }
                 else
                 {
