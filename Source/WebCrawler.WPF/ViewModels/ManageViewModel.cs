@@ -526,7 +526,7 @@ namespace WebCrawler.WPF.ViewModels
                     AppendOutput("Url redirected to: " + Editor.Response.ActualUrl, Editor.Website.Home, Editor.Website.Id, LogLevel.Warning);
                 }
 
-                SelectedViewIndex = 1;
+                SelectedViewIndex = Editor.Website.CatalogRule?.ContentMatchType == ContentMatchType.JPath ? 0 : 1;
             }
         }
 
